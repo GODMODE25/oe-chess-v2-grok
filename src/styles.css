@@ -1,0 +1,66 @@
+@import "tailwindcss";
+@import "@fontsource/outfit/latin-400.css";
+@import "@fontsource/outfit/latin-500.css";
+@import "@fontsource/outfit/latin-600.css";
+@import "@fontsource/fraunces/latin-600.css";
+
+@theme {
+  --font-sans: "Outfit", "Avenir Next", "Segoe UI", sans-serif;
+  --font-display: "Fraunces", "Iowan Old Style", Palatino, serif;
+  --color-ink: #141611;
+  --color-ink-2: #1c1f19;
+  --color-panel: #242920;
+  --color-line: #3a4034;
+  --color-ivory: #f4efe4;
+  --color-mist: #b7b1a4;
+  --color-brass: #c9923a;
+  --color-brass-2: #e4b56a;
+  --color-walnut: #6e5340;
+  --color-board-light: #ead9bc;
+  --color-board-dark: #8a6748;
+  --color-danger: #c4543a;
+  --color-ok: #8ea56a;
+  --radius-lg: 0.85rem;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    background: var(--color-ink);
+    color: var(--color-ivory);
+  }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    overflow-x: hidden;
+    font-family: var(--font-sans);
+  }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-brass);
+    outline-offset: 2px;
+  }
+}
+
+[data-board="walnut"] {
+  --color-board-light: #ead9bc;
+  --color-board-dark: #8a6748;
+}
+[data-board="ink"] {
+  --color-board-light: #d9d4c8;
+  --color-board-dark: #3c4438;
+}
+[data-board="stone"] {
+  --color-board-light: #e6e1d6;
+  --color-board-dark: #6e6b63;
+}

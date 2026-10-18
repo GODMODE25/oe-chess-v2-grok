@@ -1,0 +1,1984 @@
+[Event "King's Pawn Opening"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C20"]
+[White "Open games"]
+[Black "C20"]
+[Result "*"]
+[Opening "King's Pawn Opening"]
+[ECO "C20"]
+
+{Open with the king's pawn, then bring the knight out before you choose a
+bishop home.} 1. e4 e5 2. Nf3 Nc6 *
+
+[Event "Italian Game"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C50"]
+[White "Open games"]
+[Black "C50"]
+[Result "*"]
+[Opening "Italian Game"]
+[ECO "C50"]
+
+{The bishop on c4 eyes f7. Develop fast and decide later whether to strike
+with d3 or c3 and d4.} 1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 *
+
+[Event "Italian Game, Quiet"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C50"]
+[White "Open games"]
+[Black "C50"]
+[Result "*"]
+[Opening "Italian Game, Quiet"]
+[ECO "C50"]
+
+{A slow center keeps pieces on the board. Finish development and castle before
+forcing tactics.} 1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. d3 *
+
+[Event "Giuoco Piano"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C53"]
+[White "Open games"]
+[Black "C53"]
+[Result "*"]
+[Opening "Giuoco Piano"]
+[ECO "C53"]
+
+{Support a later d4 with c3. Do not rush the central break until the king is
+safe.} 1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. c3 Nf6 5. d3 *
+
+[Event "Giuoco Piano, Center Attack"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C53"]
+[White "Open games"]
+[Black "C53"]
+[Result "*"]
+[Opening "Giuoco Piano, Center Attack"]
+[ECO "C53"]
+
+{d4 opens the center. Recapture with the c-pawn and keep the dark squares
+under control.} 1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. c3 Nf6 5. d4 exd4 6. cxd4 *
+
+[Event "Two Knights Defense"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C55"]
+[White "Open games"]
+[Black "C55"]
+[Result "*"]
+[Opening "Two Knights Defense"]
+[ECO "C55"]
+
+{Black attacks e4 at once. White can defend quietly with d3 or try Ng5 against
+f7.} 1. e4 e5 2. Nf3 Nc6 3. Bc4 Nf6 *
+
+[Event "Two Knights, Knight Attack"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C57"]
+[White "Open games"]
+[Black "C57"]
+[Result "*"]
+[Opening "Two Knights, Knight Attack"]
+[ECO "C57"]
+
+{Ng5 forces an immediate answer on d5. Know the tactics before you play this
+in a serious line.} 1. e4 e5 2. Nf3 Nc6 3. Bc4 Nf6 4. Ng5 d5 5. exd5 *
+
+[Event "Evans Gambit"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C51"]
+[White "Open games"]
+[Black "C51"]
+[Result "*"]
+[Opening "Evans Gambit"]
+[ECO "C51"]
+
+{The pawn offer speeds development and opens the a-file. Take only if you know
+the follow-up.} 1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. b4 *
+
+[Event "Hungarian Defense"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C50"]
+[White "Open games"]
+[Black "C50"]
+[Result "*"]
+[Opening "Hungarian Defense"]
+[ECO "C50"]
+
+{A restrained bishop. It is solid, but Black gives up some activity compared
+with Bc5.} 1. e4 e5 2. Nf3 Nc6 3. Bc4 Be7 *
+
+[Event "Scotch Game"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C44"]
+[White "Open games"]
+[Black "C44"]
+[Result "*"]
+[Opening "Scotch Game"]
+[ECO "C44"]
+
+{Open the center on move three. After the trade, the d4 knight becomes the
+center of the fight.} 1. e4 e5 2. Nf3 Nc6 3. d4 *
+
+[Event "Scotch Game, Main Line"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C45"]
+[White "Open games"]
+[Black "C45"]
+[Result "*"]
+[Opening "Scotch Game, Main Line"]
+[ECO "C45"]
+
+{Develop the bishop with tempo against the knight, then castle and fight the
+half-open e-file.} 1. e4 e5 2. Nf3 Nc6 3. d4 exd4 4. Nxd4 Bc5 *
+
+[Event "Scotch Gambit"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C44"]
+[White "Open games"]
+[Black "C44"]
+[Result "*"]
+[Opening "Scotch Gambit"]
+[ECO "C44"]
+
+{Leave the pawn on d4 and play for piece activity. Do not grab material if
+your king is still in the center.} 1. e4 e5 2. Nf3 Nc6 3. d4 exd4 4. Bc4 *
+
+[Event "Petrov Defense"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C42"]
+[White "Open games"]
+[Black "C42"]
+[Result "*"]
+[Opening "Petrov Defense"]
+[ECO "C42"]
+
+{Black counterattacks e4 instead of defending e5. Symmetry is only temporary.}
+1. e4 e5 2. Nf3 Nf6 *
+
+[Event "Petrov, Classical"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C42"]
+[White "Open games"]
+[Black "C42"]
+[Result "*"]
+[Opening "Petrov, Classical"]
+[ECO "C42"]
+
+{Regain the pawn and kick the knight later with d4 or Nc3. King safety matters
+more than a tiny material edge.} 1. e4 e5 2. Nf3 Nf6 3. Nxe5 d6 4. Nf3 Nxe4 *
+
+[Event "Petrov, Steinitz"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C43"]
+[White "Open games"]
+[Black "C43"]
+[Result "*"]
+[Opening "Petrov, Steinitz"]
+[ECO "C43"]
+
+{White strikes in the center at once. Be ready for an open position with early
+queen activity.} 1. e4 e5 2. Nf3 Nf6 3. d4 *
+
+[Event "Philidor Defense"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C41"]
+[White "Open games"]
+[Black "C41"]
+[Result "*"]
+[Opening "Philidor Defense"]
+[ECO "C41"]
+
+{d6 is sturdy and a little passive. Prepare a later break with c6 and d5 or
+f5, not a premature opening of the center.} 1. e4 e5 2. Nf3 d6 *
+
+[Event "Elephant Gambit"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C40"]
+[White "Open games"]
+[Black "C40"]
+[Result "*"]
+[Opening "Elephant Gambit"]
+[ECO "C40"]
+
+{An early counterstrike. Only use it if you have checked the tactics after
+exd5.} 1. e4 e5 2. Nf3 d5 *
+
+[Event "Latvian Gambit"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C40"]
+[White "Open games"]
+[Black "C40"]
+[Result "*"]
+[Opening "Latvian Gambit"]
+[ECO "C40"]
+
+{f5 weakens the king. Treat it as a sharp sideline, not a main repertoire
+choice.} 1. e4 e5 2. Nf3 f5 *
+
+[Event "King's Gambit"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C30"]
+[White "Open games"]
+[Black "C30"]
+[Result "*"]
+[Opening "King's Gambit"]
+[ECO "C30"]
+
+{White offers a pawn to open the f-file. Castle quickly or do not play the
+gambit.} 1. e4 e5 2. f4 *
+
+[Event "King's Gambit Accepted"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C33"]
+[White "Open games"]
+[Black "C33"]
+[Result "*"]
+[Opening "King's Gambit Accepted"]
+[ECO "C33"]
+
+{Black holds the pawn with g5. Develop with Bc4 and keep an eye on the
+weakened diagonal.} 1. e4 e5 2. f4 exf4 3. Nf3 g5 *
+
+[Event "Falkbeer Countergambit"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C31"]
+[White "Open games"]
+[Black "C31"]
+[Result "*"]
+[Opening "Falkbeer Countergambit"]
+[ECO "C31"]
+
+{A central counter instead of taking on f4. Calculate the pawn tension before
+you commit the king.} 1. e4 e5 2. f4 d5 *
+
+[Event "Danish Gambit"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C21"]
+[White "Open games"]
+[Black "C21"]
+[Result "*"]
+[Opening "Danish Gambit"]
+[ECO "C21"]
+
+{Two pawns for rapid development. If you decline, do it with a developing
+move, not a slow pawn grab.} 1. e4 e5 2. d4 exd4 3. c3 *
+
+[Event "Bishop's Opening"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C23"]
+[White "Open games"]
+[Black "C23"]
+[Result "*"]
+[Opening "Bishop's Opening"]
+[ECO "C23"]
+
+{The bishop comes out before the knight. It is flexible and avoids an
+immediate Petrov.} 1. e4 e5 2. Bc4 *
+
+[Event "Bishop's Opening, Berlin"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C24"]
+[White "Open games"]
+[Black "C24"]
+[Result "*"]
+[Opening "Bishop's Opening, Berlin"]
+[ECO "C24"]
+
+{A quiet setup. You can still transpose toward an Italian or a Vienna
+structure.} 1. e4 e5 2. Bc4 Nf6 3. d3 *
+
+[Event "Vienna Game"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C25"]
+[White "Open games"]
+[Black "C25"]
+[Result "*"]
+[Opening "Vienna Game"]
+[ECO "C25"]
+
+{Nc3 supports d4 and leaves f4 available. Develop the kingside before you open
+the position.} 1. e4 e5 2. Nc3 *
+
+[Event "Vienna, Falkbeer idea"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C26"]
+[White "Open games"]
+[Black "C26"]
+[Result "*"]
+[Opening "Vienna, Falkbeer idea"]
+[ECO "C26"]
+
+{Both sides develop classically. Complete castling, then choose between f4 and
+a central d4.} 1. e4 e5 2. Nc3 Nf6 3. Bc4 Nc6 4. d3 *
+
+[Event "Vienna Gambit"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C28"]
+[White "Open games"]
+[Black "C28"]
+[Result "*"]
+[Opening "Vienna Gambit"]
+[ECO "C28"]
+
+{f4 attacks the center while the knight already sits on c3. Do not fall behind
+in development.} 1. e4 e5 2. Nc3 Nf6 3. f4 *
+
+[Event "Three Knights Game"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C46"]
+[White "Open games"]
+[Black "C46"]
+[Result "*"]
+[Opening "Three Knights Game"]
+[ECO "C46"]
+
+{Flexible development. Black chooses among Bb4, Nf6, and g6.} 1. e4 e5
+2. Nf3 Nc6 3. Nc3 *
+
+[Event "Four Knights Game"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C47"]
+[White "Open games"]
+[Black "C47"]
+[Result "*"]
+[Opening "Four Knights Game"]
+[ECO "C47"]
+
+{A symmetrical starting point. The first player to find a useful pawn break
+usually takes the initiative.} 1. e4 e5 2. Nf3 Nc6 3. Nc3 Nf6 *
+
+[Event "Four Knights, Spanish"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C48"]
+[White "Open games"]
+[Black "C48"]
+[Result "*"]
+[Opening "Four Knights, Spanish"]
+[ECO "C48"]
+
+{Bb5 pins the knight the way a Ruy Lopez does. Trade on c6 only with a clear
+plan for the pawn structure.} 1. e4 e5 2. Nf3 Nc6 3. Nc3 Nf6 4. Bb5 *
+
+[Event "Ruy Lopez"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C60"]
+[White "Open games"]
+[Black "C60"]
+[Result "*"]
+[Opening "Ruy Lopez"]
+[ECO "C60"]
+
+{Pressure the knight that defends e5. The Spanish game rewards patient
+maneuvering.} 1. e4 e5 2. Nf3 Nc6 3. Bb5 *
+
+[Event "Berlin Defense"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C65"]
+[White "Open games"]
+[Black "C65"]
+[Result "*"]
+[Opening "Berlin Defense"]
+[ECO "C65"]
+
+{An immediate hit on e4. Many lines trade into an endgame, so know the
+resulting piece activity.} 1. e4 e5 2. Nf3 Nc6 3. Bb5 Nf6 *
+
+[Event "Berlin, Open Variation"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C67"]
+[White "Open games"]
+[Black "C67"]
+[Result "*"]
+[Opening "Berlin, Open Variation"]
+[ECO "C67"]
+
+{After Nxe4 White regains the pawn and often reaches a queenless middlegame.
+King activity matters.} 1. e4 e5 2. Nf3 Nc6 3. Bb5 Nf6 4. O-O Nxe4 *
+
+[Event "Ruy Lopez, Exchange"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C68"]
+[White "Open games"]
+[Black "C68"]
+[Result "*"]
+[Opening "Ruy Lopez, Exchange"]
+[ECO "C68"]
+
+{Doubled c-pawns for Black, and White keeps a kingside pawn majority. The
+endgame plan starts early.} 1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Bxc6 *
+
+[Event "Exchange Ruy, Main"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C69"]
+[White "Open games"]
+[Black "C69"]
+[Result "*"]
+[Opening "Exchange Ruy, Main"]
+[ECO "C69"]
+
+{Castle and then decide between d4 and a slow buildup. Do not rush before the
+rooks are connected.} 1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Bxc6 dxc6 5. O-O *
+
+[Event "Ruy Lopez, Morphy"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C70"]
+[White "Open games"]
+[Black "C70"]
+[Result "*"]
+[Opening "Ruy Lopez, Morphy"]
+[ECO "C70"]
+
+{a6 asks the bishop a question. Ba4 keeps the pressure and the option to take
+on c6.} 1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 *
+
+[Event "Ruy Lopez, Archangel"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C78"]
+[White "Open games"]
+[Black "C78"]
+[Result "*"]
+[Opening "Ruy Lopez, Archangel"]
+[ECO "C78"]
+
+{b5 and Bb7 fight for the center from a distance. Watch the a4-e8 diagonal.}
+1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O b5 6. Bb3 Bb7 *
+
+[Event "Closed Ruy Lopez"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C84"]
+[White "Open games"]
+[Black "C84"]
+[Result "*"]
+[Opening "Closed Ruy Lopez"]
+[ECO "C84"]
+
+{The main closed Spanish. Prepare c3 and d4, and do not trade pieces without a
+reason.} 1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7 *
+
+[Event "Closed Ruy, Anti-Marshall"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C88"]
+[White "Open games"]
+[Black "C88"]
+[Result "*"]
+[Opening "Closed Ruy, Anti-Marshall"]
+[ECO "C88"]
+
+{d3 sidesteps the Marshall pawn sacrifice. Play is slower and more
+maneuvering.} 1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7 6. Re1 b5
+7. Bb3 O-O 8. d3 *
+
+[Event "Marshall Attack"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C89"]
+[White "Open games"]
+[Black "C89"]
+[Result "*"]
+[Opening "Marshall Attack"]
+[ECO "C89"]
+
+{Black sacrifices a pawn for activity. Know the main defensive setup before
+you allow it.} 1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7 6. Re1 b5
+7. Bb3 O-O 8. c3 d5 *
+
+[Event "Open Ruy Lopez"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C80"]
+[White "Open games"]
+[Black "C80"]
+[Result "*"]
+[Opening "Open Ruy Lopez"]
+[ECO "C80"]
+
+{Black takes on e4 and accepts an open fight. Regain the pawn cleanly before
+you start an attack.} 1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Nxe4 *
+
+[Event "Ruy Lopez, Deferred Steinitz"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C75"]
+[White "Open games"]
+[Black "C75"]
+[Result "*"]
+[Opening "Ruy Lopez, Deferred Steinitz"]
+[ECO "C75"]
+
+{A solid, slightly cramped defense. Break later with f5 or prepare piece
+trades.} 1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 d6 *
+
+[Event "Scandinavian Defense"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "B01"]
+[White "Semi-open"]
+[Black "B01"]
+[Result "*"]
+[Opening "Scandinavian Defense"]
+[ECO "B01"]
+
+{An immediate central counter. Be ready to move the queen twice and then
+develop quickly.} 1. e4 d5 *
+
+[Event "Scandinavian, Modern"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "B01"]
+[White "Semi-open"]
+[Black "B01"]
+[Result "*"]
+[Opening "Scandinavian, Modern"]
+[ECO "B01"]
+
+{Qa5 is the modern home for the queen. Develop the minor pieces before you
+look for tactics.} 1. e4 d5 2. exd5 Qxd5 3. Nc3 Qa5 *
+
+[Event "Alekhine Defense"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "B02"]
+[White "Semi-open"]
+[Black "B02"]
+[Result "*"]
+[Opening "Alekhine Defense"]
+[ECO "B02"]
+
+{Invite White's pawns forward, then undermine them. Do not attack the pawn
+center too late.} 1. e4 Nf6 *
+
+[Event "Alekhine, Four Pawns"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "B03"]
+[White "Semi-open"]
+[Black "B03"]
+[Result "*"]
+[Opening "Alekhine, Four Pawns"]
+[ECO "B03"]
+
+{White grabs space. Black must chip with c5 or dxe5 before the center rolls
+through.} 1. e4 Nf6 2. e5 Nd5 3. d4 d6 4. c4 Nb6 5. f4 *
+
+[Event "Modern Defense"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "B06"]
+[White "Pirc and Modern"]
+[Black "B06"]
+[Result "*"]
+[Opening "Modern Defense"]
+[ECO "B06"]
+
+{The fianchetto comes before Nf6. Strike the center with c5 or d6 and e5 once
+development is done.} 1. e4 g6 2. d4 Bg7 *
+
+[Event "Pirc Defense"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "B07"]
+[White "Pirc and Modern"]
+[Black "B07"]
+[Result "*"]
+[Opening "Pirc Defense"]
+[ECO "B07"]
+
+{A flexible defensive shell. Finish Bg7 and castling before you choose c5, e5,
+or a queenside expansion.} 1. e4 d6 2. d4 Nf6 3. Nc3 g6 *
+
+[Event "Pirc, Austrian Attack"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "B09"]
+[White "Pirc and Modern"]
+[Black "B09"]
+[Result "*"]
+[Opening "Pirc, Austrian Attack"]
+[ECO "B09"]
+
+{White builds a broad pawn center. Black should counter in the center rather
+than wait.} 1. e4 d6 2. d4 Nf6 3. Nc3 g6 4. f4 Bg7 5. Nf3 *
+
+[Event "Caro-Kann Defense"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "B10"]
+[White "Caro-Kann"]
+[Black "B10"]
+[Result "*"]
+[Opening "Caro-Kann Defense"]
+[ECO "B10"]
+
+{Support d5 with a pawn, not a piece. The resulting positions are solid and
+slightly slower than a Sicilian.} 1. e4 c6 *
+
+[Event "Caro-Kann, Advance"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "B12"]
+[White "Caro-Kann"]
+[Black "B12"]
+[Result "*"]
+[Opening "Caro-Kann, Advance"]
+[ECO "B12"]
+
+{White gains space. Black undermines with c5 and develops the light-squared
+bishop outside the chain.} 1. e4 c6 2. d4 d5 3. e5 *
+
+[Event "Caro-Kann, Exchange"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "B13"]
+[White "Caro-Kann"]
+[Black "B13"]
+[Result "*"]
+[Opening "Caro-Kann, Exchange"]
+[ECO "B13"]
+
+{An open, symmetrical center. Piece activity and the half-open files decide
+it.} 1. e4 c6 2. d4 d5 3. exd5 cxd5 *
+
+[Event "Caro-Kann, Classical"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "B18"]
+[White "Caro-Kann"]
+[Black "B18"]
+[Result "*"]
+[Opening "Caro-Kann, Classical"]
+[ECO "B18"]
+
+{The bishop develops before e6. Do not allow your light-squared bishop to be
+buried.} 1. e4 c6 2. d4 d5 3. Nd2 dxe4 4. Nxe4 Bf5 *
+
+[Event "Caro-Kann, Fantasy"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "B12"]
+[White "Caro-Kann"]
+[Black "B12"]
+[Result "*"]
+[Opening "Caro-Kann, Fantasy"]
+[ECO "B12"]
+
+{f3 supports e4 and keeps the position sharp. Develop before you open the
+center.} 1. e4 c6 2. d4 d5 3. f3 *
+
+[Event "Sicilian Defense"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "B20"]
+[White "Sicilian"]
+[Black "B20"]
+[Result "*"]
+[Opening "Sicilian Defense"]
+[ECO "B20"]
+
+{Fight for the center from the flank. You accept asymmetrical pawn structure
+in return for counterplay.} 1. e4 c5 *
+
+[Event "Smith-Morra Gambit"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "B21"]
+[White "Sicilian"]
+[Black "B21"]
+[Result "*"]
+[Opening "Smith-Morra Gambit"]
+[ECO "B21"]
+
+{A pawn for development and open lines. Decline with a developing move if you
+are unsure of the tactics.} 1. e4 c5 2. d4 cxd4 3. c3 *
+
+[Event "Sicilian Wing Gambit"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "B21"]
+[White "Sicilian"]
+[Black "B21"]
+[Result "*"]
+[Opening "Sicilian Wing Gambit"]
+[ECO "B21"]
+
+{An offbeat pawn offer on the wing. Know a concrete follow-up or choose a main
+line instead.} 1. e4 c5 2. b4 *
+
+[Event "Sicilian Alapin"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "B22"]
+[White "Sicilian"]
+[Black "B22"]
+[Result "*"]
+[Opening "Sicilian Alapin"]
+[ECO "B22"]
+
+{White prepares d4 with a solid pawn. Black should occupy the center with d5
+when it is sound.} 1. e4 c5 2. c3 *
+
+[Event "Closed Sicilian"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "B23"]
+[White "Sicilian"]
+[Black "B23"]
+[Result "*"]
+[Opening "Closed Sicilian"]
+[ECO "B23"]
+
+{A slow fianchetto setup. Expand with f4 only after the king has castled.}
+1. e4 c5 2. Nc3 Nc6 3. g3 *
+
+[Event "Sicilian, Hungarian"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "B27"]
+[White "Sicilian"]
+[Black "B27"]
+[Result "*"]
+[Opening "Sicilian, Hungarian"]
+[ECO "B27"]
+
+{The flexible knight move. Black chooses among d6, Nc6, e6, and g6.} 1. e4 c5
+2. Nf3 *
+
+[Event "Sicilian Rossolimo"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "B30"]
+[White "Sicilian"]
+[Black "B30"]
+[Result "*"]
+[Opening "Sicilian Rossolimo"]
+[ECO "B30"]
+
+{Bb5 avoids the open Sicilian theory maze. Decide whether to take on c6 or
+retreat after a6.} 1. e4 c5 2. Nf3 Nc6 3. Bb5 *
+
+[Event "Kalashnikov Sicilian"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "B32"]
+[White "Sicilian"]
+[Black "B32"]
+[Result "*"]
+[Opening "Kalashnikov Sicilian"]
+[ECO "B32"]
+
+{e5 gains space and accepts a hole on d5. Control that square with pieces.}
+1. e4 c5 2. Nf3 Nc6 3. d4 cxd4 4. Nxd4 e5 *
+
+[Event "Sveshnikov Sicilian"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "B33"]
+[White "Sicilian"]
+[Black "B33"]
+[Result "*"]
+[Opening "Sveshnikov Sicilian"]
+[ECO "B33"]
+
+{A sharp system built around the d5 square. Know the piece plan before you
+enter it.} 1. e4 c5 2. Nf3 Nc6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 e5 *
+
+[Event "Sicilian, French Variation"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "B40"]
+[White "Sicilian"]
+[Black "B40"]
+[Result "*"]
+[Opening "Sicilian, French Variation"]
+[ECO "B40"]
+
+{e6 prepares d5 or a Taimanov-style setup. Do not block the dark-squared
+bishop forever.} 1. e4 c5 2. Nf3 e6 *
+
+[Event "Sicilian Kan"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "B41"]
+[White "Sicilian"]
+[Black "B41"]
+[Result "*"]
+[Opening "Sicilian Kan"]
+[ECO "B41"]
+
+{a6 keeps the knight out of b5 and prepares queenside expansion. Develop
+before grabbing pawns.} 1. e4 c5 2. Nf3 e6 3. d4 cxd4 4. Nxd4 a6 *
+
+[Event "Sicilian Taimanov"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "B48"]
+[White "Sicilian"]
+[Black "B48"]
+[Result "*"]
+[Opening "Sicilian Taimanov"]
+[ECO "B48"]
+
+{Flexible piece play. Black delays d6 and keeps options on both wings.}
+1. e4 c5 2. Nf3 e6 3. d4 cxd4 4. Nxd4 Nc6 *
+
+[Event "Sicilian, Knight Development"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "B50"]
+[White "Sicilian"]
+[Black "B50"]
+[Result "*"]
+[Opening "Sicilian, Knight Development"]
+[ECO "B50"]
+
+{The door to the Najdorf, Dragon, and Classical. d6 controls e5 and prepares
+Nf6.} 1. e4 c5 2. Nf3 d6 *
+
+[Event "Moscow Sicilian"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "B51"]
+[White "Sicilian"]
+[Black "B51"]
+[Result "*"]
+[Opening "Moscow Sicilian"]
+[ECO "B51"]
+
+{The check asks Black to choose a piece arrangement. Know your answer before
+you play d6.} 1. e4 c5 2. Nf3 d6 3. Bb5+ *
+
+[Event "Classical Sicilian"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "B56"]
+[White "Sicilian"]
+[Black "B56"]
+[Result "*"]
+[Opening "Classical Sicilian"]
+[ECO "B56"]
+
+{Classical piece development. Be ready for both quiet Be2 and sharper Bg5 or
+f4 tries.} 1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 Nc6 *
+
+[Event "Sicilian Dragon"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "B70"]
+[White "Sicilian"]
+[Black "B70"]
+[Result "*"]
+[Opening "Sicilian Dragon"]
+[ECO "B70"]
+
+{The dark-squared bishop becomes the main piece. Castle and then choose
+between central and queenside counterplay.} 1. e4 c5 2. Nf3 d6 3. d4 cxd4
+4. Nxd4 Nf6 5. Nc3 g6 *
+
+[Event "Dragon, Yugoslav Attack"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "B72"]
+[White "Sicilian"]
+[Black "B72"]
+[Result "*"]
+[Opening "Dragon, Yugoslav Attack"]
+[ECO "B72"]
+
+{White prepares a kingside pawn storm. Black must generate real queenside
+play, not just wait.} 1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 g6
+6. Be3 Bg7 7. f3 *
+
+[Event "Dragon, Classical"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "B74"]
+[White "Sicilian"]
+[Black "B74"]
+[Result "*"]
+[Opening "Dragon, Classical"]
+[ECO "B74"]
+
+{A calmer anti-Dragon. Black still castles and uses the long diagonal.}
+1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 g6 6. Be2 *
+
+[Event "Sicilian Scheveningen"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "B80"]
+[White "Sicilian"]
+[Black "B80"]
+[Result "*"]
+[Opening "Sicilian Scheveningen"]
+[ECO "B80"]
+
+{A compact center. Watch the timing of e5 or d5 so you do not leave a
+permanent weakness.} 1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 e6 *
+
+[Event "Sicilian Najdorf"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "B90"]
+[White "Sicilian"]
+[Black "B90"]
+[Result "*"]
+[Opening "Sicilian Najdorf"]
+[ECO "B90"]
+
+{a6 controls b5 and prepares queenside play. It is a system, not a single
+trick.} 1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 a6 *
+
+[Event "Najdorf, Opocensky"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "B92"]
+[White "Sicilian"]
+[Black "B92"]
+[Result "*"]
+[Opening "Najdorf, Opocensky"]
+[ECO "B92"]
+
+{A positional Najdorf. Develop e5 or e6 with a clear plan for the d5 square.}
+1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 a6 6. Be2 *
+
+[Event "Najdorf, Gothic start"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "B96"]
+[White "Sicilian"]
+[Black "B96"]
+[Result "*"]
+[Opening "Najdorf, Gothic start"]
+[ECO "B96"]
+
+{Bg5 pins the knight's attention to the center. Know whether you intend e6 and
+Qb6 before you enter.} 1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 a6
+6. Bg5 *
+
+[Event "Najdorf, Poisoned Pawn"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "B97"]
+[White "Sicilian"]
+[Black "B97"]
+[Result "*"]
+[Opening "Najdorf, Poisoned Pawn"]
+[ECO "B97"]
+
+{The queen takes on b2. This is concrete tactics — do not play it from memory
+you do not have.} 1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 a6 6. Bg5 e6
+7. f4 Qb6 8. Qd2 Qxb2 *
+
+[Event "Accelerated Dragon"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "B36"]
+[White "Sicilian"]
+[Black "B36"]
+[Result "*"]
+[Opening "Accelerated Dragon"]
+[ECO "B36"]
+
+{g6 without an early d6. Watch the Maroczy bind if White plays c4.} 1. e4 c5
+2. Nf3 Nc6 3. d4 cxd4 4. Nxd4 g6 *
+
+[Event "French Defense"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C00"]
+[White "French"]
+[Black "C00"]
+[Result "*"]
+[Opening "French Defense"]
+[ECO "C00"]
+
+{Prepare d5. Accept a light-squared bishop that needs a plan, usually b6 or a
+later pawn break.} 1. e4 e6 *
+
+[Event "French, Advance"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C02"]
+[White "French"]
+[Black "C02"]
+[Result "*"]
+[Opening "French, Advance"]
+[ECO "C02"]
+
+{White clamps the center. Black's counterplay is c5, and often Qb6 against
+d4.} 1. e4 e6 2. d4 d5 3. e5 *
+
+[Event "French Advance, Paulsen"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C02"]
+[White "French"]
+[Black "C02"]
+[Result "*"]
+[Opening "French Advance, Paulsen"]
+[ECO "C02"]
+
+{Reinforce d4 with c3. Develop the kingside before you start wing attacks.}
+1. e4 e6 2. d4 d5 3. e5 c5 4. c3 Nc6 *
+
+[Event "French, Exchange"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C01"]
+[White "French"]
+[Black "C01"]
+[Result "*"]
+[Opening "French, Exchange"]
+[ECO "C01"]
+
+{Symmetry and an open e-file. The game is decided by piece placement, not a
+fixed pawn structure.} 1. e4 e6 2. d4 d5 3. exd5 exd5 *
+
+[Event "French, Tarrasch"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C03"]
+[White "French"]
+[Black "C03"]
+[Result "*"]
+[Opening "French, Tarrasch"]
+[ECO "C03"]
+
+{Nd2 avoids the pin on c3. It is slightly modest and very solid.} 1. e4 e6
+2. d4 d5 3. Nd2 *
+
+[Event "French Tarrasch, Closed"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C05"]
+[White "French"]
+[Black "C05"]
+[Result "*"]
+[Opening "French Tarrasch, Closed"]
+[ECO "C05"]
+
+{A quiet setup. Complete development and only then resolve the central
+tension.} 1. e4 e6 2. d4 d5 3. Nd2 Nf6 4. c3 *
+
+[Event "French, Rubinstein"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C10"]
+[White "French"]
+[Black "C10"]
+[Result "*"]
+[Opening "French, Rubinstein"]
+[ECO "C10"]
+
+{Black releases the tension early. The position is sound if you develop the
+light-squared bishop.} 1. e4 e6 2. d4 d5 3. Nc3 dxe4 *
+
+[Event "French, Steinitz"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C11"]
+[White "French"]
+[Black "C11"]
+[Result "*"]
+[Opening "French, Steinitz"]
+[ECO "C11"]
+
+{Pressure e4. Be ready for e5 and a closed chain where you play c5.} 1. e4 e6
+2. d4 d5 3. Nc3 Nf6 *
+
+[Event "French, Winawer"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C15"]
+[White "French"]
+[Black "C15"]
+[Result "*"]
+[Opening "French, Winawer"]
+[ECO "C15"]
+
+{Pin the knight and fight the pawn structure. Know the plans after e5 and a3.}
+1. e4 e6 2. d4 d5 3. Nc3 Bb4 *
+
+[Event "French Winawer, Main"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "C18"]
+[White "French"]
+[Black "C18"]
+[Result "*"]
+[Opening "French Winawer, Main"]
+[ECO "C18"]
+
+{Doubled c-pawns against the bishop pair. Black attacks the base of the chain;
+White uses the space and the bishops.} 1. e4 e6 2. d4 d5 3. Nc3 Bb4 4. e5 c5
+5. a3 Bxc3+ 6. bxc3 Ne7 *
+
+[Event "Blackmar-Diemer Gambit"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "D00"]
+[White "Queen's pawn"]
+[Black "D00"]
+[Result "*"]
+[Opening "Blackmar-Diemer Gambit"]
+[ECO "D00"]
+
+{A sharp gambit. Only play it if you enjoy concrete tactics more than a
+structural edge.} 1. d4 d5 2. e4 dxe4 3. Nc3 Nf6 4. f3 *
+
+[Event "Queen's Pawn Game"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "D00"]
+[White "Queen's pawn"]
+[Black "D00"]
+[Result "*"]
+[Opening "Queen's Pawn Game"]
+[ECO "D00"]
+
+{A flexible queen's pawn start. You can still choose the London, Colle, or a
+gambit-free classical setup.} 1. d4 d5 2. Nf3 Nf6 *
+
+[Event "London System"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "D02"]
+[White "Queen's pawn"]
+[Black "D02"]
+[Result "*"]
+[Opening "London System"]
+[ECO "D02"]
+
+{Develop the dark-squared bishop outside the pawn chain, then build with e3,
+c3, and Nbd2.} 1. d4 d5 2. Nf3 Nf6 3. Bf4 *
+
+[Event "Colle System"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "D04"]
+[White "Queen's pawn"]
+[Black "D04"]
+[Result "*"]
+[Opening "Colle System"]
+[ECO "D04"]
+
+{A compact setup aimed at a later e4 break. Do not play e4 until your pieces
+are ready.} 1. d4 d5 2. Nf3 Nf6 3. e3 c5 *
+
+[Event "Trompowsky Attack"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "A45"]
+[White "Queen's pawn"]
+[Black "A45"]
+[Result "*"]
+[Opening "Trompowsky Attack"]
+[ECO "A45"]
+
+{Develop the bishop before setting a pawn structure. Be ready to give the
+bishop for the knight if it damages Black's pawns.} 1. d4 Nf6 2. Bg5 *
+
+[Event "Torre Attack"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "A46"]
+[White "Queen's pawn"]
+[Black "A46"]
+[Result "*"]
+[Opening "Torre Attack"]
+[ECO "A46"]
+
+{A cousin of the London with the bishop on g5. Keep your setup flexible
+against early c5.} 1. d4 Nf6 2. Nf3 e6 3. Bg5 *
+
+[Event "Queen's Gambit"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "D06"]
+[White "Queen's Gambit"]
+[Black "D06"]
+[Result "*"]
+[Opening "Queen's Gambit"]
+[ECO "D06"]
+
+{Offer the c-pawn to fight for the center. It is a gambit in name more than in
+practice.} 1. d4 d5 2. c4 *
+
+[Event "Chigorin Defense"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "D07"]
+[White "Queen's Gambit"]
+[Black "D07"]
+[Result "*"]
+[Opening "Chigorin Defense"]
+[ECO "D07"]
+
+{Nc6 adds pressure to d4. Mind the dark squares if you later play e5.} 1. d4 d5
+2. c4 Nc6 *
+
+[Event "Albin Countergambit"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "D08"]
+[White "Queen's Gambit"]
+[Black "D08"]
+[Result "*"]
+[Opening "Albin Countergambit"]
+[ECO "D08"]
+
+{A pawn sacrifice for a wedge on d4. Know the tactics, or decline the
+adventure.} 1. d4 d5 2. c4 e5 3. dxe5 d4 *
+
+[Event "Slav Defense"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "D10"]
+[White "Queen's Gambit"]
+[Black "D10"]
+[Result "*"]
+[Opening "Slav Defense"]
+[ECO "D10"]
+
+{Support d5 with c6 so the light-squared bishop can come out. That is the
+Slav's whole idea.} 1. d4 d5 2. c4 c6 *
+
+[Event "Slav, Exchange"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "D13"]
+[White "Queen's Gambit"]
+[Black "D13"]
+[Result "*"]
+[Opening "Slav, Exchange"]
+[ECO "D13"]
+
+{Early symmetry. Play for a small edge in piece activity rather than a forced
+attack.} 1. d4 d5 2. c4 c6 3. cxd5 cxd5 *
+
+[Event "Slav, Main Line"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "D15"]
+[White "Queen's Gambit"]
+[Black "D15"]
+[Result "*"]
+[Opening "Slav, Main Line"]
+[ECO "D15"]
+
+{The normal tabiya. Black chooses between taking on c4 and keeping the
+tension.} 1. d4 d5 2. c4 c6 3. Nf3 Nf6 4. Nc3 *
+
+[Event "Slav, Czech"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "D17"]
+[White "Queen's Gambit"]
+[Black "D17"]
+[Result "*"]
+[Opening "Slav, Czech"]
+[ECO "D17"]
+
+{Taking on c4 starts a concrete fight. Develop the bishop to f5 or g4 before
+e6.} 1. d4 d5 2. c4 c6 3. Nf3 Nf6 4. Nc3 dxc4 *
+
+[Event "Queen's Gambit Accepted"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "D20"]
+[White "Queen's Gambit"]
+[Black "D20"]
+[Result "*"]
+[Opening "Queen's Gambit Accepted"]
+[ECO "D20"]
+
+{Take the pawn and give it back for development if White plays accurately. Do
+not cling to the pawn.} 1. d4 d5 2. c4 dxc4 *
+
+[Event "QGA, Classical"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "D26"]
+[White "Queen's Gambit"]
+[Black "D26"]
+[Result "*"]
+[Opening "QGA, Classical"]
+[ECO "D26"]
+
+{The main way to regain the pawn. Castle and then look at c5 or e5 breaks.}
+1. d4 d5 2. c4 dxc4 3. Nf3 Nf6 4. e3 e6 5. Bxc4 *
+
+[Event "Queen's Gambit Declined"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "D30"]
+[White "Queen's Gambit"]
+[Black "D30"]
+[Result "*"]
+[Opening "Queen's Gambit Declined"]
+[ECO "D30"]
+
+{Solid and classical. The light-squared bishop is the piece you must solve.}
+1. d4 d5 2. c4 e6 *
+
+[Event "QGD, Exchange"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "D35"]
+[White "Queen's Gambit"]
+[Black "D35"]
+[Result "*"]
+[Opening "QGD, Exchange"]
+[ECO "D35"]
+
+{Carlsbad structure: minority attack ideas for White, piece breaks for Black.}
+1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. cxd5 exd5 *
+
+[Event "QGD, Harrwitz"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "D37"]
+[White "Queen's Gambit"]
+[Black "D37"]
+[Result "*"]
+[Opening "QGD, Harrwitz"]
+[ECO "D37"]
+
+{Develop calmly. The timing of c5 or the capture on c4 decides the structure.}
+1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. Nf3 Be7 *
+
+[Event "Semi-Slav"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "D43"]
+[White "Queen's Gambit"]
+[Black "D43"]
+[Result "*"]
+[Opening "Semi-Slav"]
+[ECO "D43"]
+
+{A rock-solid triangle of pawns. The light-squared bishop still needs a plan.}
+1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. Nf3 c6 *
+
+[Event "Semi-Slav, Botvinnik"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "D44"]
+[White "Queen's Gambit"]
+[Black "D44"]
+[Result "*"]
+[Opening "Semi-Slav, Botvinnik"]
+[ECO "D44"]
+
+{The sharp Botvinnik complex. Enter only when you know the tactics.} 1. d4 d5
+2. c4 c6 3. Nf3 Nf6 4. Nc3 e6 5. Bg5 dxc4 *
+
+[Event "Semi-Slav, Meran"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "D46"]
+[White "Queen's Gambit"]
+[Black "D46"]
+[Result "*"]
+[Opening "Semi-Slav, Meran"]
+[ECO "D46"]
+
+{White regains the pawn and Black prepares c5 or e5. Piece activity matters
+more than the extra tempo.} 1. d4 d5 2. c4 c6 3. Nf3 Nf6 4. Nc3 e6 5. e3 Nbd7
+6. Bd3 dxc4 7. Bxc4 *
+
+[Event "QGD, Orthodox"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "D60"]
+[White "Queen's Gambit"]
+[Black "D60"]
+[Result "*"]
+[Opening "QGD, Orthodox"]
+[ECO "D60"]
+
+{The classical defensive setup. Free the light-squared bishop with a later
+pawn break.} 1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. Bg5 Be7 5. e3 O-O 6. Nf3 Nbd7 *
+
+[Event "Catalan Opening"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "E01"]
+[White "Catalan"]
+[Black "E01"]
+[Result "*"]
+[Opening "Catalan Opening"]
+[ECO "E01"]
+
+{Combine the queen's pawn with a fianchetto. Pressure the long diagonal before
+you force the center.} 1. d4 Nf6 2. c4 e6 3. g3 *
+
+[Event "Catalan, Open"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "E04"]
+[White "Catalan"]
+[Black "E04"]
+[Result "*"]
+[Opening "Catalan, Open"]
+[ECO "E04"]
+
+{Black takes on c4. White regains it with piece pressure, not by rushing.}
+1. d4 Nf6 2. c4 e6 3. g3 d5 4. Bg2 dxc4 *
+
+[Event "Catalan, Closed"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "E06"]
+[White "Catalan"]
+[Black "E06"]
+[Result "*"]
+[Opening "Catalan, Closed"]
+[ECO "E06"]
+
+{Black keeps the pawn tension. Develop Nf3, O-O, and only then decide on Qc2
+or b3.} 1. d4 Nf6 2. c4 e6 3. g3 d5 4. Bg2 Be7 *
+
+[Event "Grunfeld Defense"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "D80"]
+[White "Indian defences"]
+[Black "D80"]
+[Result "*"]
+[Opening "Grunfeld Defense"]
+[ECO "D80"]
+
+{Strike the center immediately with d5. You allow White space in return for
+piece pressure.} 1. d4 Nf6 2. c4 g6 3. Nc3 d5 *
+
+[Event "Grunfeld, Exchange"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "D85"]
+[White "Indian defences"]
+[Black "D85"]
+[Result "*"]
+[Opening "Grunfeld, Exchange"]
+[ECO "D85"]
+
+{The main theoretical battleground. Black attacks the pawn center with c5 and
+piece pressure on the long diagonal.} 1. d4 Nf6 2. c4 g6 3. Nc3 d5 4. cxd5 Nxd5
+5. e4 Nxc3 6. bxc3 *
+
+[Event "Grunfeld, Russian"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "D97"]
+[White "Indian defences"]
+[Black "D97"]
+[Result "*"]
+[Opening "Grunfeld, Russian"]
+[ECO "D97"]
+
+{White defends c4 with the queen and asks a question on d5. Develop before you
+resolve the tension.} 1. d4 Nf6 2. c4 g6 3. Nc3 d5 4. Nf3 Bg7 5. Qb3 *
+
+[Event "Bogo-Indian Defense"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "E11"]
+[White "Indian defences"]
+[Black "E11"]
+[Result "*"]
+[Opening "Bogo-Indian Defense"]
+[ECO "E11"]
+
+{The check interrupts White's setup. Decide in advance whether you will trade
+the bishop or drop it back.} 1. d4 Nf6 2. c4 e6 3. Nf3 Bb4+ *
+
+[Event "Queen's Indian Defense"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "E12"]
+[White "Indian defences"]
+[Black "E12"]
+[Result "*"]
+[Opening "Queen's Indian Defense"]
+[ECO "E12"]
+
+{Control e4 with a fianchetto. It is a positional defense, not a gambit.}
+1. d4 Nf6 2. c4 e6 3. Nf3 b6 *
+
+[Event "Queen's Indian, Fianchetto"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "E15"]
+[White "Indian defences"]
+[Black "E15"]
+[Result "*"]
+[Opening "Queen's Indian, Fianchetto"]
+[ECO "E15"]
+
+{Both bishops fianchetto in many lines. Fight for the e4 square with pieces.}
+1. d4 Nf6 2. c4 e6 3. Nf3 b6 4. g3 Bb7 5. Bg2 *
+
+[Event "Nimzo-Indian Defense"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "E20"]
+[White "Indian defences"]
+[Black "E20"]
+[Result "*"]
+[Opening "Nimzo-Indian Defense"]
+[ECO "E20"]
+
+{Pin the knight that would support e4. Doubled pawns for White are the
+strategic theme.} 1. d4 Nf6 2. c4 e6 3. Nc3 Bb4 *
+
+[Event "Nimzo-Indian, Classical"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "E32"]
+[White "Indian defences"]
+[Black "E32"]
+[Result "*"]
+[Opening "Nimzo-Indian, Classical"]
+[ECO "E32"]
+
+{Qc2 breaks the pin and eyes the bishop. Be ready for the exchange on c3.}
+1. d4 Nf6 2. c4 e6 3. Nc3 Bb4 4. Qc2 *
+
+[Event "Nimzo-Indian, Rubinstein"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "E41"]
+[White "Indian defences"]
+[Black "E41"]
+[Result "*"]
+[Opening "Nimzo-Indian, Rubinstein"]
+[ECO "E41"]
+
+{A solid white setup with e3. Black chooses d5 or c5 and finishes
+development.} 1. d4 Nf6 2. c4 e6 3. Nc3 Bb4 4. e3 O-O 5. Nf3 *
+
+[Event "King's Indian Defense"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "E60"]
+[White "King's Indian"]
+[Black "E60"]
+[Result "*"]
+[Opening "King's Indian Defense"]
+[ECO "E60"]
+
+{A hypermodern defense. You castle and then strike with e5 or c5.} 1. d4 Nf6
+2. c4 g6 *
+
+[Event "King's Indian, Fianchetto"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "E62"]
+[White "King's Indian"]
+[Black "E62"]
+[Result "*"]
+[Opening "King's Indian, Fianchetto"]
+[ECO "E62"]
+
+{A quieter anti-King's Indian. Black still prepares e5, but the attacks are
+slower.} 1. d4 Nf6 2. c4 g6 3. Nf3 Bg7 4. g3 O-O 5. Bg2 d6 *
+
+[Event "King's Indian, Normal"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "E70"]
+[White "King's Indian"]
+[Black "E70"]
+[Result "*"]
+[Opening "King's Indian, Normal"]
+[ECO "E70"]
+
+{White occupies the center. Black must challenge it; passive defense loses.}
+1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 *
+
+[Event "King's Indian, Four Pawns"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "E76"]
+[White "King's Indian"]
+[Black "E76"]
+[Result "*"]
+[Opening "King's Indian, Four Pawns"]
+[ECO "E76"]
+
+{Maximum space for White. Black needs a timely c5 or e5 break.} 1. d4 Nf6
+2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. f4 *
+
+[Event "King's Indian, Samisch"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "E80"]
+[White "King's Indian"]
+[Black "E80"]
+[Result "*"]
+[Opening "King's Indian, Samisch"]
+[ECO "E80"]
+
+{f3 supports e4 and prepares Be3 and Qd2. Black looks for c5 and queenside
+play.} 1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. f3 *
+
+[Event "King's Indian, Classical"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "E92"]
+[White "King's Indian"]
+[Black "E92"]
+[Result "*"]
+[Opening "King's Indian, Classical"]
+[ECO "E92"]
+
+{The classical main line. Castle, then choose e5 with a plan for the center.}
+1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. Nf3 O-O 6. Be2 *
+
+[Event "King's Indian, Mar del Plata"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "E97"]
+[White "King's Indian"]
+[Black "E97"]
+[Result "*"]
+[Opening "King's Indian, Mar del Plata"]
+[ECO "E97"]
+
+{The famous race: White attacks on the queenside, Black on the kingside. Know
+which pieces to trade.} 1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. Nf3 O-O
+6. Be2 e5 7. O-O Nc6 *
+
+[Event "Old Benoni"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "A43"]
+[White "King's Indian"]
+[Black "A43"]
+[Result "*"]
+[Opening "Old Benoni"]
+[ECO "A43"]
+
+{An immediate flank strike. Be ready for d5 and a closed, strategic fight.}
+1. d4 c5 *
+
+[Event "Benoni Defense"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "A56"]
+[White "King's Indian"]
+[Black "A56"]
+[Result "*"]
+[Opening "Benoni Defense"]
+[ECO "A56"]
+
+{Give White a pawn wedge on d5 in return for queenside play and the half-open
+e-file later.} 1. d4 Nf6 2. c4 c5 *
+
+[Event "Benko Gambit"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "A57"]
+[White "King's Indian"]
+[Black "A57"]
+[Result "*"]
+[Opening "Benko Gambit"]
+[ECO "A57"]
+
+{Sacrifice a pawn for the a- and b-files. If you play it, play on those files,
+not in the center.} 1. d4 Nf6 2. c4 c5 3. d5 b5 *
+
+[Event "Benko, Accepted"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "A58"]
+[White "King's Indian"]
+[Black "A58"]
+[Result "*"]
+[Opening "Benko, Accepted"]
+[ECO "A58"]
+
+{The main accepted order. Develop the fianchetto and put rooks on the open
+files.} 1. d4 Nf6 2. c4 c5 3. d5 b5 4. cxb5 a6 *
+
+[Event "Blumenfeld Gambit"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "E10"]
+[White "King's Indian"]
+[Black "E10"]
+[Result "*"]
+[Opening "Blumenfeld Gambit"]
+[ECO "E10"]
+
+{A cousin of the Benko with an e6 pawn. Concrete and easy to mishandle.}
+1. d4 Nf6 2. c4 e6 3. Nf3 c5 4. d5 b5 *
+
+[Event "Budapest Gambit"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "A51"]
+[White "Indian defences"]
+[Black "A51"]
+[Result "*"]
+[Opening "Budapest Gambit"]
+[ECO "A51"]
+
+{A piece-play gambit against d4. Have a follow-up ready after dxe5.} 1. d4 Nf6
+2. c4 e5 *
+
+[Event "Dutch Defense"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "A80"]
+[White "Dutch"]
+[Black "A80"]
+[Result "*"]
+[Opening "Dutch Defense"]
+[ECO "A80"]
+
+{Fight for e4 with a kingside pawn. The king is a little looser, so develop
+accurately.} 1. d4 f5 *
+
+[Event "Dutch, Classical"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "A84"]
+[White "Dutch"]
+[Black "A84"]
+[Result "*"]
+[Opening "Dutch, Classical"]
+[ECO "A84"]
+
+{A Stonewall-ready structure. The light-squared bishop needs a route, often
+via e7 or d6.} 1. d4 f5 2. c4 Nf6 3. g3 e6 *
+
+[Event "Dutch, Stonewall"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "A90"]
+[White "Dutch"]
+[Black "A90"]
+[Result "*"]
+[Opening "Dutch, Stonewall"]
+[ECO "A90"]
+
+{Pawns on d5, e6, and f5. You get the e4 square as a theme and a bad bishop to
+solve.} 1. d4 f5 2. c4 e6 3. Nf3 d5 *
+
+[Event "Dutch, Leningrad"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "A87"]
+[White "Dutch"]
+[Black "A87"]
+[Result "*"]
+[Opening "Dutch, Leningrad"]
+[ECO "A87"]
+
+{A King's Indian shape with f5. Control e4 and do not forget king safety.}
+1. d4 f5 2. c4 Nf6 3. g3 g6 4. Bg2 Bg7 5. Nf3 *
+
+[Event "Polish Opening"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "A00"]
+[White "Flank openings"]
+[Black "A00"]
+[Result "*"]
+[Opening "Polish Opening"]
+[ECO "A00"]
+
+{An early wing pawn. It is playable, but have a plan against a classical
+center.} 1. b4 e5 2. Bb2 *
+
+[Event "Nimzo-Larsen Attack"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "A01"]
+[White "Flank openings"]
+[Black "A01"]
+[Result "*"]
+[Opening "Nimzo-Larsen Attack"]
+[ECO "A01"]
+
+{Fianchetto the queen's bishop and wait to see the center. Do not delay
+development of the kingside.} 1. b3 e5 2. Bb2 Nc6 3. e3 *
+
+[Event "Bird's Opening"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "A02"]
+[White "Flank openings"]
+[Black "A02"]
+[Result "*"]
+[Opening "Bird's Opening"]
+[ECO "A02"]
+
+{A reversed Dutch. Control e5 and watch the weakened king diagonal.} 1. f4 d5
+2. Nf3 *
+
+[Event "Reti Opening"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "A04"]
+[White "Flank openings"]
+[Black "A04"]
+[Result "*"]
+[Opening "Reti Opening"]
+[ECO "A04"]
+
+{Pressure d5 without committing d4. You can transpose into many queen's pawn
+structures.} 1. Nf3 d5 2. c4 *
+
+[Event "King's Indian Attack"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "A07"]
+[White "Flank openings"]
+[Black "A07"]
+[Result "*"]
+[Opening "King's Indian Attack"]
+[ECO "A07"]
+
+{A system, not a forced line. Build e4 after you castle.} 1. Nf3 d5 2. g3 Nf6
+3. Bg2 c5 4. O-O Nc6 5. d3 *
+
+[Event "English Opening"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "A10"]
+[White "Flank openings"]
+[Black "A10"]
+[Result "*"]
+[Opening "English Opening"]
+[ECO "A10"]
+
+{Fight for d5 from the flank. It often becomes a reversed Sicilian.} 1. c4 e5 *
+
+[Event "English, Anglo-Indian"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "A15"]
+[White "Flank openings"]
+[Black "A15"]
+[Result "*"]
+[Opening "English, Anglo-Indian"]
+[ECO "A15"]
+
+{A flexible move order. You can head for a fianchetto or a queen's pawn
+center.} 1. c4 Nf6 2. Nf3 g6 *
+
+[Event "English, Reversed Sicilian"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "A20"]
+[White "Flank openings"]
+[Black "A20"]
+[Result "*"]
+[Opening "English, Reversed Sicilian"]
+[ECO "A20"]
+
+{Black occupies the center the way White does in a Sicilian. Develop and then
+choose d3 or a later d4.} 1. c4 e5 2. Nc3 Nf6 *
+
+[Event "English, Closed"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "A25"]
+[White "Flank openings"]
+[Black "A25"]
+[Result "*"]
+[Opening "English, Closed"]
+[ECO "A25"]
+
+{A closed English. Fianchetto, castle, and prepare d3 or a central break.}
+1. c4 e5 2. Nc3 Nc6 3. g3 *
+
+[Event "English, Symmetrical"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "A30"]
+[White "Flank openings"]
+[Black "A30"]
+[Result "*"]
+[Opening "English, Symmetrical"]
+[ECO "A30"]
+
+{Symmetry does not mean a draw. The first useful pawn break, d4 or d5,
+matters.} 1. c4 c5 2. Nc3 Nc6 3. g3 g6 4. Bg2 Bg7 *
+
+[Event "English, Botvinnik setup"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "A36"]
+[White "Flank openings"]
+[Black "A36"]
+[Result "*"]
+[Opening "English, Botvinnik setup"]
+[ECO "A36"]
+
+{The Botvinnik pawn wedge. Control d5 and do not open the position before you
+are developed.} 1. c4 c5 2. Nc3 Nc6 3. g3 g6 4. Bg2 Bg7 5. e4 *
+
+[Event "Nimzowitsch Defense"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "B00"]
+[White "Semi-open"]
+[Black "B00"]
+[Result "*"]
+[Opening "Nimzowitsch Defense"]
+[ECO "B00"]
+
+{An unusual knight development. It is legal and tricky, but less reliable than
+mainstream defenses.} 1. e4 Nc6 *
+
+[Event "Owen's Defense"]
+[Site "OE Chess"]
+[Date "2026.01.01"]
+[Round "B00"]
+[White "Semi-open"]
+[Black "B00"]
+[Result "*"]
+[Opening "Owen's Defense"]
+[ECO "B00"]
+
+{A queenside fianchetto against e4. Strike the center soon or you will be
+squeezed.} 1. e4 b6 2. d4 Bb7 *

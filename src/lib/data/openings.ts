@@ -1,0 +1,3443 @@
+import type { OpeningLine } from "../chess/types";
+
+export const OPENINGS: OpeningLine[] = [
+  {
+    "id": "op-c20-king-s-pawn-opening",
+    "eco": "C20",
+    "name": "King's Pawn Opening",
+    "family": "Open games",
+    "popularity": 70,
+    "tags": [
+      "e4",
+      "fundamentals"
+    ],
+    "note": "Open with the king's pawn, then bring the knight out before you choose a bishop home.",
+    "moves": [
+      "e4",
+      "e5",
+      "Nf3",
+      "Nc6"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c50-italian-game",
+    "eco": "C50",
+    "name": "Italian Game",
+    "family": "Open games",
+    "popularity": 94,
+    "tags": [
+      "e4",
+      "open"
+    ],
+    "note": "The bishop on c4 eyes f7. Develop fast and decide later whether to strike with d3 or c3 and d4.",
+    "moves": [
+      "e4",
+      "e5",
+      "Nf3",
+      "Nc6",
+      "Bc4",
+      "Bc5"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c50-italian-game-quiet",
+    "eco": "C50",
+    "name": "Italian Game, Quiet",
+    "family": "Open games",
+    "popularity": 80,
+    "tags": [
+      "e4",
+      "open"
+    ],
+    "note": "A slow center keeps pieces on the board. Finish development and castle before forcing tactics.",
+    "moves": [
+      "e4",
+      "e5",
+      "Nf3",
+      "Nc6",
+      "Bc4",
+      "Bc5",
+      "d3"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c53-giuoco-piano",
+    "eco": "C53",
+    "name": "Giuoco Piano",
+    "family": "Open games",
+    "popularity": 84,
+    "tags": [
+      "e4",
+      "open"
+    ],
+    "note": "Support a later d4 with c3. Do not rush the central break until the king is safe.",
+    "moves": [
+      "e4",
+      "e5",
+      "Nf3",
+      "Nc6",
+      "Bc4",
+      "Bc5",
+      "c3",
+      "Nf6",
+      "d3"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c53-giuoco-piano-center-attack",
+    "eco": "C53",
+    "name": "Giuoco Piano, Center Attack",
+    "family": "Open games",
+    "popularity": 76,
+    "tags": [
+      "e4",
+      "open"
+    ],
+    "note": "d4 opens the center. Recapture with the c-pawn and keep the dark squares under control.",
+    "moves": [
+      "e4",
+      "e5",
+      "Nf3",
+      "Nc6",
+      "Bc4",
+      "Bc5",
+      "c3",
+      "Nf6",
+      "d4",
+      "exd4",
+      "cxd4"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c55-two-knights-defense",
+    "eco": "C55",
+    "name": "Two Knights Defense",
+    "family": "Open games",
+    "popularity": 86,
+    "tags": [
+      "e4",
+      "open"
+    ],
+    "note": "Black attacks e4 at once. White can defend quietly with d3 or try Ng5 against f7.",
+    "moves": [
+      "e4",
+      "e5",
+      "Nf3",
+      "Nc6",
+      "Bc4",
+      "Nf6"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c57-two-knights-knight-attack",
+    "eco": "C57",
+    "name": "Two Knights, Knight Attack",
+    "family": "Open games",
+    "popularity": 72,
+    "tags": [
+      "e4",
+      "tactics"
+    ],
+    "note": "Ng5 forces an immediate answer on d5. Know the tactics before you play this in a serious line.",
+    "moves": [
+      "e4",
+      "e5",
+      "Nf3",
+      "Nc6",
+      "Bc4",
+      "Nf6",
+      "Ng5",
+      "d5",
+      "exd5"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c51-evans-gambit",
+    "eco": "C51",
+    "name": "Evans Gambit",
+    "family": "Open games",
+    "popularity": 68,
+    "tags": [
+      "e4",
+      "gambit"
+    ],
+    "note": "The pawn offer speeds development and opens the a-file. Take only if you know the follow-up.",
+    "moves": [
+      "e4",
+      "e5",
+      "Nf3",
+      "Nc6",
+      "Bc4",
+      "Bc5",
+      "b4"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c50-hungarian-defense",
+    "eco": "C50",
+    "name": "Hungarian Defense",
+    "family": "Open games",
+    "popularity": 48,
+    "tags": [
+      "e4",
+      "solid"
+    ],
+    "note": "A restrained bishop. It is solid, but Black gives up some activity compared with Bc5.",
+    "moves": [
+      "e4",
+      "e5",
+      "Nf3",
+      "Nc6",
+      "Bc4",
+      "Be7"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c44-scotch-game",
+    "eco": "C44",
+    "name": "Scotch Game",
+    "family": "Open games",
+    "popularity": 82,
+    "tags": [
+      "e4",
+      "open"
+    ],
+    "note": "Open the center on move three. After the trade, the d4 knight becomes the center of the fight.",
+    "moves": [
+      "e4",
+      "e5",
+      "Nf3",
+      "Nc6",
+      "d4"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c45-scotch-game-main-line",
+    "eco": "C45",
+    "name": "Scotch Game, Main Line",
+    "family": "Open games",
+    "popularity": 78,
+    "tags": [
+      "e4",
+      "open"
+    ],
+    "note": "Develop the bishop with tempo against the knight, then castle and fight the half-open e-file.",
+    "moves": [
+      "e4",
+      "e5",
+      "Nf3",
+      "Nc6",
+      "d4",
+      "exd4",
+      "Nxd4",
+      "Bc5"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c44-scotch-gambit",
+    "eco": "C44",
+    "name": "Scotch Gambit",
+    "family": "Open games",
+    "popularity": 64,
+    "tags": [
+      "e4",
+      "gambit"
+    ],
+    "note": "Leave the pawn on d4 and play for piece activity. Do not grab material if your king is still in the center.",
+    "moves": [
+      "e4",
+      "e5",
+      "Nf3",
+      "Nc6",
+      "d4",
+      "exd4",
+      "Bc4"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c42-petrov-defense",
+    "eco": "C42",
+    "name": "Petrov Defense",
+    "family": "Open games",
+    "popularity": 74,
+    "tags": [
+      "e4",
+      "solid"
+    ],
+    "note": "Black counterattacks e4 instead of defending e5. Symmetry is only temporary.",
+    "moves": [
+      "e4",
+      "e5",
+      "Nf3",
+      "Nf6"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c42-petrov-classical",
+    "eco": "C42",
+    "name": "Petrov, Classical",
+    "family": "Open games",
+    "popularity": 70,
+    "tags": [
+      "e4",
+      "solid"
+    ],
+    "note": "Regain the pawn and kick the knight later with d4 or Nc3. King safety matters more than a tiny material edge.",
+    "moves": [
+      "e4",
+      "e5",
+      "Nf3",
+      "Nf6",
+      "Nxe5",
+      "d6",
+      "Nf3",
+      "Nxe4"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c43-petrov-steinitz",
+    "eco": "C43",
+    "name": "Petrov, Steinitz",
+    "family": "Open games",
+    "popularity": 60,
+    "tags": [
+      "e4",
+      "solid"
+    ],
+    "note": "White strikes in the center at once. Be ready for an open position with early queen activity.",
+    "moves": [
+      "e4",
+      "e5",
+      "Nf3",
+      "Nf6",
+      "d4"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c41-philidor-defense",
+    "eco": "C41",
+    "name": "Philidor Defense",
+    "family": "Open games",
+    "popularity": 55,
+    "tags": [
+      "e4",
+      "solid"
+    ],
+    "note": "d6 is sturdy and a little passive. Prepare a later break with c6 and d5 or f5, not a premature opening of the center.",
+    "moves": [
+      "e4",
+      "e5",
+      "Nf3",
+      "d6"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c40-elephant-gambit",
+    "eco": "C40",
+    "name": "Elephant Gambit",
+    "family": "Open games",
+    "popularity": 40,
+    "tags": [
+      "e4",
+      "gambit"
+    ],
+    "note": "An early counterstrike. Only use it if you have checked the tactics after exd5.",
+    "moves": [
+      "e4",
+      "e5",
+      "Nf3",
+      "d5"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c40-latvian-gambit",
+    "eco": "C40",
+    "name": "Latvian Gambit",
+    "family": "Open games",
+    "popularity": 42,
+    "tags": [
+      "e4",
+      "gambit"
+    ],
+    "note": "f5 weakens the king. Treat it as a sharp sideline, not a main repertoire choice.",
+    "moves": [
+      "e4",
+      "e5",
+      "Nf3",
+      "f5"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c30-king-s-gambit",
+    "eco": "C30",
+    "name": "King's Gambit",
+    "family": "Open games",
+    "popularity": 66,
+    "tags": [
+      "e4",
+      "gambit"
+    ],
+    "note": "White offers a pawn to open the f-file. Castle quickly or do not play the gambit.",
+    "moves": [
+      "e4",
+      "e5",
+      "f4"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c33-king-s-gambit-accepted",
+    "eco": "C33",
+    "name": "King's Gambit Accepted",
+    "family": "Open games",
+    "popularity": 62,
+    "tags": [
+      "e4",
+      "gambit"
+    ],
+    "note": "Black holds the pawn with g5. Develop with Bc4 and keep an eye on the weakened diagonal.",
+    "moves": [
+      "e4",
+      "e5",
+      "f4",
+      "exf4",
+      "Nf3",
+      "g5"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c31-falkbeer-countergambit",
+    "eco": "C31",
+    "name": "Falkbeer Countergambit",
+    "family": "Open games",
+    "popularity": 44,
+    "tags": [
+      "e4",
+      "gambit"
+    ],
+    "note": "A central counter instead of taking on f4. Calculate the pawn tension before you commit the king.",
+    "moves": [
+      "e4",
+      "e5",
+      "f4",
+      "d5"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c21-danish-gambit",
+    "eco": "C21",
+    "name": "Danish Gambit",
+    "family": "Open games",
+    "popularity": 46,
+    "tags": [
+      "e4",
+      "gambit"
+    ],
+    "note": "Two pawns for rapid development. If you decline, do it with a developing move, not a slow pawn grab.",
+    "moves": [
+      "e4",
+      "e5",
+      "d4",
+      "exd4",
+      "c3"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c23-bishop-s-opening",
+    "eco": "C23",
+    "name": "Bishop's Opening",
+    "family": "Open games",
+    "popularity": 58,
+    "tags": [
+      "e4",
+      "open"
+    ],
+    "note": "The bishop comes out before the knight. It is flexible and avoids an immediate Petrov.",
+    "moves": [
+      "e4",
+      "e5",
+      "Bc4"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c24-bishop-s-opening-berlin",
+    "eco": "C24",
+    "name": "Bishop's Opening, Berlin",
+    "family": "Open games",
+    "popularity": 56,
+    "tags": [
+      "e4",
+      "open"
+    ],
+    "note": "A quiet setup. You can still transpose toward an Italian or a Vienna structure.",
+    "moves": [
+      "e4",
+      "e5",
+      "Bc4",
+      "Nf6",
+      "d3"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c25-vienna-game",
+    "eco": "C25",
+    "name": "Vienna Game",
+    "family": "Open games",
+    "popularity": 63,
+    "tags": [
+      "e4",
+      "open"
+    ],
+    "note": "Nc3 supports d4 and leaves f4 available. Develop the kingside before you open the position.",
+    "moves": [
+      "e4",
+      "e5",
+      "Nc3"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c26-vienna-falkbeer-idea",
+    "eco": "C26",
+    "name": "Vienna, Falkbeer idea",
+    "family": "Open games",
+    "popularity": 52,
+    "tags": [
+      "e4",
+      "open"
+    ],
+    "note": "Both sides develop classically. Complete castling, then choose between f4 and a central d4.",
+    "moves": [
+      "e4",
+      "e5",
+      "Nc3",
+      "Nf6",
+      "Bc4",
+      "Nc6",
+      "d3"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c28-vienna-gambit",
+    "eco": "C28",
+    "name": "Vienna Gambit",
+    "family": "Open games",
+    "popularity": 50,
+    "tags": [
+      "e4",
+      "gambit"
+    ],
+    "note": "f4 attacks the center while the knight already sits on c3. Do not fall behind in development.",
+    "moves": [
+      "e4",
+      "e5",
+      "Nc3",
+      "Nf6",
+      "f4"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c46-three-knights-game",
+    "eco": "C46",
+    "name": "Three Knights Game",
+    "family": "Open games",
+    "popularity": 54,
+    "tags": [
+      "e4",
+      "open"
+    ],
+    "note": "Flexible development. Black chooses among Bb4, Nf6, and g6.",
+    "moves": [
+      "e4",
+      "e5",
+      "Nf3",
+      "Nc6",
+      "Nc3"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c47-four-knights-game",
+    "eco": "C47",
+    "name": "Four Knights Game",
+    "family": "Open games",
+    "popularity": 60,
+    "tags": [
+      "e4",
+      "open"
+    ],
+    "note": "A symmetrical starting point. The first player to find a useful pawn break usually takes the initiative.",
+    "moves": [
+      "e4",
+      "e5",
+      "Nf3",
+      "Nc6",
+      "Nc3",
+      "Nf6"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c48-four-knights-spanish",
+    "eco": "C48",
+    "name": "Four Knights, Spanish",
+    "family": "Open games",
+    "popularity": 58,
+    "tags": [
+      "e4",
+      "open"
+    ],
+    "note": "Bb5 pins the knight the way a Ruy Lopez does. Trade on c6 only with a clear plan for the pawn structure.",
+    "moves": [
+      "e4",
+      "e5",
+      "Nf3",
+      "Nc6",
+      "Nc3",
+      "Nf6",
+      "Bb5"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c60-ruy-lopez",
+    "eco": "C60",
+    "name": "Ruy Lopez",
+    "family": "Open games",
+    "popularity": 96,
+    "tags": [
+      "e4",
+      "open"
+    ],
+    "note": "Pressure the knight that defends e5. The Spanish game rewards patient maneuvering.",
+    "moves": [
+      "e4",
+      "e5",
+      "Nf3",
+      "Nc6",
+      "Bb5"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c65-berlin-defense",
+    "eco": "C65",
+    "name": "Berlin Defense",
+    "family": "Open games",
+    "popularity": 88,
+    "tags": [
+      "e4",
+      "endgame"
+    ],
+    "note": "An immediate hit on e4. Many lines trade into an endgame, so know the resulting piece activity.",
+    "moves": [
+      "e4",
+      "e5",
+      "Nf3",
+      "Nc6",
+      "Bb5",
+      "Nf6"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c67-berlin-open-variation",
+    "eco": "C67",
+    "name": "Berlin, Open Variation",
+    "family": "Open games",
+    "popularity": 80,
+    "tags": [
+      "e4",
+      "endgame"
+    ],
+    "note": "After Nxe4 White regains the pawn and often reaches a queenless middlegame. King activity matters.",
+    "moves": [
+      "e4",
+      "e5",
+      "Nf3",
+      "Nc6",
+      "Bb5",
+      "Nf6",
+      "O-O",
+      "Nxe4"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c68-ruy-lopez-exchange",
+    "eco": "C68",
+    "name": "Ruy Lopez, Exchange",
+    "family": "Open games",
+    "popularity": 64,
+    "tags": [
+      "e4",
+      "structure"
+    ],
+    "note": "Doubled c-pawns for Black, and White keeps a kingside pawn majority. The endgame plan starts early.",
+    "moves": [
+      "e4",
+      "e5",
+      "Nf3",
+      "Nc6",
+      "Bb5",
+      "a6",
+      "Bxc6"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c69-exchange-ruy-main",
+    "eco": "C69",
+    "name": "Exchange Ruy, Main",
+    "family": "Open games",
+    "popularity": 60,
+    "tags": [
+      "e4",
+      "structure"
+    ],
+    "note": "Castle and then decide between d4 and a slow buildup. Do not rush before the rooks are connected.",
+    "moves": [
+      "e4",
+      "e5",
+      "Nf3",
+      "Nc6",
+      "Bb5",
+      "a6",
+      "Bxc6",
+      "dxc6",
+      "O-O"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c70-ruy-lopez-morphy",
+    "eco": "C70",
+    "name": "Ruy Lopez, Morphy",
+    "family": "Open games",
+    "popularity": 90,
+    "tags": [
+      "e4",
+      "open"
+    ],
+    "note": "a6 asks the bishop a question. Ba4 keeps the pressure and the option to take on c6.",
+    "moves": [
+      "e4",
+      "e5",
+      "Nf3",
+      "Nc6",
+      "Bb5",
+      "a6",
+      "Ba4"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c78-ruy-lopez-archangel",
+    "eco": "C78",
+    "name": "Ruy Lopez, Archangel",
+    "family": "Open games",
+    "popularity": 66,
+    "tags": [
+      "e4",
+      "open"
+    ],
+    "note": "b5 and Bb7 fight for the center from a distance. Watch the a4-e8 diagonal.",
+    "moves": [
+      "e4",
+      "e5",
+      "Nf3",
+      "Nc6",
+      "Bb5",
+      "a6",
+      "Ba4",
+      "Nf6",
+      "O-O",
+      "b5",
+      "Bb3",
+      "Bb7"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c84-closed-ruy-lopez",
+    "eco": "C84",
+    "name": "Closed Ruy Lopez",
+    "family": "Open games",
+    "popularity": 86,
+    "tags": [
+      "e4",
+      "closed"
+    ],
+    "note": "The main closed Spanish. Prepare c3 and d4, and do not trade pieces without a reason.",
+    "moves": [
+      "e4",
+      "e5",
+      "Nf3",
+      "Nc6",
+      "Bb5",
+      "a6",
+      "Ba4",
+      "Nf6",
+      "O-O",
+      "Be7"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c88-closed-ruy-anti-marshall",
+    "eco": "C88",
+    "name": "Closed Ruy, Anti-Marshall",
+    "family": "Open games",
+    "popularity": 74,
+    "tags": [
+      "e4",
+      "closed"
+    ],
+    "note": "d3 sidesteps the Marshall pawn sacrifice. Play is slower and more maneuvering.",
+    "moves": [
+      "e4",
+      "e5",
+      "Nf3",
+      "Nc6",
+      "Bb5",
+      "a6",
+      "Ba4",
+      "Nf6",
+      "O-O",
+      "Be7",
+      "Re1",
+      "b5",
+      "Bb3",
+      "O-O",
+      "d3"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c89-marshall-attack",
+    "eco": "C89",
+    "name": "Marshall Attack",
+    "family": "Open games",
+    "popularity": 77,
+    "tags": [
+      "e4",
+      "gambit"
+    ],
+    "note": "Black sacrifices a pawn for activity. Know the main defensive setup before you allow it.",
+    "moves": [
+      "e4",
+      "e5",
+      "Nf3",
+      "Nc6",
+      "Bb5",
+      "a6",
+      "Ba4",
+      "Nf6",
+      "O-O",
+      "Be7",
+      "Re1",
+      "b5",
+      "Bb3",
+      "O-O",
+      "c3",
+      "d5"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c80-open-ruy-lopez",
+    "eco": "C80",
+    "name": "Open Ruy Lopez",
+    "family": "Open games",
+    "popularity": 75,
+    "tags": [
+      "e4",
+      "open"
+    ],
+    "note": "Black takes on e4 and accepts an open fight. Regain the pawn cleanly before you start an attack.",
+    "moves": [
+      "e4",
+      "e5",
+      "Nf3",
+      "Nc6",
+      "Bb5",
+      "a6",
+      "Ba4",
+      "Nf6",
+      "O-O",
+      "Nxe4"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c75-ruy-lopez-deferred-steinitz",
+    "eco": "C75",
+    "name": "Ruy Lopez, Deferred Steinitz",
+    "family": "Open games",
+    "popularity": 58,
+    "tags": [
+      "e4",
+      "solid"
+    ],
+    "note": "A solid, slightly cramped defense. Break later with f5 or prepare piece trades.",
+    "moves": [
+      "e4",
+      "e5",
+      "Nf3",
+      "Nc6",
+      "Bb5",
+      "a6",
+      "Ba4",
+      "d6"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-b01-scandinavian-defense",
+    "eco": "B01",
+    "name": "Scandinavian Defense",
+    "family": "Semi-open",
+    "popularity": 72,
+    "tags": [
+      "e4",
+      "semi"
+    ],
+    "note": "An immediate central counter. Be ready to move the queen twice and then develop quickly.",
+    "moves": [
+      "e4",
+      "d5"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-b01-scandinavian-modern",
+    "eco": "B01",
+    "name": "Scandinavian, Modern",
+    "family": "Semi-open",
+    "popularity": 70,
+    "tags": [
+      "e4",
+      "semi"
+    ],
+    "note": "Qa5 is the modern home for the queen. Develop the minor pieces before you look for tactics.",
+    "moves": [
+      "e4",
+      "d5",
+      "exd5",
+      "Qxd5",
+      "Nc3",
+      "Qa5"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-b02-alekhine-defense",
+    "eco": "B02",
+    "name": "Alekhine Defense",
+    "family": "Semi-open",
+    "popularity": 64,
+    "tags": [
+      "e4",
+      "hypermodern"
+    ],
+    "note": "Invite White's pawns forward, then undermine them. Do not attack the pawn center too late.",
+    "moves": [
+      "e4",
+      "Nf6"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-b03-alekhine-four-pawns",
+    "eco": "B03",
+    "name": "Alekhine, Four Pawns",
+    "family": "Semi-open",
+    "popularity": 55,
+    "tags": [
+      "e4",
+      "hypermodern"
+    ],
+    "note": "White grabs space. Black must chip with c5 or dxe5 before the center rolls through.",
+    "moves": [
+      "e4",
+      "Nf6",
+      "e5",
+      "Nd5",
+      "d4",
+      "d6",
+      "c4",
+      "Nb6",
+      "f4"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-b06-modern-defense",
+    "eco": "B06",
+    "name": "Modern Defense",
+    "family": "Pirc and Modern",
+    "popularity": 60,
+    "tags": [
+      "e4",
+      "hypermodern"
+    ],
+    "note": "The fianchetto comes before Nf6. Strike the center with c5 or d6 and e5 once development is done.",
+    "moves": [
+      "e4",
+      "g6",
+      "d4",
+      "Bg7"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-b07-pirc-defense",
+    "eco": "B07",
+    "name": "Pirc Defense",
+    "family": "Pirc and Modern",
+    "popularity": 68,
+    "tags": [
+      "e4",
+      "hypermodern"
+    ],
+    "note": "A flexible defensive shell. Finish Bg7 and castling before you choose c5, e5, or a queenside expansion.",
+    "moves": [
+      "e4",
+      "d6",
+      "d4",
+      "Nf6",
+      "Nc3",
+      "g6"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-b09-pirc-austrian-attack",
+    "eco": "B09",
+    "name": "Pirc, Austrian Attack",
+    "family": "Pirc and Modern",
+    "popularity": 62,
+    "tags": [
+      "e4",
+      "attack"
+    ],
+    "note": "White builds a broad pawn center. Black should counter in the center rather than wait.",
+    "moves": [
+      "e4",
+      "d6",
+      "d4",
+      "Nf6",
+      "Nc3",
+      "g6",
+      "f4",
+      "Bg7",
+      "Nf3"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-b10-caro-kann-defense",
+    "eco": "B10",
+    "name": "Caro-Kann Defense",
+    "family": "Caro-Kann",
+    "popularity": 90,
+    "tags": [
+      "e4",
+      "solid"
+    ],
+    "note": "Support d5 with a pawn, not a piece. The resulting positions are solid and slightly slower than a Sicilian.",
+    "moves": [
+      "e4",
+      "c6"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-b12-caro-kann-advance",
+    "eco": "B12",
+    "name": "Caro-Kann, Advance",
+    "family": "Caro-Kann",
+    "popularity": 84,
+    "tags": [
+      "e4",
+      "solid"
+    ],
+    "note": "White gains space. Black undermines with c5 and develops the light-squared bishop outside the chain.",
+    "moves": [
+      "e4",
+      "c6",
+      "d4",
+      "d5",
+      "e5"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-b13-caro-kann-exchange",
+    "eco": "B13",
+    "name": "Caro-Kann, Exchange",
+    "family": "Caro-Kann",
+    "popularity": 66,
+    "tags": [
+      "e4",
+      "structure"
+    ],
+    "note": "An open, symmetrical center. Piece activity and the half-open files decide it.",
+    "moves": [
+      "e4",
+      "c6",
+      "d4",
+      "d5",
+      "exd5",
+      "cxd5"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-b18-caro-kann-classical",
+    "eco": "B18",
+    "name": "Caro-Kann, Classical",
+    "family": "Caro-Kann",
+    "popularity": 80,
+    "tags": [
+      "e4",
+      "solid"
+    ],
+    "note": "The bishop develops before e6. Do not allow your light-squared bishop to be buried.",
+    "moves": [
+      "e4",
+      "c6",
+      "d4",
+      "d5",
+      "Nd2",
+      "dxe4",
+      "Nxe4",
+      "Bf5"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-b12-caro-kann-fantasy",
+    "eco": "B12",
+    "name": "Caro-Kann, Fantasy",
+    "family": "Caro-Kann",
+    "popularity": 48,
+    "tags": [
+      "e4",
+      "sideline"
+    ],
+    "note": "f3 supports e4 and keeps the position sharp. Develop before you open the center.",
+    "moves": [
+      "e4",
+      "c6",
+      "d4",
+      "d5",
+      "f3"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-b20-sicilian-defense",
+    "eco": "B20",
+    "name": "Sicilian Defense",
+    "family": "Sicilian",
+    "popularity": 97,
+    "tags": [
+      "e4",
+      "sicilian"
+    ],
+    "note": "Fight for the center from the flank. You accept asymmetrical pawn structure in return for counterplay.",
+    "moves": [
+      "e4",
+      "c5"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-b21-smith-morra-gambit",
+    "eco": "B21",
+    "name": "Smith-Morra Gambit",
+    "family": "Sicilian",
+    "popularity": 58,
+    "tags": [
+      "e4",
+      "gambit"
+    ],
+    "note": "A pawn for development and open lines. Decline with a developing move if you are unsure of the tactics.",
+    "moves": [
+      "e4",
+      "c5",
+      "d4",
+      "cxd4",
+      "c3"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-b21-sicilian-wing-gambit",
+    "eco": "B21",
+    "name": "Sicilian Wing Gambit",
+    "family": "Sicilian",
+    "popularity": 36,
+    "tags": [
+      "e4",
+      "gambit"
+    ],
+    "note": "An offbeat pawn offer on the wing. Know a concrete follow-up or choose a main line instead.",
+    "moves": [
+      "e4",
+      "c5",
+      "b4"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-b22-sicilian-alapin",
+    "eco": "B22",
+    "name": "Sicilian Alapin",
+    "family": "Sicilian",
+    "popularity": 70,
+    "tags": [
+      "e4",
+      "sicilian"
+    ],
+    "note": "White prepares d4 with a solid pawn. Black should occupy the center with d5 when it is sound.",
+    "moves": [
+      "e4",
+      "c5",
+      "c3"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-b23-closed-sicilian",
+    "eco": "B23",
+    "name": "Closed Sicilian",
+    "family": "Sicilian",
+    "popularity": 64,
+    "tags": [
+      "e4",
+      "sicilian"
+    ],
+    "note": "A slow fianchetto setup. Expand with f4 only after the king has castled.",
+    "moves": [
+      "e4",
+      "c5",
+      "Nc3",
+      "Nc6",
+      "g3"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-b27-sicilian-hungarian",
+    "eco": "B27",
+    "name": "Sicilian, Hungarian",
+    "family": "Sicilian",
+    "popularity": 60,
+    "tags": [
+      "e4",
+      "sicilian"
+    ],
+    "note": "The flexible knight move. Black chooses among d6, Nc6, e6, and g6.",
+    "moves": [
+      "e4",
+      "c5",
+      "Nf3"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-b30-sicilian-rossolimo",
+    "eco": "B30",
+    "name": "Sicilian Rossolimo",
+    "family": "Sicilian",
+    "popularity": 78,
+    "tags": [
+      "e4",
+      "sicilian"
+    ],
+    "note": "Bb5 avoids the open Sicilian theory maze. Decide whether to take on c6 or retreat after a6.",
+    "moves": [
+      "e4",
+      "c5",
+      "Nf3",
+      "Nc6",
+      "Bb5"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-b32-kalashnikov-sicilian",
+    "eco": "B32",
+    "name": "Kalashnikov Sicilian",
+    "family": "Sicilian",
+    "popularity": 62,
+    "tags": [
+      "e4",
+      "sicilian"
+    ],
+    "note": "e5 gains space and accepts a hole on d5. Control that square with pieces.",
+    "moves": [
+      "e4",
+      "c5",
+      "Nf3",
+      "Nc6",
+      "d4",
+      "cxd4",
+      "Nxd4",
+      "e5"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-b33-sveshnikov-sicilian",
+    "eco": "B33",
+    "name": "Sveshnikov Sicilian",
+    "family": "Sicilian",
+    "popularity": 80,
+    "tags": [
+      "e4",
+      "sicilian"
+    ],
+    "note": "A sharp system built around the d5 square. Know the piece plan before you enter it.",
+    "moves": [
+      "e4",
+      "c5",
+      "Nf3",
+      "Nc6",
+      "d4",
+      "cxd4",
+      "Nxd4",
+      "Nf6",
+      "Nc3",
+      "e5"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-b40-sicilian-french-variation",
+    "eco": "B40",
+    "name": "Sicilian, French Variation",
+    "family": "Sicilian",
+    "popularity": 58,
+    "tags": [
+      "e4",
+      "sicilian"
+    ],
+    "note": "e6 prepares d5 or a Taimanov-style setup. Do not block the dark-squared bishop forever.",
+    "moves": [
+      "e4",
+      "c5",
+      "Nf3",
+      "e6"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-b41-sicilian-kan",
+    "eco": "B41",
+    "name": "Sicilian Kan",
+    "family": "Sicilian",
+    "popularity": 66,
+    "tags": [
+      "e4",
+      "sicilian"
+    ],
+    "note": "a6 keeps the knight out of b5 and prepares queenside expansion. Develop before grabbing pawns.",
+    "moves": [
+      "e4",
+      "c5",
+      "Nf3",
+      "e6",
+      "d4",
+      "cxd4",
+      "Nxd4",
+      "a6"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-b48-sicilian-taimanov",
+    "eco": "B48",
+    "name": "Sicilian Taimanov",
+    "family": "Sicilian",
+    "popularity": 72,
+    "tags": [
+      "e4",
+      "sicilian"
+    ],
+    "note": "Flexible piece play. Black delays d6 and keeps options on both wings.",
+    "moves": [
+      "e4",
+      "c5",
+      "Nf3",
+      "e6",
+      "d4",
+      "cxd4",
+      "Nxd4",
+      "Nc6"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-b50-sicilian-knight-development",
+    "eco": "B50",
+    "name": "Sicilian, Knight Development",
+    "family": "Sicilian",
+    "popularity": 68,
+    "tags": [
+      "e4",
+      "sicilian"
+    ],
+    "note": "The door to the Najdorf, Dragon, and Classical. d6 controls e5 and prepares Nf6.",
+    "moves": [
+      "e4",
+      "c5",
+      "Nf3",
+      "d6"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-b51-moscow-sicilian",
+    "eco": "B51",
+    "name": "Moscow Sicilian",
+    "family": "Sicilian",
+    "popularity": 64,
+    "tags": [
+      "e4",
+      "sicilian"
+    ],
+    "note": "The check asks Black to choose a piece arrangement. Know your answer before you play d6.",
+    "moves": [
+      "e4",
+      "c5",
+      "Nf3",
+      "d6",
+      "Bb5+"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-b56-classical-sicilian",
+    "eco": "B56",
+    "name": "Classical Sicilian",
+    "family": "Sicilian",
+    "popularity": 74,
+    "tags": [
+      "e4",
+      "sicilian"
+    ],
+    "note": "Classical piece development. Be ready for both quiet Be2 and sharper Bg5 or f4 tries.",
+    "moves": [
+      "e4",
+      "c5",
+      "Nf3",
+      "d6",
+      "d4",
+      "cxd4",
+      "Nxd4",
+      "Nf6",
+      "Nc3",
+      "Nc6"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-b70-sicilian-dragon",
+    "eco": "B70",
+    "name": "Sicilian Dragon",
+    "family": "Sicilian",
+    "popularity": 76,
+    "tags": [
+      "e4",
+      "sicilian"
+    ],
+    "note": "The dark-squared bishop becomes the main piece. Castle and then choose between central and queenside counterplay.",
+    "moves": [
+      "e4",
+      "c5",
+      "Nf3",
+      "d6",
+      "d4",
+      "cxd4",
+      "Nxd4",
+      "Nf6",
+      "Nc3",
+      "g6"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-b72-dragon-yugoslav-attack",
+    "eco": "B72",
+    "name": "Dragon, Yugoslav Attack",
+    "family": "Sicilian",
+    "popularity": 74,
+    "tags": [
+      "e4",
+      "attack"
+    ],
+    "note": "White prepares a kingside pawn storm. Black must generate real queenside play, not just wait.",
+    "moves": [
+      "e4",
+      "c5",
+      "Nf3",
+      "d6",
+      "d4",
+      "cxd4",
+      "Nxd4",
+      "Nf6",
+      "Nc3",
+      "g6",
+      "Be3",
+      "Bg7",
+      "f3"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-b74-dragon-classical",
+    "eco": "B74",
+    "name": "Dragon, Classical",
+    "family": "Sicilian",
+    "popularity": 60,
+    "tags": [
+      "e4",
+      "sicilian"
+    ],
+    "note": "A calmer anti-Dragon. Black still castles and uses the long diagonal.",
+    "moves": [
+      "e4",
+      "c5",
+      "Nf3",
+      "d6",
+      "d4",
+      "cxd4",
+      "Nxd4",
+      "Nf6",
+      "Nc3",
+      "g6",
+      "Be2"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-b80-sicilian-scheveningen",
+    "eco": "B80",
+    "name": "Sicilian Scheveningen",
+    "family": "Sicilian",
+    "popularity": 78,
+    "tags": [
+      "e4",
+      "sicilian"
+    ],
+    "note": "A compact center. Watch the timing of e5 or d5 so you do not leave a permanent weakness.",
+    "moves": [
+      "e4",
+      "c5",
+      "Nf3",
+      "d6",
+      "d4",
+      "cxd4",
+      "Nxd4",
+      "Nf6",
+      "Nc3",
+      "e6"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-b90-sicilian-najdorf",
+    "eco": "B90",
+    "name": "Sicilian Najdorf",
+    "family": "Sicilian",
+    "popularity": 95,
+    "tags": [
+      "e4",
+      "sicilian"
+    ],
+    "note": "a6 controls b5 and prepares queenside play. It is a system, not a single trick.",
+    "moves": [
+      "e4",
+      "c5",
+      "Nf3",
+      "d6",
+      "d4",
+      "cxd4",
+      "Nxd4",
+      "Nf6",
+      "Nc3",
+      "a6"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-b92-najdorf-opocensky",
+    "eco": "B92",
+    "name": "Najdorf, Opocensky",
+    "family": "Sicilian",
+    "popularity": 70,
+    "tags": [
+      "e4",
+      "sicilian"
+    ],
+    "note": "A positional Najdorf. Develop e5 or e6 with a clear plan for the d5 square.",
+    "moves": [
+      "e4",
+      "c5",
+      "Nf3",
+      "d6",
+      "d4",
+      "cxd4",
+      "Nxd4",
+      "Nf6",
+      "Nc3",
+      "a6",
+      "Be2"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-b96-najdorf-gothic-start",
+    "eco": "B96",
+    "name": "Najdorf, Gothic start",
+    "family": "Sicilian",
+    "popularity": 68,
+    "tags": [
+      "e4",
+      "sicilian"
+    ],
+    "note": "Bg5 pins the knight's attention to the center. Know whether you intend e6 and Qb6 before you enter.",
+    "moves": [
+      "e4",
+      "c5",
+      "Nf3",
+      "d6",
+      "d4",
+      "cxd4",
+      "Nxd4",
+      "Nf6",
+      "Nc3",
+      "a6",
+      "Bg5"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-b97-najdorf-poisoned-pawn",
+    "eco": "B97",
+    "name": "Najdorf, Poisoned Pawn",
+    "family": "Sicilian",
+    "popularity": 63,
+    "tags": [
+      "e4",
+      "tactics"
+    ],
+    "note": "The queen takes on b2. This is concrete tactics — do not play it from memory you do not have.",
+    "moves": [
+      "e4",
+      "c5",
+      "Nf3",
+      "d6",
+      "d4",
+      "cxd4",
+      "Nxd4",
+      "Nf6",
+      "Nc3",
+      "a6",
+      "Bg5",
+      "e6",
+      "f4",
+      "Qb6",
+      "Qd2",
+      "Qxb2"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-b36-accelerated-dragon",
+    "eco": "B36",
+    "name": "Accelerated Dragon",
+    "family": "Sicilian",
+    "popularity": 73,
+    "tags": [
+      "e4",
+      "sicilian"
+    ],
+    "note": "g6 without an early d6. Watch the Maroczy bind if White plays c4.",
+    "moves": [
+      "e4",
+      "c5",
+      "Nf3",
+      "Nc6",
+      "d4",
+      "cxd4",
+      "Nxd4",
+      "g6"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c00-french-defense",
+    "eco": "C00",
+    "name": "French Defense",
+    "family": "French",
+    "popularity": 88,
+    "tags": [
+      "e4",
+      "french"
+    ],
+    "note": "Prepare d5. Accept a light-squared bishop that needs a plan, usually b6 or a later pawn break.",
+    "moves": [
+      "e4",
+      "e6"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c02-french-advance",
+    "eco": "C02",
+    "name": "French, Advance",
+    "family": "French",
+    "popularity": 82,
+    "tags": [
+      "e4",
+      "french"
+    ],
+    "note": "White clamps the center. Black's counterplay is c5, and often Qb6 against d4.",
+    "moves": [
+      "e4",
+      "e6",
+      "d4",
+      "d5",
+      "e5"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c02-french-advance-paulsen",
+    "eco": "C02",
+    "name": "French Advance, Paulsen",
+    "family": "French",
+    "popularity": 76,
+    "tags": [
+      "e4",
+      "french"
+    ],
+    "note": "Reinforce d4 with c3. Develop the kingside before you start wing attacks.",
+    "moves": [
+      "e4",
+      "e6",
+      "d4",
+      "d5",
+      "e5",
+      "c5",
+      "c3",
+      "Nc6"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c01-french-exchange",
+    "eco": "C01",
+    "name": "French, Exchange",
+    "family": "French",
+    "popularity": 60,
+    "tags": [
+      "e4",
+      "structure"
+    ],
+    "note": "Symmetry and an open e-file. The game is decided by piece placement, not a fixed pawn structure.",
+    "moves": [
+      "e4",
+      "e6",
+      "d4",
+      "d5",
+      "exd5",
+      "exd5"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c03-french-tarrasch",
+    "eco": "C03",
+    "name": "French, Tarrasch",
+    "family": "French",
+    "popularity": 74,
+    "tags": [
+      "e4",
+      "french"
+    ],
+    "note": "Nd2 avoids the pin on c3. It is slightly modest and very solid.",
+    "moves": [
+      "e4",
+      "e6",
+      "d4",
+      "d5",
+      "Nd2"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c05-french-tarrasch-closed",
+    "eco": "C05",
+    "name": "French Tarrasch, Closed",
+    "family": "French",
+    "popularity": 66,
+    "tags": [
+      "e4",
+      "french"
+    ],
+    "note": "A quiet setup. Complete development and only then resolve the central tension.",
+    "moves": [
+      "e4",
+      "e6",
+      "d4",
+      "d5",
+      "Nd2",
+      "Nf6",
+      "c3"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c10-french-rubinstein",
+    "eco": "C10",
+    "name": "French, Rubinstein",
+    "family": "French",
+    "popularity": 64,
+    "tags": [
+      "e4",
+      "french"
+    ],
+    "note": "Black releases the tension early. The position is sound if you develop the light-squared bishop.",
+    "moves": [
+      "e4",
+      "e6",
+      "d4",
+      "d5",
+      "Nc3",
+      "dxe4"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c11-french-steinitz",
+    "eco": "C11",
+    "name": "French, Steinitz",
+    "family": "French",
+    "popularity": 78,
+    "tags": [
+      "e4",
+      "french"
+    ],
+    "note": "Pressure e4. Be ready for e5 and a closed chain where you play c5.",
+    "moves": [
+      "e4",
+      "e6",
+      "d4",
+      "d5",
+      "Nc3",
+      "Nf6"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c15-french-winawer",
+    "eco": "C15",
+    "name": "French, Winawer",
+    "family": "French",
+    "popularity": 84,
+    "tags": [
+      "e4",
+      "french"
+    ],
+    "note": "Pin the knight and fight the pawn structure. Know the plans after e5 and a3.",
+    "moves": [
+      "e4",
+      "e6",
+      "d4",
+      "d5",
+      "Nc3",
+      "Bb4"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-c18-french-winawer-main",
+    "eco": "C18",
+    "name": "French Winawer, Main",
+    "family": "French",
+    "popularity": 80,
+    "tags": [
+      "e4",
+      "french"
+    ],
+    "note": "Doubled c-pawns against the bishop pair. Black attacks the base of the chain; White uses the space and the bishops.",
+    "moves": [
+      "e4",
+      "e6",
+      "d4",
+      "d5",
+      "Nc3",
+      "Bb4",
+      "e5",
+      "c5",
+      "a3",
+      "Bxc3+",
+      "bxc3",
+      "Ne7"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-d00-blackmar-diemer-gambit",
+    "eco": "D00",
+    "name": "Blackmar-Diemer Gambit",
+    "family": "Queen's pawn",
+    "popularity": 40,
+    "tags": [
+      "d4",
+      "gambit"
+    ],
+    "note": "A sharp gambit. Only play it if you enjoy concrete tactics more than a structural edge.",
+    "moves": [
+      "d4",
+      "d5",
+      "e4",
+      "dxe4",
+      "Nc3",
+      "Nf6",
+      "f3"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-d00-queen-s-pawn-game",
+    "eco": "D00",
+    "name": "Queen's Pawn Game",
+    "family": "Queen's pawn",
+    "popularity": 75,
+    "tags": [
+      "d4",
+      "fundamentals"
+    ],
+    "note": "A flexible queen's pawn start. You can still choose the London, Colle, or a gambit-free classical setup.",
+    "moves": [
+      "d4",
+      "d5",
+      "Nf3",
+      "Nf6"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-d02-london-system",
+    "eco": "D02",
+    "name": "London System",
+    "family": "Queen's pawn",
+    "popularity": 86,
+    "tags": [
+      "d4",
+      "system"
+    ],
+    "note": "Develop the dark-squared bishop outside the pawn chain, then build with e3, c3, and Nbd2.",
+    "moves": [
+      "d4",
+      "d5",
+      "Nf3",
+      "Nf6",
+      "Bf4"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-d04-colle-system",
+    "eco": "D04",
+    "name": "Colle System",
+    "family": "Queen's pawn",
+    "popularity": 58,
+    "tags": [
+      "d4",
+      "system"
+    ],
+    "note": "A compact setup aimed at a later e4 break. Do not play e4 until your pieces are ready.",
+    "moves": [
+      "d4",
+      "d5",
+      "Nf3",
+      "Nf6",
+      "e3",
+      "c5"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-a45-trompowsky-attack",
+    "eco": "A45",
+    "name": "Trompowsky Attack",
+    "family": "Queen's pawn",
+    "popularity": 62,
+    "tags": [
+      "d4",
+      "sideline"
+    ],
+    "note": "Develop the bishop before setting a pawn structure. Be ready to give the bishop for the knight if it damages Black's pawns.",
+    "moves": [
+      "d4",
+      "Nf6",
+      "Bg5"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-a46-torre-attack",
+    "eco": "A46",
+    "name": "Torre Attack",
+    "family": "Queen's pawn",
+    "popularity": 60,
+    "tags": [
+      "d4",
+      "system"
+    ],
+    "note": "A cousin of the London with the bishop on g5. Keep your setup flexible against early c5.",
+    "moves": [
+      "d4",
+      "Nf6",
+      "Nf3",
+      "e6",
+      "Bg5"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-d06-queen-s-gambit",
+    "eco": "D06",
+    "name": "Queen's Gambit",
+    "family": "Queen's Gambit",
+    "popularity": 92,
+    "tags": [
+      "d4",
+      "gambit"
+    ],
+    "note": "Offer the c-pawn to fight for the center. It is a gambit in name more than in practice.",
+    "moves": [
+      "d4",
+      "d5",
+      "c4"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-d07-chigorin-defense",
+    "eco": "D07",
+    "name": "Chigorin Defense",
+    "family": "Queen's Gambit",
+    "popularity": 52,
+    "tags": [
+      "d4",
+      "sideline"
+    ],
+    "note": "Nc6 adds pressure to d4. Mind the dark squares if you later play e5.",
+    "moves": [
+      "d4",
+      "d5",
+      "c4",
+      "Nc6"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-d08-albin-countergambit",
+    "eco": "D08",
+    "name": "Albin Countergambit",
+    "family": "Queen's Gambit",
+    "popularity": 48,
+    "tags": [
+      "d4",
+      "gambit"
+    ],
+    "note": "A pawn sacrifice for a wedge on d4. Know the tactics, or decline the adventure.",
+    "moves": [
+      "d4",
+      "d5",
+      "c4",
+      "e5",
+      "dxe5",
+      "d4"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-d10-slav-defense",
+    "eco": "D10",
+    "name": "Slav Defense",
+    "family": "Queen's Gambit",
+    "popularity": 88,
+    "tags": [
+      "d4",
+      "slav"
+    ],
+    "note": "Support d5 with c6 so the light-squared bishop can come out. That is the Slav's whole idea.",
+    "moves": [
+      "d4",
+      "d5",
+      "c4",
+      "c6"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-d13-slav-exchange",
+    "eco": "D13",
+    "name": "Slav, Exchange",
+    "family": "Queen's Gambit",
+    "popularity": 55,
+    "tags": [
+      "d4",
+      "structure"
+    ],
+    "note": "Early symmetry. Play for a small edge in piece activity rather than a forced attack.",
+    "moves": [
+      "d4",
+      "d5",
+      "c4",
+      "c6",
+      "cxd5",
+      "cxd5"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-d15-slav-main-line",
+    "eco": "D15",
+    "name": "Slav, Main Line",
+    "family": "Queen's Gambit",
+    "popularity": 80,
+    "tags": [
+      "d4",
+      "slav"
+    ],
+    "note": "The normal tabiya. Black chooses between taking on c4 and keeping the tension.",
+    "moves": [
+      "d4",
+      "d5",
+      "c4",
+      "c6",
+      "Nf3",
+      "Nf6",
+      "Nc3"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-d17-slav-czech",
+    "eco": "D17",
+    "name": "Slav, Czech",
+    "family": "Queen's Gambit",
+    "popularity": 70,
+    "tags": [
+      "d4",
+      "slav"
+    ],
+    "note": "Taking on c4 starts a concrete fight. Develop the bishop to f5 or g4 before e6.",
+    "moves": [
+      "d4",
+      "d5",
+      "c4",
+      "c6",
+      "Nf3",
+      "Nf6",
+      "Nc3",
+      "dxc4"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-d20-queen-s-gambit-accepted",
+    "eco": "D20",
+    "name": "Queen's Gambit Accepted",
+    "family": "Queen's Gambit",
+    "popularity": 78,
+    "tags": [
+      "d4",
+      "qga"
+    ],
+    "note": "Take the pawn and give it back for development if White plays accurately. Do not cling to the pawn.",
+    "moves": [
+      "d4",
+      "d5",
+      "c4",
+      "dxc4"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-d26-qga-classical",
+    "eco": "D26",
+    "name": "QGA, Classical",
+    "family": "Queen's Gambit",
+    "popularity": 74,
+    "tags": [
+      "d4",
+      "qga"
+    ],
+    "note": "The main way to regain the pawn. Castle and then look at c5 or e5 breaks.",
+    "moves": [
+      "d4",
+      "d5",
+      "c4",
+      "dxc4",
+      "Nf3",
+      "Nf6",
+      "e3",
+      "e6",
+      "Bxc4"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-d30-queen-s-gambit-declined",
+    "eco": "D30",
+    "name": "Queen's Gambit Declined",
+    "family": "Queen's Gambit",
+    "popularity": 90,
+    "tags": [
+      "d4",
+      "qgd"
+    ],
+    "note": "Solid and classical. The light-squared bishop is the piece you must solve.",
+    "moves": [
+      "d4",
+      "d5",
+      "c4",
+      "e6"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-d35-qgd-exchange",
+    "eco": "D35",
+    "name": "QGD, Exchange",
+    "family": "Queen's Gambit",
+    "popularity": 72,
+    "tags": [
+      "d4",
+      "structure"
+    ],
+    "note": "Carlsbad structure: minority attack ideas for White, piece breaks for Black.",
+    "moves": [
+      "d4",
+      "d5",
+      "c4",
+      "e6",
+      "Nc3",
+      "Nf6",
+      "cxd5",
+      "exd5"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-d37-qgd-harrwitz",
+    "eco": "D37",
+    "name": "QGD, Harrwitz",
+    "family": "Queen's Gambit",
+    "popularity": 68,
+    "tags": [
+      "d4",
+      "qgd"
+    ],
+    "note": "Develop calmly. The timing of c5 or the capture on c4 decides the structure.",
+    "moves": [
+      "d4",
+      "d5",
+      "c4",
+      "e6",
+      "Nc3",
+      "Nf6",
+      "Nf3",
+      "Be7"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-d43-semi-slav",
+    "eco": "D43",
+    "name": "Semi-Slav",
+    "family": "Queen's Gambit",
+    "popularity": 86,
+    "tags": [
+      "d4",
+      "slav"
+    ],
+    "note": "A rock-solid triangle of pawns. The light-squared bishop still needs a plan.",
+    "moves": [
+      "d4",
+      "d5",
+      "c4",
+      "e6",
+      "Nc3",
+      "Nf6",
+      "Nf3",
+      "c6"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-d44-semi-slav-botvinnik",
+    "eco": "D44",
+    "name": "Semi-Slav, Botvinnik",
+    "family": "Queen's Gambit",
+    "popularity": 70,
+    "tags": [
+      "d4",
+      "tactics"
+    ],
+    "note": "The sharp Botvinnik complex. Enter only when you know the tactics.",
+    "moves": [
+      "d4",
+      "d5",
+      "c4",
+      "c6",
+      "Nf3",
+      "Nf6",
+      "Nc3",
+      "e6",
+      "Bg5",
+      "dxc4"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-d46-semi-slav-meran",
+    "eco": "D46",
+    "name": "Semi-Slav, Meran",
+    "family": "Queen's Gambit",
+    "popularity": 72,
+    "tags": [
+      "d4",
+      "slav"
+    ],
+    "note": "White regains the pawn and Black prepares c5 or e5. Piece activity matters more than the extra tempo.",
+    "moves": [
+      "d4",
+      "d5",
+      "c4",
+      "c6",
+      "Nf3",
+      "Nf6",
+      "Nc3",
+      "e6",
+      "e3",
+      "Nbd7",
+      "Bd3",
+      "dxc4",
+      "Bxc4"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-d60-qgd-orthodox",
+    "eco": "D60",
+    "name": "QGD, Orthodox",
+    "family": "Queen's Gambit",
+    "popularity": 76,
+    "tags": [
+      "d4",
+      "qgd"
+    ],
+    "note": "The classical defensive setup. Free the light-squared bishop with a later pawn break.",
+    "moves": [
+      "d4",
+      "d5",
+      "c4",
+      "e6",
+      "Nc3",
+      "Nf6",
+      "Bg5",
+      "Be7",
+      "e3",
+      "O-O",
+      "Nf3",
+      "Nbd7"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-e01-catalan-opening",
+    "eco": "E01",
+    "name": "Catalan Opening",
+    "family": "Catalan",
+    "popularity": 84,
+    "tags": [
+      "d4",
+      "catalan"
+    ],
+    "note": "Combine the queen's pawn with a fianchetto. Pressure the long diagonal before you force the center.",
+    "moves": [
+      "d4",
+      "Nf6",
+      "c4",
+      "e6",
+      "g3"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-e04-catalan-open",
+    "eco": "E04",
+    "name": "Catalan, Open",
+    "family": "Catalan",
+    "popularity": 78,
+    "tags": [
+      "d4",
+      "catalan"
+    ],
+    "note": "Black takes on c4. White regains it with piece pressure, not by rushing.",
+    "moves": [
+      "d4",
+      "Nf6",
+      "c4",
+      "e6",
+      "g3",
+      "d5",
+      "Bg2",
+      "dxc4"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-e06-catalan-closed",
+    "eco": "E06",
+    "name": "Catalan, Closed",
+    "family": "Catalan",
+    "popularity": 76,
+    "tags": [
+      "d4",
+      "catalan"
+    ],
+    "note": "Black keeps the pawn tension. Develop Nf3, O-O, and only then decide on Qc2 or b3.",
+    "moves": [
+      "d4",
+      "Nf6",
+      "c4",
+      "e6",
+      "g3",
+      "d5",
+      "Bg2",
+      "Be7"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-d80-grunfeld-defense",
+    "eco": "D80",
+    "name": "Grunfeld Defense",
+    "family": "Indian defences",
+    "popularity": 86,
+    "tags": [
+      "d4",
+      "grunfeld"
+    ],
+    "note": "Strike the center immediately with d5. You allow White space in return for piece pressure.",
+    "moves": [
+      "d4",
+      "Nf6",
+      "c4",
+      "g6",
+      "Nc3",
+      "d5"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-d85-grunfeld-exchange",
+    "eco": "D85",
+    "name": "Grunfeld, Exchange",
+    "family": "Indian defences",
+    "popularity": 82,
+    "tags": [
+      "d4",
+      "grunfeld"
+    ],
+    "note": "The main theoretical battleground. Black attacks the pawn center with c5 and piece pressure on the long diagonal.",
+    "moves": [
+      "d4",
+      "Nf6",
+      "c4",
+      "g6",
+      "Nc3",
+      "d5",
+      "cxd5",
+      "Nxd5",
+      "e4",
+      "Nxc3",
+      "bxc3"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-d97-grunfeld-russian",
+    "eco": "D97",
+    "name": "Grunfeld, Russian",
+    "family": "Indian defences",
+    "popularity": 64,
+    "tags": [
+      "d4",
+      "grunfeld"
+    ],
+    "note": "White defends c4 with the queen and asks a question on d5. Develop before you resolve the tension.",
+    "moves": [
+      "d4",
+      "Nf6",
+      "c4",
+      "g6",
+      "Nc3",
+      "d5",
+      "Nf3",
+      "Bg7",
+      "Qb3"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-e11-bogo-indian-defense",
+    "eco": "E11",
+    "name": "Bogo-Indian Defense",
+    "family": "Indian defences",
+    "popularity": 60,
+    "tags": [
+      "d4",
+      "indian"
+    ],
+    "note": "The check interrupts White's setup. Decide in advance whether you will trade the bishop or drop it back.",
+    "moves": [
+      "d4",
+      "Nf6",
+      "c4",
+      "e6",
+      "Nf3",
+      "Bb4+"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-e12-queen-s-indian-defense",
+    "eco": "E12",
+    "name": "Queen's Indian Defense",
+    "family": "Indian defences",
+    "popularity": 82,
+    "tags": [
+      "d4",
+      "indian"
+    ],
+    "note": "Control e4 with a fianchetto. It is a positional defense, not a gambit.",
+    "moves": [
+      "d4",
+      "Nf6",
+      "c4",
+      "e6",
+      "Nf3",
+      "b6"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-e15-queen-s-indian-fianchetto",
+    "eco": "E15",
+    "name": "Queen's Indian, Fianchetto",
+    "family": "Indian defences",
+    "popularity": 70,
+    "tags": [
+      "d4",
+      "indian"
+    ],
+    "note": "Both bishops fianchetto in many lines. Fight for the e4 square with pieces.",
+    "moves": [
+      "d4",
+      "Nf6",
+      "c4",
+      "e6",
+      "Nf3",
+      "b6",
+      "g3",
+      "Bb7",
+      "Bg2"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-e20-nimzo-indian-defense",
+    "eco": "E20",
+    "name": "Nimzo-Indian Defense",
+    "family": "Indian defences",
+    "popularity": 93,
+    "tags": [
+      "d4",
+      "indian"
+    ],
+    "note": "Pin the knight that would support e4. Doubled pawns for White are the strategic theme.",
+    "moves": [
+      "d4",
+      "Nf6",
+      "c4",
+      "e6",
+      "Nc3",
+      "Bb4"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-e32-nimzo-indian-classical",
+    "eco": "E32",
+    "name": "Nimzo-Indian, Classical",
+    "family": "Indian defences",
+    "popularity": 78,
+    "tags": [
+      "d4",
+      "indian"
+    ],
+    "note": "Qc2 breaks the pin and eyes the bishop. Be ready for the exchange on c3.",
+    "moves": [
+      "d4",
+      "Nf6",
+      "c4",
+      "e6",
+      "Nc3",
+      "Bb4",
+      "Qc2"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-e41-nimzo-indian-rubinstein",
+    "eco": "E41",
+    "name": "Nimzo-Indian, Rubinstein",
+    "family": "Indian defences",
+    "popularity": 74,
+    "tags": [
+      "d4",
+      "indian"
+    ],
+    "note": "A solid white setup with e3. Black chooses d5 or c5 and finishes development.",
+    "moves": [
+      "d4",
+      "Nf6",
+      "c4",
+      "e6",
+      "Nc3",
+      "Bb4",
+      "e3",
+      "O-O",
+      "Nf3"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-e60-king-s-indian-defense",
+    "eco": "E60",
+    "name": "King's Indian Defense",
+    "family": "King's Indian",
+    "popularity": 90,
+    "tags": [
+      "d4",
+      "kid"
+    ],
+    "note": "A hypermodern defense. You castle and then strike with e5 or c5.",
+    "moves": [
+      "d4",
+      "Nf6",
+      "c4",
+      "g6"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-e62-king-s-indian-fianchetto",
+    "eco": "E62",
+    "name": "King's Indian, Fianchetto",
+    "family": "King's Indian",
+    "popularity": 72,
+    "tags": [
+      "d4",
+      "kid"
+    ],
+    "note": "A quieter anti-King's Indian. Black still prepares e5, but the attacks are slower.",
+    "moves": [
+      "d4",
+      "Nf6",
+      "c4",
+      "g6",
+      "Nf3",
+      "Bg7",
+      "g3",
+      "O-O",
+      "Bg2",
+      "d6"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-e70-king-s-indian-normal",
+    "eco": "E70",
+    "name": "King's Indian, Normal",
+    "family": "King's Indian",
+    "popularity": 80,
+    "tags": [
+      "d4",
+      "kid"
+    ],
+    "note": "White occupies the center. Black must challenge it; passive defense loses.",
+    "moves": [
+      "d4",
+      "Nf6",
+      "c4",
+      "g6",
+      "Nc3",
+      "Bg7",
+      "e4"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-e76-king-s-indian-four-pawns",
+    "eco": "E76",
+    "name": "King's Indian, Four Pawns",
+    "family": "King's Indian",
+    "popularity": 58,
+    "tags": [
+      "d4",
+      "attack"
+    ],
+    "note": "Maximum space for White. Black needs a timely c5 or e5 break.",
+    "moves": [
+      "d4",
+      "Nf6",
+      "c4",
+      "g6",
+      "Nc3",
+      "Bg7",
+      "e4",
+      "d6",
+      "f4"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-e80-king-s-indian-samisch",
+    "eco": "E80",
+    "name": "King's Indian, Samisch",
+    "family": "King's Indian",
+    "popularity": 66,
+    "tags": [
+      "d4",
+      "kid"
+    ],
+    "note": "f3 supports e4 and prepares Be3 and Qd2. Black looks for c5 and queenside play.",
+    "moves": [
+      "d4",
+      "Nf6",
+      "c4",
+      "g6",
+      "Nc3",
+      "Bg7",
+      "e4",
+      "d6",
+      "f3"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-e92-king-s-indian-classical",
+    "eco": "E92",
+    "name": "King's Indian, Classical",
+    "family": "King's Indian",
+    "popularity": 84,
+    "tags": [
+      "d4",
+      "kid"
+    ],
+    "note": "The classical main line. Castle, then choose e5 with a plan for the center.",
+    "moves": [
+      "d4",
+      "Nf6",
+      "c4",
+      "g6",
+      "Nc3",
+      "Bg7",
+      "e4",
+      "d6",
+      "Nf3",
+      "O-O",
+      "Be2"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-e97-king-s-indian-mar-del-plata",
+    "eco": "E97",
+    "name": "King's Indian, Mar del Plata",
+    "family": "King's Indian",
+    "popularity": 80,
+    "tags": [
+      "d4",
+      "kid"
+    ],
+    "note": "The famous race: White attacks on the queenside, Black on the kingside. Know which pieces to trade.",
+    "moves": [
+      "d4",
+      "Nf6",
+      "c4",
+      "g6",
+      "Nc3",
+      "Bg7",
+      "e4",
+      "d6",
+      "Nf3",
+      "O-O",
+      "Be2",
+      "e5",
+      "O-O",
+      "Nc6"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-a43-old-benoni",
+    "eco": "A43",
+    "name": "Old Benoni",
+    "family": "King's Indian",
+    "popularity": 52,
+    "tags": [
+      "d4",
+      "benoni"
+    ],
+    "note": "An immediate flank strike. Be ready for d5 and a closed, strategic fight.",
+    "moves": [
+      "d4",
+      "c5"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-a56-benoni-defense",
+    "eco": "A56",
+    "name": "Benoni Defense",
+    "family": "King's Indian",
+    "popularity": 70,
+    "tags": [
+      "d4",
+      "benoni"
+    ],
+    "note": "Give White a pawn wedge on d5 in return for queenside play and the half-open e-file later.",
+    "moves": [
+      "d4",
+      "Nf6",
+      "c4",
+      "c5"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-a57-benko-gambit",
+    "eco": "A57",
+    "name": "Benko Gambit",
+    "family": "King's Indian",
+    "popularity": 68,
+    "tags": [
+      "d4",
+      "gambit"
+    ],
+    "note": "Sacrifice a pawn for the a- and b-files. If you play it, play on those files, not in the center.",
+    "moves": [
+      "d4",
+      "Nf6",
+      "c4",
+      "c5",
+      "d5",
+      "b5"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-a58-benko-accepted",
+    "eco": "A58",
+    "name": "Benko, Accepted",
+    "family": "King's Indian",
+    "popularity": 64,
+    "tags": [
+      "d4",
+      "gambit"
+    ],
+    "note": "The main accepted order. Develop the fianchetto and put rooks on the open files.",
+    "moves": [
+      "d4",
+      "Nf6",
+      "c4",
+      "c5",
+      "d5",
+      "b5",
+      "cxb5",
+      "a6"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-e10-blumenfeld-gambit",
+    "eco": "E10",
+    "name": "Blumenfeld Gambit",
+    "family": "King's Indian",
+    "popularity": 46,
+    "tags": [
+      "d4",
+      "gambit"
+    ],
+    "note": "A cousin of the Benko with an e6 pawn. Concrete and easy to mishandle.",
+    "moves": [
+      "d4",
+      "Nf6",
+      "c4",
+      "e6",
+      "Nf3",
+      "c5",
+      "d5",
+      "b5"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-a51-budapest-gambit",
+    "eco": "A51",
+    "name": "Budapest Gambit",
+    "family": "Indian defences",
+    "popularity": 50,
+    "tags": [
+      "d4",
+      "gambit"
+    ],
+    "note": "A piece-play gambit against d4. Have a follow-up ready after dxe5.",
+    "moves": [
+      "d4",
+      "Nf6",
+      "c4",
+      "e5"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-a80-dutch-defense",
+    "eco": "A80",
+    "name": "Dutch Defense",
+    "family": "Dutch",
+    "popularity": 66,
+    "tags": [
+      "d4",
+      "dutch"
+    ],
+    "note": "Fight for e4 with a kingside pawn. The king is a little looser, so develop accurately.",
+    "moves": [
+      "d4",
+      "f5"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-a84-dutch-classical",
+    "eco": "A84",
+    "name": "Dutch, Classical",
+    "family": "Dutch",
+    "popularity": 60,
+    "tags": [
+      "d4",
+      "dutch"
+    ],
+    "note": "A Stonewall-ready structure. The light-squared bishop needs a route, often via e7 or d6.",
+    "moves": [
+      "d4",
+      "f5",
+      "c4",
+      "Nf6",
+      "g3",
+      "e6"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-a90-dutch-stonewall",
+    "eco": "A90",
+    "name": "Dutch, Stonewall",
+    "family": "Dutch",
+    "popularity": 62,
+    "tags": [
+      "d4",
+      "dutch"
+    ],
+    "note": "Pawns on d5, e6, and f5. You get the e4 square as a theme and a bad bishop to solve.",
+    "moves": [
+      "d4",
+      "f5",
+      "c4",
+      "e6",
+      "Nf3",
+      "d5"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-a87-dutch-leningrad",
+    "eco": "A87",
+    "name": "Dutch, Leningrad",
+    "family": "Dutch",
+    "popularity": 64,
+    "tags": [
+      "d4",
+      "dutch"
+    ],
+    "note": "A King's Indian shape with f5. Control e4 and do not forget king safety.",
+    "moves": [
+      "d4",
+      "f5",
+      "c4",
+      "Nf6",
+      "g3",
+      "g6",
+      "Bg2",
+      "Bg7",
+      "Nf3"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-a00-polish-opening",
+    "eco": "A00",
+    "name": "Polish Opening",
+    "family": "Flank openings",
+    "popularity": 42,
+    "tags": [
+      "flank"
+    ],
+    "note": "An early wing pawn. It is playable, but have a plan against a classical center.",
+    "moves": [
+      "b4",
+      "e5",
+      "Bb2"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-a01-nimzo-larsen-attack",
+    "eco": "A01",
+    "name": "Nimzo-Larsen Attack",
+    "family": "Flank openings",
+    "popularity": 55,
+    "tags": [
+      "flank"
+    ],
+    "note": "Fianchetto the queen's bishop and wait to see the center. Do not delay development of the kingside.",
+    "moves": [
+      "b3",
+      "e5",
+      "Bb2",
+      "Nc6",
+      "e3"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-a02-bird-s-opening",
+    "eco": "A02",
+    "name": "Bird's Opening",
+    "family": "Flank openings",
+    "popularity": 48,
+    "tags": [
+      "flank"
+    ],
+    "note": "A reversed Dutch. Control e5 and watch the weakened king diagonal.",
+    "moves": [
+      "f4",
+      "d5",
+      "Nf3"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-a04-reti-opening",
+    "eco": "A04",
+    "name": "Reti Opening",
+    "family": "Flank openings",
+    "popularity": 76,
+    "tags": [
+      "flank",
+      "reti"
+    ],
+    "note": "Pressure d5 without committing d4. You can transpose into many queen's pawn structures.",
+    "moves": [
+      "Nf3",
+      "d5",
+      "c4"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-a07-king-s-indian-attack",
+    "eco": "A07",
+    "name": "King's Indian Attack",
+    "family": "Flank openings",
+    "popularity": 70,
+    "tags": [
+      "flank",
+      "kia"
+    ],
+    "note": "A system, not a forced line. Build e4 after you castle.",
+    "moves": [
+      "Nf3",
+      "d5",
+      "g3",
+      "Nf6",
+      "Bg2",
+      "c5",
+      "O-O",
+      "Nc6",
+      "d3"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-a10-english-opening",
+    "eco": "A10",
+    "name": "English Opening",
+    "family": "Flank openings",
+    "popularity": 88,
+    "tags": [
+      "flank",
+      "english"
+    ],
+    "note": "Fight for d5 from the flank. It often becomes a reversed Sicilian.",
+    "moves": [
+      "c4",
+      "e5"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-a15-english-anglo-indian",
+    "eco": "A15",
+    "name": "English, Anglo-Indian",
+    "family": "Flank openings",
+    "popularity": 72,
+    "tags": [
+      "flank",
+      "english"
+    ],
+    "note": "A flexible move order. You can head for a fianchetto or a queen's pawn center.",
+    "moves": [
+      "c4",
+      "Nf6",
+      "Nf3",
+      "g6"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-a20-english-reversed-sicilian",
+    "eco": "A20",
+    "name": "English, Reversed Sicilian",
+    "family": "Flank openings",
+    "popularity": 68,
+    "tags": [
+      "flank",
+      "english"
+    ],
+    "note": "Black occupies the center the way White does in a Sicilian. Develop and then choose d3 or a later d4.",
+    "moves": [
+      "c4",
+      "e5",
+      "Nc3",
+      "Nf6"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-a25-english-closed",
+    "eco": "A25",
+    "name": "English, Closed",
+    "family": "Flank openings",
+    "popularity": 64,
+    "tags": [
+      "flank",
+      "english"
+    ],
+    "note": "A closed English. Fianchetto, castle, and prepare d3 or a central break.",
+    "moves": [
+      "c4",
+      "e5",
+      "Nc3",
+      "Nc6",
+      "g3"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-a30-english-symmetrical",
+    "eco": "A30",
+    "name": "English, Symmetrical",
+    "family": "Flank openings",
+    "popularity": 70,
+    "tags": [
+      "flank",
+      "english"
+    ],
+    "note": "Symmetry does not mean a draw. The first useful pawn break, d4 or d5, matters.",
+    "moves": [
+      "c4",
+      "c5",
+      "Nc3",
+      "Nc6",
+      "g3",
+      "g6",
+      "Bg2",
+      "Bg7"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-a36-english-botvinnik-setup",
+    "eco": "A36",
+    "name": "English, Botvinnik setup",
+    "family": "Flank openings",
+    "popularity": 66,
+    "tags": [
+      "flank",
+      "english"
+    ],
+    "note": "The Botvinnik pawn wedge. Control d5 and do not open the position before you are developed.",
+    "moves": [
+      "c4",
+      "c5",
+      "Nc3",
+      "Nc6",
+      "g3",
+      "g6",
+      "Bg2",
+      "Bg7",
+      "e4"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-b00-nimzowitsch-defense",
+    "eco": "B00",
+    "name": "Nimzowitsch Defense",
+    "family": "Semi-open",
+    "popularity": 44,
+    "tags": [
+      "e4",
+      "sideline"
+    ],
+    "note": "An unusual knight development. It is legal and tricky, but less reliable than mainstream defenses.",
+    "moves": [
+      "e4",
+      "Nc6"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  },
+  {
+    "id": "op-b00-owen-s-defense",
+    "eco": "B00",
+    "name": "Owen's Defense",
+    "family": "Semi-open",
+    "popularity": 40,
+    "tags": [
+      "e4",
+      "hypermodern"
+    ],
+    "note": "A queenside fianchetto against e4. Strike the center soon or you will be squeezed.",
+    "moves": [
+      "e4",
+      "b6",
+      "d4",
+      "Bb7"
+    ],
+    "source": "builtin",
+    "updatedAt": 1700000000000
+  }
+];
