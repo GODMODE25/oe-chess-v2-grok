@@ -6,11 +6,12 @@ The app that runs here is the full trainer: a local chessboard, a bundled Stockf
 
 ## Train
 
-- **Play** a legal game against Stockfish. Choose a side, a clock, a strength, or a starting FEN. Undo, flip the board, step through the score, and turn on analysis.
-- **Openings** browse the book by name and ECO, build a White repertoire and a Black repertoire, and drill lines with spaced repetition. Blind drill hides the book move.
-- **Endgames** filter the position list and play the assigned side until you mate, promote, or hold the draw.
+- **Play** against Stockfish, another person, or watch the engine play itself. Each side is Human or Computer. Choosing Computer does not start the clock. Press Start, Play White, or Play Black. Pause freezes the clock and the engine. Stop and New game both reset the clock and the board. Drag your piece on the opponent's turn to set a premove. If you are Black, the board turns around.
+- **Openings** open on a shelf of three White courses and three Black courses (Legendary and S-tier). Add or remove courses, or add any line from the full book. Explorer lists every shipped line. Train one named variation at a time. Undo takes back the last move. Retry starts the variation over. The book replies on the line; Stockfish answers if you leave it. Progress bars track each variation and the course.
+- **Endgames** use dropdowns for category, difficulty, pieces, side, and progress. Every shipped position is listed. Each side can be Human or Computer, and premoved. A prompt appears when you solve or fail, with Next or Back to the menu.
 - **Library** keeps saved games and imports PGN.
-- **Settings** exports a backup, a diagnostic log, and optional Google Drive sync.
+- **About** explains what the trainer does and what it leaves out.
+- **Settings** chooses a board color and a piece set (Classic photos or Diagram silhouettes), exports a backup, and optionally syncs to Google Drive.
 
 You can use everything with no network. Google sign-in is only for sync.
 
@@ -22,6 +23,10 @@ npm run dev
 ```
 
 The dev server listens on port 8080. `npm test` checks the rules, spaced repetition, endgame results, sync merge, and engine parsing. `node scripts/build-chess-db.mjs` rebuilds the shipped opening and endgame book.
+
+## Pieces
+
+The default set is the flat Cburnett set used on lichess.org. The files are in `public/pieces/standard/` and the license is in `public/pieces/standard/LICENSE.txt` (Colin M.L. Burnett, GPL-2.0-or-later). More free sets from the same project are at [lichess-org/lila public/piece](https://github.com/lichess-org/lila/tree/master/public/piece). Diagram and Classic stay available in Settings.
 
 ## Data
 
@@ -52,7 +57,7 @@ Syzygy tablebases are not bundled. `probeTablebase` in `src/lib/chess/endgame-re
 1. In Google Cloud, create an OAuth client of type **Web application**.
 2. Add this site’s origin as an authorized JavaScript origin.
 3. Enable the Drive API.
-4. Paste the client id into Settings. The scope requested is `drive.appdata` only.
+4. The client id for this personal install is already filled in Settings. Change it if you use a different Google Cloud project. The scope requested is `drive.appdata` only.
 5. Sign in, then use **Sync now** or **Restore from cloud**.
 
 Sync is local-first. Simple fields use the newest edit. Records merge by id. A newer edit beats an older delete. Equal timestamps keep the content. Restore downloads a local backup before replacing this device.

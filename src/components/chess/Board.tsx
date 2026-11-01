@@ -1,6 +1,6 @@
 import { Chess, type Square } from "chess.js";
 import { useMemo, useState, type PointerEvent } from "react";
-import type { BoardTheme } from "@/lib/chess/types";
+import type { BoardTheme, PieceSet, Side } from "@/lib/chess/types";
 import { PieceGlyph } from "./pieces";
 
 type Arrow = { from: string; to: string };
@@ -14,6 +14,9 @@ type BoardProps = {
   highlights?: string[];
   coordinates?: boolean;
   theme?: BoardTheme;
+  pieceSet?: PieceSet;
+  humanColors?: Side[];
+  onPremove?: (from: string, to: string, promotion?: string) => void;
   onMove?: (from: string, to: string, promotion?: string) => void;
 };
 
@@ -48,6 +51,9 @@ export function Board({
   highlights = [],
   coordinates = true,
   theme = "walnut",
+  pieceSet = "classic",
+  humanColors,
+  onPremove,
   onMove,
 }: BoardProps) {
   const chess = useMemo(() => {
@@ -59,7 +65,7 @@ export function Board({
   }, [fen]);
   const [selected, setSelected] = useState<string | null>(null);
   const [drag, setDrag] = useState<{ from: string; x: number; y: number; type: string; color: "w" | "b" } | null>(null);
-  const [pending, setPending] = useState<{ from: string; to: string } | null>(null);
+  const [pending, setPending] = useState<{ from: string; to: string; premove: boolean; color: "w" | "b" } | null>(null);
 
   const files = orientation === "white" ? "abcdefgh".split("") : "hgfedcba".split("");
   const ranks = orientation === "white" ? [8, 7, 6, 5, 4, 3, 2, 1] : [1, 2, 3, 4, 5, 6, 7, 8];
@@ -67,27 +73,44 @@ export function Board({
   const targets = selected ? legal.filter((move) => move.from === selected).map((move) => move.to) : [];
   const checked = chess ? kingSquare(chess) : null;
 
+  function owned(sq: string) {
+    const piece = chess?.get(sq as Square);
+    if (!piece) return null;
+    const allowed = humanColors ?? (chess ? [chess.turn()] : []);
+    return allowed.includes(piece.color) ? piece : null;
+  }
+
   function tryMove(from: string, to: string) {
     const choices = legal.filter((move) => move.from === from && move.to === to);
+    const piece = chess?.get(from as Square);
     if (!choices.length) {
-      const piece = chess?.get(to as Square);
-      if (piece && piece.color === chess?.turn()) setSelected(to);
+      const rank = to[1];
+      const promo = piece?.type === "p" && ((piece.color === "w" && rank === "8") || (piece.color === "b" && rank === "1"));
+      if (piece && onPremove && piece.color !== chess?.turn()) {
+        if (promo) setPending({ from, to, premove: true, color: piece.color });
+        else onPremove(from, to);
+        setSelected(null);
+        return;
+      }
+      const occupant = chess?.get(to as Square);
+      if (occupant && owned(to)) setSelected(to);
       else setSelected(null);
       return;
     }
     if (choices.some((move) => move.promotion)) {
-      setPending({ from, to });
+      setPending({ from, to, premove: false, color: piece?.color ?? "w" });
       setSelected(null);
       return;
     }
-    onMove?.(from, to);
+    if (piece && piece.color !== chess?.turn() && onPremove) onPremove(from, to);
+    else onMove?.(from, to);
     setSelected(null);
   }
 
   function onPointerDown(event: PointerEvent, sq: string) {
     if (!interactive || !chess) return;
-    const piece = chess.get(sq as Square);
-    if (piece && piece.color === chess.turn()) {
+    const piece = owned(sq);
+    if (piece) {
       setSelected(sq);
       setDrag({ from: sq, x: event.clientX, y: event.clientY, type: piece.type, color: piece.color });
       (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
@@ -106,11 +129,7 @@ export function Board({
   function onClickSquare(sq: string) {
     if (!interactive || drag) return;
     if (selected && selected !== sq) tryMove(selected, sq);
-    else {
-      const piece = chess?.get(sq as Square);
-      if (piece && piece.color === chess?.turn()) setSelected(sq);
-      else setSelected(null);
-    }
+    else setSelected(owned(sq) ? sq : null);
   }
 
   return (
@@ -148,7 +167,7 @@ export function Board({
                   </span>
                 )}
                 {isTarget && piece && <span className="absolute inset-1 rounded-full border-4 border-ink/50" />}
-                {piece && !hide && <PieceGlyph type={piece.type} color={piece.color} className="relative z-10 h-full w-full p-1" />}
+                {piece && !hide && <PieceGlyph type={piece.type} color={piece.color} set={pieceSet} className="relative z-10 h-full w-full p-1" />}
                 {coordinates && file === files[0] && (
                   <span className={`absolute top-0.5 left-1 text-xs ${light ? "text-walnut" : "text-ivory"}`}>{rank}</span>
                 )}
@@ -181,7 +200,7 @@ export function Board({
       </div>
       {drag && (
         <div className="pointer-events-none fixed z-50 h-16 w-16" style={{ left: drag.x - 32, top: drag.y - 32 }}>
-          <PieceGlyph type={drag.type} color={drag.color} className="h-full w-full" />
+          <PieceGlyph type={drag.type} color={drag.color} set={pieceSet} className="h-full w-full" />
         </div>
       )}
       {pending && (
@@ -193,11 +212,12 @@ export function Board({
                 type="button"
                 className="h-14 w-14 rounded-lg bg-board-light"
                 onClick={() => {
-                  onMove?.(pending.from, pending.to, type);
+                  if (pending.premove) onPremove?.(pending.from, pending.to, type);
+                  else onMove?.(pending.from, pending.to, type);
                   setPending(null);
                 }}
               >
-                <PieceGlyph type={type} color={chess?.turn() === "b" ? "b" : "w"} />
+                <PieceGlyph type={type} color={pending.color} set={pieceSet} />
               </button>
             ))}
           </div>

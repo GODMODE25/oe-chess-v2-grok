@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { readDiag } from "@/lib/chess/diag";
 import { exportBackup, useOe } from "@/lib/chess/store";
-import type { BoardTheme, SyncStatus } from "@/lib/chess/types";
+import type { BoardTheme, PieceSet, SyncStatus } from "@/lib/chess/types";
+import { PieceGlyph } from "./pieces";
 import { Button, Field, Panel, Pill, TextInput } from "./ui";
 
 const STATUS: Record<SyncStatus, string> = {
@@ -56,6 +57,27 @@ export function SettingsView() {
             <Button key={theme} variant={settings.boardTheme === theme ? "primary" : "quiet"} onClick={() => patchSettings({ boardTheme: theme })}>
               {theme}
             </Button>
+          ))}
+        </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {([
+            ["standard", "Standard"],
+            ["diagram", "Diagram"],
+            ["classic", "Classic"],
+          ] as Array<[PieceSet, string]>).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => patchSettings({ pieceSet: id })}
+              className={`rounded-xl border p-3 text-left ${settings.pieceSet === id || (!settings.pieceSet && id === "standard") ? "border-brass" : "border-line"}`}
+            >
+              <span className="text-sm">{label}</span>
+              <span className="mt-2 flex h-16 gap-1">
+                {["k", "q", "n", "p"].map((type) => (
+                  <PieceGlyph key={type} type={type} color="w" set={id} className="h-16 w-12 object-contain" />
+                ))}
+              </span>
+            </button>
           ))}
         </div>
         <div className="mt-3 flex flex-wrap gap-2">

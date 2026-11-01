@@ -11,8 +11,9 @@ export type SyncStatus =
   | "up-to-date"
   | "conflict"
   | "error";
-export type NavId = "play" | "openings" | "endgames" | "library" | "stats" | "settings";
+export type NavId = "play" | "openings" | "endgames" | "library" | "stats" | "about" | "settings";
 export type BoardTheme = "walnut" | "ink" | "stone";
+export type PieceSet = "standard" | "diagram" | "classic";
 export type PieceGroup = "pawn" | "knight" | "bishop" | "rook" | "queen" | "mixed" | "basic";
 
 export type OpeningLine = {
@@ -113,6 +114,7 @@ export type Settings = {
   endgameThinkMs: number;
   analysisDepth: number;
   googleClientId: string;
+  pieceSet?: PieceSet;
 };
 
 export type Repertoire = {
@@ -121,6 +123,7 @@ export type Repertoire = {
   b: string[];
   seeded: boolean;
   updatedAt: number;
+  carousel?: { w: string[]; b: string[] };
 };
 
 export type FavoriteSet = { id: string; ids: string[]; updatedAt: number };

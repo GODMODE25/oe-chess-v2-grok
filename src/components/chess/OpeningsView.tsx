@@ -1,389 +1,438 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { gradeFromDrill, isDue, queueRank, reviewId } from "@/lib/chess/srs";
+import { COURSES, DEFAULT_CAROUSEL, courseById, reviewProgress, variationsFor, type Course } from "@/lib/chess/courses";
+import { getEngine } from "@/lib/chess/engine";
 import { parsePgn, replay, splitPgnGames, START_FEN } from "@/lib/chess/rules";
+import { gradeFromDrill, reviewId } from "@/lib/chess/srs";
 import { allOpenings, useOe } from "@/lib/chess/store";
 import type { OpeningLine, Side } from "@/lib/chess/types";
 import { Board } from "./Board";
-import { Button, Field, Panel, Pill, TextInput } from "./ui";
-
-type Tab = "train" | "explore" | "repertoire";
+import { Button, Meter, Panel, Pill, TextInput } from "./ui";
 
 export function OpeningsView() {
-  const [tab, setTab] = useState<Tab>("train");
-  return (
-    <div className="grid gap-4">
-      <div className="flex flex-wrap gap-2">
-        {(["train", "explore", "repertoire"] as Tab[]).map((item) => (
-          <Button key={item} variant={tab === item ? "primary" : "quiet"} onClick={() => setTab(item)}>
-            {item === "train" ? "Train" : item === "explore" ? "Explorer" : "Repertoire"}
-          </Button>
-        ))}
+  const repertoire = useOe((s) => s.repertoire);
+  const reviews = useOe((s) => s.reviews);
+  const settings = useOe((s) => s.settings);
+  const setCarousel = useOe((s) => s.setCarousel);
+  const custom = useOe((s) => s.openings);
+  const book = useMemo(() => allOpenings(custom), [custom]);
+  const [courseId, setCourseId] = useState<string | null>(null);
+  const [lineId, setLineId] = useState<string | null>(null);
+  const [adding, setAdding] = useState<Side | null>(null);
+  const [tab, setTab] = useState<"shelf" | "explorer">("shelf");
+  const [query, setQuery] = useState("");
+  const [family, setFamily] = useState("All");
+  const [trainSide, setTrainSide] = useState<Side>("w");
+  const [ghost, setGhost] = useState<Course | null>(null);
+
+  const shelf = {
+    w: repertoire.carousel?.w ?? DEFAULT_CAROUSEL.w,
+    b: repertoire.carousel?.b ?? DEFAULT_CAROUSEL.b,
+  };
+  const course = courseId ? courseById(courseId) : undefined;
+  const variations = course ? variationsFor(course) : [];
+  const activeCourse = course ?? ghost ?? undefined;
+  const line = lineId ? book.find((row) => row.id === lineId) ?? null : null;
+  const families = ["All", ...Array.from(new Set(book.map((row) => row.family)))];
+
+  function progressFor(target: Course) {
+    const rows = variationsFor(target);
+    if (!rows.length) return 0;
+    const total = rows.reduce((sum, row) => {
+      const review = reviews.find((item) => item.id === reviewId(row.id, target.side));
+      return sum + reviewProgress(review);
+    }, 0);
+    return total / rows.length;
+  }
+
+  function openLine(row: OpeningLine, side: Side) {
+    setGhost({
+      id: `solo-${row.id}`,
+      name: row.name,
+      side,
+      tier: "s",
+      blurb: row.note,
+      variationNames: [row.name],
+    });
+    setCourseId(null);
+    setLineId(row.id);
+  }
+
+  if (line && activeCourse) return <VariationSession course={activeCourse} line={line} onExit={() => { setLineId(null); setGhost(null); }} />;
+
+  if (course) {
+    return (
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="flex flex-col items-center gap-3">
+          <Board
+            fen={START_FEN}
+            orientation={course.side === "w" ? "white" : "black"}
+            coordinates={settings.coordinates}
+            theme={settings.boardTheme}
+            pieceSet={settings.pieceSet ?? "standard"}
+            interactive={false}
+          />
+          <p className="text-sm text-mist">The board faces you. You play {course.side === "w" ? "White" : "Black"}.</p>
+        </div>
+        <div className="grid content-start gap-3">
+          <Panel>
+            <Button variant="ghost" onClick={() => setCourseId(null)}>Back to shelf</Button>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <h2 className="text-2xl">{course.name}</h2>
+              <Pill tone="brass">{course.tier === "legendary" ? "Legendary" : "S-tier"}</Pill>
+            </div>
+            <p className="mt-2 text-sm text-mist">{course.blurb}</p>
+            <div className="mt-3">
+              <Meter value={progressFor(course)} label="Opening progress" />
+            </div>
+          </Panel>
+          {variations.map((variation) => {
+            const review = reviews.find((item) => item.id === reviewId(variation.id, course.side));
+            return (
+              <button
+                key={variation.id}
+                type="button"
+                className="rounded-xl border border-line bg-ink-2 p-3 text-left hover:border-brass"
+                onClick={() => setLineId(variation.id)}
+              >
+                <h3 className="text-lg">{variation.name}</h3>
+                <p className="mt-1 text-sm text-mist">{variation.moves.length} plies · {variation.eco}</p>
+                <div className="mt-2">
+                  <Meter value={reviewProgress(review)} label={review?.status ?? "new"} />
+                </div>
+              </button>
+            );
+          })}
+        </div>
       </div>
-      {tab === "train" && <Trainer />}
-      {tab === "explore" && <Explorer />}
-      {tab === "repertoire" && <RepertoireEditor />}
+    );
+  }
+
+  const visible = book.filter((row) => {
+    if (family !== "All" && row.family !== family) return false;
+    const hay = `${row.name} ${row.eco} ${row.family}`.toLowerCase();
+    return hay.includes(query.trim().toLowerCase());
+  });
+
+  return (
+    <div className="grid gap-6">
+      <Panel>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-2xl">Openings</h2>
+            <p className="mt-1 text-sm text-mist">The shelf starts with three white and three black courses. The full book stays in Explorer and in Add.</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant={tab === "shelf" ? "primary" : "quiet"} onClick={() => setTab("shelf")}>Shelf</Button>
+            <Button variant={tab === "explorer" ? "primary" : "quiet"} onClick={() => setTab("explorer")}>Explorer</Button>
+          </div>
+        </div>
+      </Panel>
+      {tab === "explorer" ? (
+        <Panel>
+          <div className="grid gap-3 md:grid-cols-[1fr_12rem_10rem]">
+            <TextInput value={query} placeholder="Search the book" onChange={(event) => setQuery(event.target.value)} />
+            <select className="h-11 rounded-lg border border-line bg-ink px-3 text-sm" value={family} onChange={(event) => setFamily(event.target.value)}>
+              {families.map((item) => <option key={item}>{item}</option>)}
+            </select>
+            <div className="flex gap-2">
+              <Button className="whitespace-nowrap" variant={trainSide === "w" ? "primary" : "quiet"} onClick={() => setTrainSide("w")}>As White</Button>
+              <Button className="whitespace-nowrap" variant={trainSide === "b" ? "primary" : "quiet"} onClick={() => setTrainSide("b")}>As Black</Button>
+            </div>
+          </div>
+          <p className="mt-3 text-sm text-mist">{visible.length} lines</p>
+          <div className="mt-3 grid gap-2 md:grid-cols-2">
+            {visible.map((row) => (
+              <button key={row.id} type="button" className="rounded-lg border border-line px-3 py-2 text-left hover:border-brass" onClick={() => openLine(row, trainSide)}>
+                <span className="text-xs text-mist">{row.eco} · {row.family}</span>
+                <span className="block">{row.name}</span>
+              </button>
+            ))}
+          </div>
+        </Panel>
+      ) : (
+        <>
+          {(["w", "b"] as Side[]).map((side) => (
+            <section key={side} className="grid gap-3">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl">{side === "w" ? "White" : "Black"}</h2>
+                <Button variant="quiet" onClick={() => setAdding(side)}>Add</Button>
+              </div>
+              <div className="flex gap-3 overflow-x-auto pb-2">
+                {shelf[side].map((id) => {
+                  const solo = id.startsWith("line:") ? book.find((row) => row.id === id.slice(5)) : undefined;
+                  const item = solo ? null : courseById(id);
+                  if (!item && !solo) return null;
+                  const title = item?.name ?? solo?.name ?? "";
+                  const blurb = item?.blurb ?? solo?.note ?? "";
+                  const pct = item
+                    ? progressFor(item)
+                    : reviewProgress(reviews.find((review) => review.id === reviewId(solo!.id, side)));
+                  return (
+                    <div key={id} className="w-72 shrink-0 rounded-xl border border-line bg-ink-2 p-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <Pill tone="brass">{item ? (item.tier === "legendary" ? "Legendary" : "S-tier") : "Line"}</Pill>
+                        <Button variant="ghost" className="h-8 px-2" onClick={() => setCarousel(side, shelf[side].filter((row) => row !== id))}>Remove</Button>
+                      </div>
+                      <button
+                        type="button"
+                        className="mt-3 w-full text-left"
+                        onClick={() => {
+                          setGhost(null);
+                          if (solo) openLine(solo, side);
+                          else setCourseId(id);
+                        }}
+                      >
+                        <h3 className="text-2xl">{title}</h3>
+                        <p className="mt-1 min-h-12 text-sm text-mist">{blurb}</p>
+                        <div className="mt-3">
+                          <Meter value={pct} label="Progress" />
+                        </div>
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          ))}
+          {adding && (
+            <Panel>
+              <h2 className="text-xl">Add to {adding === "w" ? "White" : "Black"}</h2>
+              <div className="mt-3 grid gap-2">
+                {COURSES.filter((item) => item.side === adding && !shelf[adding].includes(item.id)).map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className="rounded-lg border border-line px-3 py-2 text-left hover:border-brass"
+                    onClick={() => {
+                      setCarousel(adding, [...shelf[adding], item.id]);
+                      setAdding(null);
+                    }}
+                  >
+                    <span className="text-xs text-brass">{item.tier === "legendary" ? "Legendary" : "S-tier"}</span>
+                    <span className="block">{item.name}</span>
+                  </button>
+                ))}
+              </div>
+              <div className="mt-4 grid gap-2 md:grid-cols-[12rem_1fr]">
+                <select className="h-11 rounded-lg border border-line bg-ink px-3 text-sm" value={family} onChange={(event) => setFamily(event.target.value)}>
+                  {families.map((item) => <option key={item}>{item}</option>)}
+                </select>
+                <TextInput value={query} placeholder="Find any other line" onChange={(event) => setQuery(event.target.value)} />
+              </div>
+              <div className="mt-3 grid max-h-80 gap-2 overflow-auto">
+                {visible.filter((row) => !shelf[adding].includes(`line:${row.id}`)).slice(0, 40).map((row) => (
+                  <button
+                    key={row.id}
+                    type="button"
+                    className="rounded-lg border border-line px-3 py-2 text-left hover:border-brass"
+                    onClick={() => {
+                      setCarousel(adding, [...shelf[adding], `line:${row.id}`]);
+                      setAdding(null);
+                    }}
+                  >
+                    <span className="text-xs text-mist">{row.eco} · {row.family}</span>
+                    <span className="block">{row.name}</span>
+                  </button>
+                ))}
+              </div>
+              <Button className="mt-3" variant="quiet" onClick={() => setAdding(null)}>Close</Button>
+            </Panel>
+          )}
+        </>
+      )}
     </div>
   );
 }
 
-function Trainer() {
-  const repertoire = useOe((s) => s.repertoire);
-  const reviews = useOe((s) => s.reviews);
-  const custom = useOe((s) => s.openings);
+function VariationSession({ course, line, onExit }: { course: Course; line: OpeningLine; onExit: () => void }) {
   const settings = useOe((s) => s.settings);
   const gradeLine = useOe((s) => s.gradeLine);
   const noteSuccess = useOe((s) => s.noteSuccess);
-  const setLaunch = useOe((s) => s.setLaunch);
-  const [side, setSide] = useState<Side>("w");
-  const [blind, setBlind] = useState(false);
-  const [index, setIndex] = useState(0);
   const [ply, setPly] = useState(0);
-  const [mistakes, setMistakes] = useState(0);
-  const [hints, setHints] = useState(0);
-  const [started, setStarted] = useState(() => Date.now());
+  const [offBook, setOffBook] = useState(false);
+  const [extra, setExtra] = useState<string[]>([]);
   const [banner, setBanner] = useState("");
-  const [doneGrade, setDoneGrade] = useState<string | null>(null);
+  const [hints, setHints] = useState(0);
+  const [mistakes, setMistakes] = useState(0);
+  const [started] = useState(() => Date.now());
+  const [done, setDone] = useState(false);
+  const [thinking, setThinking] = useState(false);
+  const [hold, setHold] = useState(false);
   const graded = useRef(false);
-
-  const lines = useMemo(() => {
-    const pool = allOpenings(custom).filter((line) => repertoire[side].includes(line.id));
-    return pool
-      .map((line) => ({ line, review: reviews.find((row) => row.id === reviewId(line.id, side)) }))
-      .sort((a, b) => queueRank(a.review, Date.now()) - queueRank(b.review, Date.now()));
-  }, [custom, repertoire, reviews, side]);
-  const dueCount = lines.filter((row) => isDue(row.review, Date.now())).length;
-  const current = lines[index]?.line;
-  const prefix = current ? current.moves.slice(0, ply) : [];
+  const prefix = useMemo(
+    () => (offBook ? [...line.moves.slice(0, ply), ...extra] : line.moves.slice(0, ply)),
+    [offBook, line.moves, ply, extra],
+  );
   const position = useMemo(() => replay(START_FEN, prefix), [prefix]);
-  const studentTurn = current ? (ply % 2 === 0 ? "w" : "b") === side && ply < current.moves.length : false;
-  const expected = current && ply < current.moves.length ? current.moves[ply] : "";
+  const studentTurn = !done && position.chess.turn() === course.side && !thinking;
+  const expected = !offBook && ply < line.moves.length ? line.moves[ply] : "";
+  const sessionPct = line.moves.length ? Math.min(100, (Math.min(ply, line.moves.length) / line.moves.length) * 100) : 0;
 
   useEffect(() => {
-    setPly(0);
-    setMistakes(0);
-    setHints(0);
-    setStarted(Date.now());
-    setBanner("");
-    setDoneGrade(null);
-    graded.current = false;
-  }, [current?.id, side]);
-
-  useEffect(() => {
-    if (!current || doneGrade || graded.current) return;
-    if (ply >= current.moves.length) {
+    if (done || offBook || hold) return;
+    if (ply >= line.moves.length) {
+      if (graded.current) return;
       graded.current = true;
       const grade = gradeFromDrill({
         mistakes,
         hints,
         elapsedMs: Date.now() - started,
-        studentMoves: current.moves.filter((_, i) => (i % 2 === 0 ? "w" : "b") === side).length,
+        studentMoves: line.moves.filter((_, index) => (index % 2 === 0 ? "w" : "b") === course.side).length,
       });
-      gradeLine(current.id, side, grade, Date.now() - started);
+      gradeLine(line.id, course.side, grade, Date.now() - started);
       if (grade !== "fail") noteSuccess();
-      setDoneGrade(grade);
+      setDone(true);
+      setBanner(grade === "fail" ? "Logged as a miss. Retry the variation." : "Variation complete.");
       return;
     }
-    if (studentTurn) return;
-    const timer = window.setTimeout(() => setPly((value) => value + 1), 280);
+    if (position.chess.turn() === course.side) return;
+    const timer = window.setTimeout(() => setPly((value) => value + 1), 420);
     return () => window.clearTimeout(timer);
-  }, [current, ply, studentTurn, doneGrade, mistakes, hints, started, side, gradeLine, noteSuccess]);
+  }, [ply, offBook, done, hold, line, course.side, position.chess, mistakes, hints, started, gradeLine, noteSuccess]);
 
-  function resetLine() {
-    setPly(0);
-    setMistakes(0);
-    setHints(0);
-    setStarted(Date.now());
-    setBanner("");
-    setDoneGrade(null);
+  useEffect(() => {
+    if (!offBook || done || position.chess.turn() === course.side || position.chess.isGameOver()) return;
+    let cancel = false;
+    const engine = getEngine();
+    setThinking(true);
+    engine
+      .go({ fen: START_FEN, uciMoves: position.uci, movetime: 700, strength: "max" })
+      .then((best) => {
+        if (cancel || !best) return;
+        const next = replay(START_FEN, prefix);
+        const moved = next.chess.move({
+          from: best.slice(0, 2),
+          to: best.slice(2, 4),
+          promotion: (best[4] as "q" | "r" | "b" | "n" | undefined) || undefined,
+        });
+        if (moved) setExtra((rows) => [...rows, moved.san]);
+      })
+      .finally(() => {
+        if (!cancel) setThinking(false);
+      });
+    return () => {
+      cancel = true;
+      engine.stop();
+    };
+  }, [offBook, done, position.chess, position.uci, course.side, prefix]);
+
+  function undoLast() {
+    setDone(false);
     graded.current = false;
+    setBanner("Last move taken back.");
+    setHold(true);
+    if (offBook) {
+      if (extra.length <= 1) {
+        setOffBook(false);
+        setExtra([]);
+      } else {
+        setExtra((rows) => rows.slice(0, -1));
+      }
+      return;
+    }
+    setPly((value) => Math.max(0, value - 1));
   }
 
   function onMove(from: string, to: string, promotion?: string) {
-    if (!current || !studentTurn || doneGrade) return;
-    const next = replay(START_FEN, prefix);
+    if (!studentTurn) return;
+    setHold(false);
     let moved;
     try {
-      moved = next.chess.move({ from, to, promotion: promotion as "q" | "r" | "b" | "n" | undefined });
+      moved = position.chess.move({ from, to, promotion: promotion as "q" | "r" | "b" | "n" | undefined });
     } catch {
       return;
     }
-    const played = moved.san.replace(/[+#]/g, "");
-    const book = expected.replace(/[+#]/g, "");
-    if (played !== book) {
-      setMistakes((value) => value + 1);
-      setBanner(`The repertoire move is ${expected}.`);
+    if (!offBook) {
+      const played = moved.san.replace(/[+#]/g, "");
+      const book = expected.replace(/[+#]/g, "");
+      if (played !== book) {
+        setMistakes((value) => value + 1);
+        setOffBook(true);
+        setExtra([moved.san]);
+        setBanner(`That leaves the book. The variation move was ${expected}. Stockfish will answer.`);
+        return;
+      }
+      setBanner("");
+      setPly((value) => value + 1);
       return;
     }
-    setBanner("");
-    setPly((value) => value + 1);
+    setExtra((rows) => [...rows, moved.san]);
   }
 
   const hintSquares = useMemo(() => {
-    if (!hints || !expected || !current) return [];
+    if (!hints || !expected) return [] as string[];
     try {
-      const probe = replay(START_FEN, prefix);
+      const probe = replay(START_FEN, line.moves.slice(0, ply));
       const moved = probe.chess.move(expected);
       return moved ? [moved.from, moved.to] : [];
     } catch {
       return [];
     }
-  }, [hints, expected, current, prefix]);
+  }, [hints, expected, ply, line.moves]);
 
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
       <div className="flex flex-col items-center gap-3">
-        <div className="flex w-full max-w-xl flex-wrap items-center justify-between gap-2">
-          <div className="flex gap-2">
-            <Button variant={side === "w" ? "primary" : "quiet"} onClick={() => { setSide("w"); setIndex(0); }}>White</Button>
-            <Button variant={side === "b" ? "primary" : "quiet"} onClick={() => { setSide("b"); setIndex(0); }}>Black</Button>
-          </div>
-          <Button variant={blind ? "primary" : "quiet"} onClick={() => setBlind((value) => !value)}>
-            {blind ? "Blind drill on" : "Blind drill"}
-          </Button>
-        </div>
-        {current ? (
-          <Board
-            fen={position.chess.fen()}
-            orientation={side === "w" ? "white" : "black"}
-            interactive={studentTurn && !doneGrade}
-            coordinates={settings.coordinates}
-            theme={settings.boardTheme}
-            highlights={hints > 0 ? hintSquares : []}
-            arrows={hints > 1 && hintSquares.length === 2 ? [{ from: hintSquares[0], to: hintSquares[1] }] : []}
-            onMove={onMove}
-          />
-        ) : (
-          <Panel>Add lines to this repertoire first.</Panel>
-        )}
-        <div className="flex flex-wrap justify-center gap-2">
-          <Button variant="quiet" onClick={() => setHints((value) => value + 1)} disabled={!studentTurn}>Hint</Button>
-          <Button variant="quiet" onClick={resetLine}>Retry</Button>
-          <Button
-            variant="quiet"
-            onClick={() => current && setLaunch({ startFen: position.chess.fen(), sans: [], player: side })}
-          >
-            Play from here
-          </Button>
-        </div>
-        {banner && <p className="text-sm text-brass-2">{banner}</p>}
-      </div>
-      <Panel>
-        <p className="text-sm text-mist">{dueCount} due · {lines.length} in this repertoire</p>
-        {current && (
-          <>
-            <h2 className="mt-2 text-2xl">{current.name}</h2>
-            <p className="text-sm text-brass">{current.eco}</p>
-            {!blind && <p className="mt-3 text-sm text-mist">{current.note}</p>}
-            {!blind && (
-              <p className="mt-3 text-sm leading-6">
-                {current.moves.map((san, i) => (
-                  <span key={`${san}${i}`} className={i === ply ? "text-brass" : i < ply ? "text-ivory" : "text-mist"}>
-                    {i % 2 === 0 ? ` ${Math.floor(i / 2) + 1}.` : ""} {san}
-                  </span>
-                ))}
-              </p>
-            )}
-            {blind && <p className="mt-3 text-sm text-mist">The book move stays hidden until you miss or ask for a hint.</p>}
-            {doneGrade && (
-              <div className="mt-4 grid gap-2">
-                <Pill tone={doneGrade === "fail" ? "danger" : "ok"}>{doneGrade}</Pill>
-                <Button onClick={() => setIndex((value) => (value + 1) % Math.max(1, lines.length))}>Next line</Button>
-              </div>
-            )}
-          </>
-        )}
-      </Panel>
-    </div>
-  );
-}
-
-function Explorer() {
-  const custom = useOe((s) => s.openings);
-  const favorites = useOe((s) => s.favorites);
-  const extraTags = useOe((s) => s.extraTags);
-  const settings = useOe((s) => s.settings);
-  const toggleFavorite = useOe((s) => s.toggleFavorite);
-  const saveOpening = useOe((s) => s.saveOpening);
-  const repertoire = useOe((s) => s.repertoire);
-  const setRepertoire = useOe((s) => s.setRepertoire);
-  const [query, setQuery] = useState("");
-  const [family, setFamily] = useState("All");
-  const [picked, setPicked] = useState<string | null>(null);
-  const [ply, setPly] = useState(0);
-  const [draft, setDraft] = useState({ name: "", eco: "A00", moves: "", note: "", tags: "" });
-  const [formError, setFormError] = useState("");
-  const lines = allOpenings(custom);
-  const families = ["All", ...Array.from(new Set(lines.map((line) => line.family)))];
-  const filtered = lines.filter((line) => {
-    const tags = [...line.tags, ...(extraTags.map[line.id] ?? [])].join(" ");
-    const blob = `${line.name} ${line.eco} ${line.moves.join(" ")} ${tags}`.toLowerCase();
-    if (family !== "All" && line.family !== family) return false;
-    return blob.includes(query.trim().toLowerCase());
-  });
-  const current = lines.find((line) => line.id === picked) ?? filtered[0];
-  const prefix = current?.moves.slice(0, ply) ?? [];
-  const position = useMemo(() => replay(START_FEN, prefix), [prefix]);
-  const nextMoves = new Map<string, OpeningLine[]>();
-  for (const line of filtered) {
-    if (!prefix.every((san, index) => line.moves[index] === san)) continue;
-    const san = line.moves[prefix.length];
-    if (!san) continue;
-    nextMoves.set(san, [...(nextMoves.get(san) ?? []), line]);
-  }
-
-  function createLine() {
-    const parsed = draft.moves.trim().split(/\s+/).filter(Boolean);
-    try {
-      replay(START_FEN, parsed);
-    } catch (error) {
-      setFormError(error instanceof Error ? error.message : "Illegal moves");
-      return;
-    }
-    if (!draft.name.trim() || parsed.length < 1) {
-      setFormError("Name the line and give at least one move.");
-      return;
-    }
-    const line: OpeningLine = {
-      id: `user-${crypto.randomUUID().slice(0, 8)}`,
-      eco: draft.eco || "A00",
-      name: draft.name.trim(),
-      family: "Custom",
-      popularity: 50,
-      tags: draft.tags.split(",").map((tag) => tag.trim()).filter(Boolean),
-      note: draft.note.trim(),
-      moves: parsed,
-      source: "user",
-      updatedAt: Date.now(),
-    };
-    saveOpening(line);
-    setRepertoire("w", [...repertoire.w, line.id]);
-    setFormError("");
-    setPicked(line.id);
-    setDraft({ name: "", eco: "A00", moves: "", note: "", tags: "" });
-  }
-
-  return (
-    <div className="grid gap-4 xl:grid-cols-[16rem_minmax(0,1fr)_18rem]">
-      <Panel className="max-h-[70vh] overflow-auto">
-        <TextInput value={query} placeholder="Search name, ECO, moves" onChange={(event) => setQuery(event.target.value)} />
-        <div className="mt-3 flex flex-col gap-1">
-          {families.map((item) => (
-            <button key={item} type="button" className={`rounded-lg px-3 py-2 text-left text-sm ${family === item ? "bg-brass text-ink" : "hover:bg-panel"}`} onClick={() => setFamily(item)}>
-              {item}
-            </button>
-          ))}
-        </div>
-      </Panel>
-      <div className="flex flex-col items-center gap-3">
         <Board
           fen={position.chess.fen()}
+          orientation={course.side === "w" ? "white" : "black"}
+          interactive={studentTurn}
           coordinates={settings.coordinates}
           theme={settings.boardTheme}
-          interactive={false}
+          pieceSet={settings.pieceSet ?? "standard"}
+          highlights={hintSquares}
+          arrows={hints > 1 && hintSquares.length === 2 ? [{ from: hintSquares[0]!, to: hintSquares[1]! }] : []}
+          onMove={onMove}
         />
         <div className="flex flex-wrap justify-center gap-2">
-          <Button variant="quiet" onClick={() => setPly(0)}>Start</Button>
-          <Button variant="quiet" onClick={() => setPly((value) => Math.max(0, value - 1))}>Back</Button>
+          <Button variant="quiet" onClick={onExit}>Back</Button>
+          <Button variant="quiet" disabled={!studentTurn || offBook} onClick={() => setHints((value) => value + 1)}>Hint</Button>
+          <Button variant="quiet" disabled={ply === 0 && extra.length === 0} onClick={undoLast}>Undo</Button>
+          <Button
+            variant="quiet"
+            onClick={() => {
+              graded.current = false;
+              setPly(0);
+              setOffBook(false);
+              setExtra([]);
+              setHints(0);
+              setMistakes(0);
+              setDone(false);
+              setHold(false);
+              setBanner("");
+            }}
+          >
+            Retry
+          </Button>
         </div>
-        <div className="flex flex-wrap justify-center gap-2">
-          {[...nextMoves.entries()].map(([san, group]) => (
-            <Button key={san} variant="quiet" onClick={() => { setPly((value) => value + 1); setPicked(group[0].id); }}>
-              {san} · {group.length}
-            </Button>
-          ))}
+        <p className="text-sm text-mist">
+          {thinking ? "Stockfish is answering." : studentTurn ? "Your move in the variation." : offBook ? "Stockfish to move." : "Book reply."}
+        </p>
+      </div>
+      <Panel>
+        <p className="text-sm text-brass">{course.name}</p>
+        <h2 className="text-2xl">{line.name}</h2>
+        <p className="mt-2 text-sm text-mist">{line.note}</p>
+        <div className="mt-3">
+          <Meter value={done ? 100 : sessionPct} label="This variation" />
         </div>
-      </div>
-      <div className="grid gap-3">
-        <Panel className="max-h-72 overflow-auto">
-          {filtered.slice(0, 40).map((line) => (
-            <button key={line.id} type="button" className="block w-full rounded-lg px-2 py-2 text-left hover:bg-panel" onClick={() => { setPicked(line.id); setPly(0); }}>
-              <span className="text-xs text-brass">{line.eco}</span>
-              <span className="block text-sm">{line.name}</span>
-            </button>
+        <p className="mt-3 h-48 overflow-auto text-sm leading-6">
+          {line.moves.map((san, index) => (
+            <span key={`${san}${index}`} className={index < ply ? "text-ivory" : index === ply && !offBook ? "text-brass" : "text-mist"}>
+              {index % 2 === 0 ? ` ${Math.floor(index / 2) + 1}.` : ""} {san}
+            </span>
           ))}
-        </Panel>
-        {current && (
-          <Panel>
-            <div className="flex items-start justify-between gap-2">
-              <h2 className="text-xl">{current.name}</h2>
-              <Button variant="ghost" onClick={() => toggleFavorite(current.id)}>{favorites.ids.includes(current.id) ? "Starred" : "Star"}</Button>
-            </div>
-            <p className="mt-2 text-sm text-mist">{current.note}</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Button variant="quiet" onClick={() => setRepertoire("w", repertoire.w.includes(current.id) ? repertoire.w.filter((id) => id !== current.id) : [...repertoire.w, current.id])}>
-                {repertoire.w.includes(current.id) ? "In White" : "Add White"}
-              </Button>
-              <Button variant="quiet" onClick={() => setRepertoire("b", repertoire.b.includes(current.id) ? repertoire.b.filter((id) => id !== current.id) : [...repertoire.b, current.id])}>
-                {repertoire.b.includes(current.id) ? "In Black" : "Add Black"}
-              </Button>
-            </div>
-            <div className="mt-3 flex flex-wrap gap-1">
-              {current.tags.map((tag) => <Pill key={tag}>{tag}</Pill>)}
-            </div>
-          </Panel>
-        )}
-        <Panel>
-          <h2 className="mb-2 text-lg">Custom line</h2>
-          <div className="grid gap-2">
-            <TextInput placeholder="Name" value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} />
-            <TextInput placeholder="ECO" value={draft.eco} onChange={(event) => setDraft({ ...draft, eco: event.target.value })} />
-            <TextInput placeholder="Moves, e.g. e4 c5 Nf3" value={draft.moves} onChange={(event) => setDraft({ ...draft, moves: event.target.value })} />
-            <TextInput placeholder="Note" value={draft.note} onChange={(event) => setDraft({ ...draft, note: event.target.value })} />
-            <TextInput placeholder="Tags, comma separated" value={draft.tags} onChange={(event) => setDraft({ ...draft, tags: event.target.value })} />
-            {formError && <p className="text-sm text-danger">{formError}</p>}
-            <Button onClick={createLine}>Save line</Button>
-          </div>
-        </Panel>
-      </div>
+        </p>
+        {banner && <p className="mt-3 text-sm text-brass-2">{banner}</p>}
+      </Panel>
     </div>
-  );
-}
-
-function RepertoireEditor() {
-  const custom = useOe((s) => s.openings);
-  const repertoire = useOe((s) => s.repertoire);
-  const setRepertoire = useOe((s) => s.setRepertoire);
-  const deleteOpening = useOe((s) => s.deleteOpening);
-  const [side, setSide] = useState<Side>("w");
-  const [query, setQuery] = useState("");
-  const lines = allOpenings(custom).filter((line) => `${line.name} ${line.eco}`.toLowerCase().includes(query.toLowerCase()));
-  const selected = new Set(repertoire[side]);
-  return (
-    <Panel>
-      <div className="mb-3 flex flex-wrap gap-2">
-        <Button variant={side === "w" ? "primary" : "quiet"} onClick={() => setSide("w")}>White</Button>
-        <Button variant={side === "b" ? "primary" : "quiet"} onClick={() => setSide("b")}>Black</Button>
-        <TextInput className="max-w-xs" placeholder="Filter" value={query} onChange={(event) => setQuery(event.target.value)} />
-      </div>
-      <ul className="grid gap-1 md:grid-cols-2">
-        {lines.map((line) => (
-          <li key={line.id} className="flex items-center justify-between gap-2 rounded-lg px-2 py-1 hover:bg-panel">
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={selected.has(line.id)}
-                onChange={() => {
-                  const next = selected.has(line.id) ? repertoire[side].filter((id) => id !== line.id) : [...repertoire[side], line.id];
-                  setRepertoire(side, next);
-                }}
-              />
-              <span>{line.eco} {line.name}</span>
-            </label>
-            {line.source === "user" && (
-              <Button variant="ghost" onClick={() => deleteOpening(line.id)}>Delete</Button>
-            )}
-          </li>
-        ))}
-      </ul>
-    </Panel>
   );
 }
 
 export function importOpeningsFromPgn(text: string) {
   const saveOpening = useOe.getState().saveOpening;
-  const games = splitPgnGames(text);
   let count = 0;
-  for (const chunk of games) {
+  for (const chunk of splitPgnGames(text)) {
     const parsed = parsePgn(chunk);
     if (!parsed.ok || parsed.sans.length === 0) continue;
     saveOpening({

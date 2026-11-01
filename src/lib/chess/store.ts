@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { ENDGAMES } from "@/lib/data/endgames";
+import { EXTRA_OPENINGS } from "@/lib/data/extra-openings";
 import { OPENINGS } from "@/lib/data/openings";
+import { DEFAULT_CAROUSEL } from "./courses";
 import { loadSnapshot, saveSnapshot, type LocalSnapshot } from "./db";
 import { logDiag } from "./diag";
 import { downloadSyncFile, findSyncFile, requestGoogleToken, uploadSyncFile } from "./google-drive";
@@ -48,6 +50,8 @@ const BLACK_STARTERS = [
   "Grunfeld Defense",
 ];
 
+const GOOGLE_CLIENT_ID = "363429370732-ojtbmms9c0grpepguv6on4us3upcd86o.apps.googleusercontent.com";
+
 export function defaultSettings(now = Date.now()): Settings {
   return {
     id: "main",
@@ -60,7 +64,8 @@ export function defaultSettings(now = Date.now()): Settings {
     playThinkMs: 900,
     endgameThinkMs: 1600,
     analysisDepth: 14,
-    googleClientId: "",
+    googleClientId: GOOGLE_CLIENT_ID,
+    pieceSet: "standard",
   };
 }
 
@@ -124,6 +129,7 @@ export type OeState = {
   toggleFavorite: (id: string) => void;
   setExtraTags: (id: string, tags: string[]) => void;
   setRepertoire: (side: Side, ids: string[]) => void;
+  setCarousel: (side: Side, ids: string[]) => void;
   gradeLine: (lineId: string, side: Side, grade: Grade, elapsedMs: number) => void;
   saveAttempt: (attempt: EndgameAttempt) => void;
   saveEndgame: (pos: EndgamePos) => void;
@@ -306,6 +312,17 @@ export const useOe = create<OeState>((set, get) => ({
     const state = get();
     const repertoire = { ...state.repertoire, [side]: ids, updatedAt: Date.now() };
     set({ repertoire, ...touchSync(state, "repertoire", `Updated ${side === "w" ? "White" : "Black"} repertoire`) });
+    schedulePersist();
+  },
+  setCarousel: (side, ids) => {
+    const state = get();
+    const carousel = {
+      w: state.repertoire.carousel?.w ?? DEFAULT_CAROUSEL.w,
+      b: state.repertoire.carousel?.b ?? DEFAULT_CAROUSEL.b,
+      [side]: ids,
+    };
+    const repertoire = { ...state.repertoire, carousel, updatedAt: Date.now() };
+    set({ repertoire, ...touchSync(state, "repertoire", `Updated the ${side === "w" ? "White" : "Black"} shelf`) });
     schedulePersist();
   },
   gradeLine: (lineId, side, grade, elapsedMs) => {
@@ -531,10 +548,16 @@ export function bootStore(): Promise<void> {
       try {
         const snap = await loadSnapshot();
         const base = useOe.getState();
+        const loaded = snap.settings ?? base.settings;
         useOe.setState({
           booted: true,
           profile: snap.profile ?? base.profile,
-          settings: snap.settings ?? base.settings,
+          settings: {
+            ...base.settings,
+            ...loaded,
+            googleClientId: loaded.googleClientId?.trim() || GOOGLE_CLIENT_ID,
+            pieceSet: loaded.pieceSet === "diagram" ? "diagram" : "standard",
+          },
           games: snap.games.length ? snap.games : base.games,
           openings: snap.openings,
           reviews: snap.reviews,
@@ -561,7 +584,13 @@ export function bootStore(): Promise<void> {
 }
 
 export function allOpenings(custom: OpeningLine[]): OpeningLine[] {
-  return [...custom.filter((line) => !line.deleted), ...OPENINGS];
+  const seen = new Set<string>();
+  const rows = [...custom.filter((line) => !line.deleted), ...EXTRA_OPENINGS, ...OPENINGS];
+  return rows.filter((line) => {
+    if (seen.has(line.id)) return false;
+    seen.add(line.id);
+    return true;
+  });
 }
 
 export function allEndgames(custom: EndgamePos[]): EndgamePos[] {

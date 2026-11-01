@@ -1,11 +1,37 @@
+import { Chess, type Square } from "chess.js";
 import { assetUrl } from "./asset-url";
 import { logDiag } from "./diag";
 import type { EngineInfo } from "./types";
 import { parseBestmove, parseInfo } from "./uci";
 
-type Waiter = { resolve: (line: string) => void; reject: (error: Error) => void; onInfo?: (info: EngineInfo) => void };
+type Waiter = {
+  id: number;
+  resolve: (line: string) => void;
+  reject: (error: Error) => void;
+  onInfo?: (info: EngineInfo) => void;
+};
 
 const ENGINE_JS = "/engines/stockfish-19-lite-single.js";
+
+let singleton: EngineClient | null = null;
+
+function opponentInCheck(fen: string) {
+  try {
+    const chess = new Chess(fen);
+    const turn = chess.turn();
+    const other = turn === "w" ? "b" : "w";
+    let king: Square | null = null;
+    for (const row of chess.board()) {
+      for (const piece of row) {
+        if (piece?.type === "k" && piece.color === other) king = piece.square;
+      }
+    }
+    if (!king) return true;
+    return chess.isAttacked(king, turn);
+  } catch {
+    return true;
+  }
+}
 
 export class EngineClient {
   private worker: Worker | null = null;
@@ -15,6 +41,8 @@ export class EngineClient {
   private failed: Error | null = null;
   readonly ready: Promise<void>;
   private strengthKey = "";
+  private seq = 0;
+  private tail: Promise<void> = Promise.resolve();
 
   constructor() {
     this.ready = this.boot();
@@ -33,9 +61,8 @@ export class EngineClient {
       }
       this.worker.onmessage = (event) => this.onMessage(event.data);
       this.worker.onerror = () => {
-        const err = new Error("Stockfish failed to load. The engine file may be blocked.");
-        this.failed = err;
-        logDiag("error", err.message);
+        const err = new Error("Stockfish stopped. It will load again for the next move.");
+        this.fail(err);
         reject(err);
       };
       const timer = setTimeout(() => {
@@ -67,6 +94,12 @@ export class EngineClient {
       if (!line) continue;
       if (line === "uciok") this.uciok?.();
       if (line === "readyok") this.readyok?.();
+      if (line.includes("CRITICAL ERROR")) {
+        this.fail(new Error("Stockfish rejected that position."));
+        this.worker?.terminate();
+        this.worker = null;
+        continue;
+      }
       if (line.startsWith("info ") && this.waiter?.onInfo) {
         const info = parseInfo(line);
         if (info && info.depth > 0) this.waiter.onInfo(info);
@@ -120,38 +153,51 @@ export class EngineClient {
     strength: number | "max";
     onInfo?: (info: EngineInfo) => void;
   }): Promise<string | null> {
+    const id = ++this.seq;
+    if (this.waiter) this.send("stop");
+    const run = this.tail.then(() => this.search(id, options));
+    this.tail = run.then(
+      () => undefined,
+      () => undefined,
+    );
+    return run;
+  }
+
+  private async search(
+    id: number,
+    options: {
+      fen: string;
+      uciMoves?: string[];
+      movetime?: number;
+      depth?: number;
+      strength: number | "max";
+      onInfo?: (info: EngineInfo) => void;
+    },
+  ): Promise<string | null> {
     await this.ready;
     if (this.failed) throw this.failed;
-    await this.setStrength(options.strength);
+    if (opponentInCheck(options.fen)) return null;
+    if (id !== this.seq) return null;
     if (this.waiter) {
       this.send("stop");
-      try {
-        await Promise.race([
-          new Promise((resolve) => {
-            const prev = this.waiter;
-            if (!prev) return resolve(null);
-            const orig = prev.resolve;
-            prev.resolve = (line) => {
-              orig(line);
-              resolve(line);
-            };
-          }),
-          new Promise((resolve) => setTimeout(resolve, 400)),
-        ]);
-      } catch {
-        /* the stopped search can resolve late */
-      }
+      await this.waitBest(800);
       this.waiter = null;
     }
+    if (id !== this.seq) return null;
+    await this.setStrength(options.strength);
+    if (id !== this.seq) return null;
     const moves = options.uciMoves?.length ? ` moves ${options.uciMoves.join(" ")}` : "";
     this.send(`position fen ${options.fen}${moves}`);
     const line = await new Promise<string>((resolve, reject) => {
       const timer = setTimeout(() => {
-        this.waiter = null;
+        if (this.waiter?.id === id) this.waiter = null;
         reject(new Error("Stockfish search timed out"));
       }, Math.max(8000, (options.movetime ?? 2000) + 6000));
       this.waiter = {
-        onInfo: options.onInfo,
+        id,
+        onInfo: (info) => {
+          if (id === this.seq) options.onInfo?.(info);
+        },
         resolve: (value) => {
           clearTimeout(timer);
           resolve(value);
@@ -166,10 +212,44 @@ export class EngineClient {
       if (options.movetime) go.push("movetime", String(options.movetime));
       this.send(go.join(" "));
     });
-    return parseBestmove(line)?.move ?? null;
+    if (id !== this.seq) return null;
+    const move = parseBestmove(line)?.move ?? null;
+    if (!move || move === "0000" || move === "(none)") return null;
+    return move;
+  }
+
+  private waitBest(ms: number) {
+    return new Promise<void>((resolve) => {
+      const waiter = this.waiter;
+      if (!waiter) {
+        resolve();
+        return;
+      }
+      const timer = setTimeout(resolve, ms);
+      const orig = waiter.resolve;
+      waiter.resolve = (line) => {
+        clearTimeout(timer);
+        orig(line);
+        resolve();
+      };
+    });
+  }
+
+  isFailed() {
+    return this.failed != null;
+  }
+
+  private fail(err: Error) {
+    this.failed = err;
+    logDiag("error", err.message);
+    const waiter = this.waiter;
+    this.waiter = null;
+    waiter?.reject(err);
+    if (singleton === this) singleton = null;
   }
 
   stop() {
+    this.seq += 1;
     if (this.waiter) this.send("stop");
   }
 
@@ -180,9 +260,10 @@ export class EngineClient {
   }
 }
 
-let singleton: EngineClient | null = null;
-
 export function getEngine(): EngineClient {
-  if (!singleton) singleton = new EngineClient();
+  if (!singleton || singleton.isFailed()) {
+    singleton?.destroy();
+    singleton = new EngineClient();
+  }
   return singleton;
 }

@@ -60,6 +60,23 @@ export function TextInput(props: InputHTMLAttributes<HTMLInputElement>) {
   );
 }
 
+export function Meter({ value, label }: { value: number; label?: string }) {
+  const pct = Math.max(0, Math.min(100, Math.round(value)));
+  return (
+    <div>
+      {label && (
+        <div className="mb-1 flex justify-between text-xs text-mist">
+          <span>{label}</span>
+          <span className="tabular-nums">{pct}%</span>
+        </div>
+      )}
+      <div className="h-2 overflow-hidden rounded-full bg-panel" role="meter" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
+        <div className="h-full bg-brass" style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
+}
+
 export function Pill({ children, tone = "mist" }: { children: ReactNode; tone?: "mist" | "brass" | "ok" | "danger" }) {
   const look = {
     mist: "bg-panel text-mist",

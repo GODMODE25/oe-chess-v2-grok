@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="OE Chess">
-  <rect width="32" height="32" rx="6" fill="#141611"/>
-  <rect x="5" y="5" width="22" height="22" rx="2" fill="#6E5340"/>
-  <rect x="14" y="8" width="4" height="16" rx="0.4" fill="#C9923A"/>
-  <rect x="9" y="11.5" width="14" height="3.5" rx="0.4" fill="#C9923A"/>
+  <rect width="32" height="32" rx="7" fill="#141611"/>
+  <path fill="#E4B56A" d="M14.2 5.2h3.6V7.6h2.6v3.4h-2.6v1.2c2.6.7 4.2 2.6 4.2 5.4v1.4H10v-1.4c0-2.8 1.6-4.7 4.2-5.4V11H11.6V7.6h2.6z"/>
+  <rect x="9" y="21.6" width="14" height="2.2" rx="0.6" fill="#C9923A"/>
+  <rect x="7.6" y="24.2" width="16.8" height="2.8" rx="0.8" fill="#E4B56A"/>
 </svg>

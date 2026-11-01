@@ -7,9 +7,27 @@ import { playTone } from "@/lib/chess/sound";
 import { allEndgames, useOe } from "@/lib/chess/store";
 import type { Difficulty, EndgameAttempt, EndgamePos, Side } from "@/lib/chess/types";
 import { Board } from "./Board";
-import { Button, Field, Panel, Pill, TextInput } from "./ui";
+import { Button, Field, Meter, Panel, Pill, TextInput } from "./ui";
 
 const DIFFICULTIES: Array<Difficulty | "all"> = ["all", "beginner", "intermediate", "advanced", "expert"];
+const PIECES = ["all", "basic", "pawn", "knight", "bishop", "rook", "queen", "mixed"];
+
+function MenuSelect({ label, value, options, onChange }: { label: string; value: string; options: { value: string; label: string }[]; onChange: (value: string) => void }) {
+  return (
+    <label className="grid gap-1 text-xs text-mist">
+      {label}
+      <select
+        className="h-11 rounded-lg border border-line bg-ink px-3 text-sm text-ivory outline-none"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>{option.label}</option>
+        ))}
+      </select>
+    </label>
+  );
+}
 
 export function EndgamesView() {
   const custom = useOe((s) => s.endgames);
@@ -94,12 +112,20 @@ export function EndgamesView() {
     setDraftTitle("");
   }
 
+  const solvedCount = positions.filter((pos) => (stats.get(pos.id)?.wins ?? 0) > 0).length;
+
   return (
     <div className="grid gap-4">
       {active ? (
         <Trainer
+          key={active.id}
           pos={active}
           onExit={() => setActiveId(null)}
+          onNext={() => {
+            const index = filtered.findIndex((pos) => pos.id === active.id);
+            const next = filtered[index + 1] ?? filtered[0];
+            if (next) setActiveId(next.id);
+          }}
           onSave={(attempt) => {
             saveAttempt(attempt);
             if (attempt.success) noteSuccess();
@@ -107,34 +133,40 @@ export function EndgamesView() {
         />
       ) : (
         <>
-          <div className="flex flex-wrap gap-2">
-            <Button onClick={randomOne}>Random</Button>
-            <Button variant="quiet" onClick={weakOne}>Train weak</Button>
-            {DIFFICULTIES.map((item) => (
-              <Button key={item} variant={difficulty === item ? "primary" : "quiet"} onClick={() => setDifficulty(item)}>
-                {item}
-              </Button>
-            ))}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {["all", "basic", "pawn", "knight", "bishop", "rook", "queen", "mixed"].map((item) => (
-              <Button key={item} variant={piece === item ? "primary" : "ghost"} onClick={() => setPiece(item)}>{item}</Button>
-            ))}
-            <Button variant={side === "all" ? "primary" : "ghost"} onClick={() => setSide("all")}>Either side</Button>
-            <Button variant={side === "w" ? "primary" : "ghost"} onClick={() => setSide("w")}>White</Button>
-            <Button variant={side === "b" ? "primary" : "ghost"} onClick={() => setSide("b")}>Black</Button>
-            {["all", "new", "solved", "failed"].map((item) => (
-              <Button key={item} variant={status === item ? "primary" : "ghost"} onClick={() => setStatus(item)}>{item}</Button>
-            ))}
-          </div>
-          <div className="flex gap-2 overflow-auto">
-            {categories.map((item) => (
-              <Button key={item} variant={category === item ? "primary" : "quiet"} onClick={() => setCategory(item)}>{item}</Button>
-            ))}
-          </div>
-          <p className="text-sm text-mist">{filtered.length} positions. Tablebases are not installed — Stockfish judges the defense.</p>
+          <Panel>
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <h2 className="text-2xl">Endgames</h2>
+                <p className="mt-1 text-sm text-mist">{filtered.length} of {positions.length} positions</p>
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={randomOne}>Random</Button>
+                <Button variant="quiet" onClick={weakOne}>Train weak</Button>
+              </div>
+            </div>
+            <div className="mt-3">
+              <Meter value={positions.length ? (solvedCount / positions.length) * 100 : 0} label="Solved" />
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+              <MenuSelect label="Category" value={category} onChange={setCategory} options={categories.map((item) => ({ value: item, label: item }))} />
+              <MenuSelect label="Difficulty" value={difficulty} onChange={(value) => setDifficulty(value as Difficulty | "all")} options={DIFFICULTIES.map((item) => ({ value: item, label: item[0].toUpperCase() + item.slice(1) }))} />
+              <MenuSelect label="Pieces" value={piece} onChange={setPiece} options={PIECES.map((item) => ({ value: item, label: item[0].toUpperCase() + item.slice(1) }))} />
+              <MenuSelect
+                label="Your side"
+                value={side}
+                onChange={(value) => setSide(value as "all" | Side)}
+                options={[{ value: "all", label: "Either" }, { value: "w", label: "White" }, { value: "b", label: "Black" }]}
+              />
+              <MenuSelect
+                label="Progress"
+                value={status}
+                onChange={setStatus}
+                options={[{ value: "all", label: "All" }, { value: "new", label: "New" }, { value: "solved", label: "Solved" }, { value: "failed", label: "Failed" }]}
+              />
+            </div>
+          </Panel>
           <div className="grid gap-2 md:grid-cols-2">
-            {filtered.slice(0, 60).map((pos) => {
+            {filtered.map((pos) => {
               const row = stats.get(pos.id);
               return (
                 <button key={pos.id} type="button" className="rounded-xl border border-line bg-ink-2 p-3 text-left hover:border-brass" onClick={() => setActiveId(pos.id)}>
@@ -162,7 +194,7 @@ export function EndgamesView() {
   );
 }
 
-function Trainer({ pos, onExit, onSave }: { pos: EndgamePos; onExit: () => void; onSave: (attempt: EndgameAttempt) => void }) {
+function Trainer({ pos, onExit, onNext, onSave }: { pos: EndgamePos; onExit: () => void; onNext: () => void; onSave: (attempt: EndgameAttempt) => void }) {
   const settings = useOe((s) => s.settings);
   const [sans, setSans] = useState<string[]>([]);
   const [hints, setHints] = useState(0);
@@ -172,10 +204,21 @@ function Trainer({ pos, onExit, onSave }: { pos: EndgamePos; onExit: () => void;
   const [settled, setSettled] = useState(false);
   const [note, setNote] = useState("");
   const [thinking, setThinking] = useState(false);
+  const [seats, setSeats] = useState<Record<Side, "you" | "stockfish">>({
+    w: pos.userSide === "w" ? "you" : "stockfish",
+    b: pos.userSide === "b" ? "you" : "stockfish",
+  });
+  const [engineError, setEngineError] = useState("");
+  const [engineNonce, setEngineNonce] = useState(0);
+  const [premove, setPremove] = useState<{ from: string; to: string; promotion?: string } | null>(null);
   const saved = useRef(false);
+  const tries = useRef(0);
   const played = useMemo(() => replay(pos.fen, sans), [pos.fen, sans]);
+  const uciKey = played.uci.join(" ");
   const judgement = judgeEndgame(played.chess, pos);
-  const engineTurn = !settled && judgement.state === "playing" && played.chess.turn() !== pos.userSide;
+  const turn = played.chess.turn();
+  const engineTurn = !settled && judgement.state === "playing" && seats[turn] === "stockfish";
+  const humans = (["w", "b"] as Side[]).filter((side) => seats[side] === "you");
   const last = played.chess.history({ verbose: true }).at(-1);
 
   useEffect(() => {
@@ -198,21 +241,47 @@ function Trainer({ pos, onExit, onSave }: { pos: EndgamePos; onExit: () => void;
   }, [judgement.state, judgement.reason, judgement.userMoves, settled, attemptId, hints, onSave, pos.id, started]);
 
   useEffect(() => {
+    tries.current = 0;
+  }, [pos.id, sans.length]);
+
+  useEffect(() => {
     if (!engineTurn) return;
     let cancel = false;
     const engine = getEngine();
     setThinking(true);
+    const movetime = settings.endgameMaximum ? settings.endgameThinkMs : settings.playThinkMs;
     engine
       .go({
         fen: pos.fen,
-        uciMoves: played.uci,
-        movetime: settings.endgameMaximum ? settings.endgameThinkMs : settings.playThinkMs,
+        uciMoves: uciKey ? uciKey.split(" ") : [],
+        movetime,
         strength: settings.endgameMaximum ? "max" : settings.playStrength,
       })
       .then((best) => {
-        if (cancel || !best) return;
-        setSans((current) => applyUciMove(pos.fen, current, best) ?? current);
+        if (cancel) return;
+        const next = best ? applyUciMove(pos.fen, sans, best) : null;
+        if (!next) {
+          if (tries.current < 2) {
+            tries.current += 1;
+            setEngineNonce((value) => value + 1);
+            return;
+          }
+          setEngineError(best ? "Stockfish returned a move this position rejects." : "Stockfish did not answer.");
+          return;
+        }
+        tries.current = 0;
+        setEngineError("");
+        setSans(next);
         playTone("move");
+      })
+      .catch((error: unknown) => {
+        if (cancel) return;
+        if (tries.current < 2) {
+          tries.current += 1;
+          setEngineNonce((value) => value + 1);
+          return;
+        }
+        setEngineError(error instanceof Error ? error.message : "Engine error");
       })
       .finally(() => {
         if (!cancel) setThinking(false);
@@ -221,19 +290,37 @@ function Trainer({ pos, onExit, onSave }: { pos: EndgamePos; onExit: () => void;
       cancel = true;
       engine.stop();
     };
-  }, [engineTurn, pos.fen, played.uci, settings.endgameMaximum, settings.endgameThinkMs, settings.playStrength, settings.playThinkMs]);
+  }, [engineTurn, pos.fen, uciKey, sans, engineNonce, settings.endgameMaximum, settings.endgameThinkMs, settings.playStrength, settings.playThinkMs]);
 
-  function onMove(from: string, to: string, promotion?: string) {
-    if (engineTurn || settled || thinking) return;
+  function playMove(from: string, to: string, promotion?: string) {
     try {
       const moved = played.chess.move({ from, to, promotion: promotion as "q" | "r" | "b" | "n" | undefined });
       setSans((rows) => [...rows, moved.san]);
       setArrow([]);
+      setPremove(null);
       playTone(moved.captured ? "capture" : "move");
+      return true;
     } catch {
-      /* illegal */
+      return false;
     }
   }
+
+  function onMove(from: string, to: string, promotion?: string) {
+    if (settled) return;
+    const piece = played.chess.get(from as "a1");
+    if (!piece || seats[piece.color] !== "you") return;
+    if (thinking || piece.color !== turn) {
+      setPremove({ from, to, promotion });
+      return;
+    }
+    playMove(from, to, promotion);
+  }
+
+  useEffect(() => {
+    if (!premove || settled || thinking || seats[turn] !== "you" || judgement.state !== "playing") return;
+    if (!playMove(premove.from, premove.to, premove.promotion)) setPremove(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [premove, turn, thinking, settled, sans]);
 
   async function hint() {
     const engine = getEngine();
@@ -256,15 +343,19 @@ function Trainer({ pos, onExit, onSave }: { pos: EndgamePos; onExit: () => void;
   }
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
+    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]" data-fen={played.chess.fen()}>
       <div className="flex flex-col items-center gap-3">
         <Board
           fen={played.chess.fen()}
-          orientation={pos.userSide === "w" ? "white" : "black"}
-          interactive={!engineTurn && !settled && !thinking}
+          orientation={seats.b === "you" && seats.w !== "you" ? "black" : "white"}
+          interactive={!settled && humans.length > 0}
+          humanColors={humans}
+          onPremove={(from, to, promotion) => setPremove({ from, to, promotion })}
           coordinates={settings.coordinates}
           theme={settings.boardTheme}
+          pieceSet={settings.pieceSet ?? "standard"}
           lastMove={last ? { from: last.from, to: last.to } : null}
+          highlights={premove ? [premove.from, premove.to] : []}
           arrows={arrow}
           onMove={onMove}
         />
@@ -274,9 +365,28 @@ function Trainer({ pos, onExit, onSave }: { pos: EndgamePos; onExit: () => void;
           <Button variant="quiet" onClick={takeback}>Takeback</Button>
           <Button variant="quiet" onClick={() => { saved.current = false; setSans([]); setSettled(false); setNote(""); setArrow([]); }}>Retry</Button>
         </div>
-        {thinking && <p className="text-sm text-mist">Stockfish is defending.</p>}
+        {thinking && <p className="text-sm text-mist">Stockfish is thinking.</p>}
+        {engineError && (
+          <p className="text-sm text-danger">
+            {engineError}{" "}
+            <button type="button" className="underline" onClick={() => setEngineNonce((value) => value + 1)}>Try again</button>
+          </p>
+        )}
+        {premove && <p className="text-sm text-mist">Premove set.</p>}
+        {settled && (
+          <div className="fixed inset-0 z-40 grid place-items-center bg-ink/70 p-4">
+            <Panel className="w-full max-w-md">
+              <h2 className="text-2xl">{judgement.state === "solved" ? "Solved" : "Not this time"}</h2>
+              <p className="mt-2 text-sm text-mist">{note}</p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Button onClick={onNext}>Next position</Button>
+                <Button variant="quiet" onClick={onExit}>Back to menu</Button>
+              </div>
+            </Panel>
+          </div>
+        )}
       </div>
-      <Panel>
+      <Panel className="h-[36rem] overflow-y-auto">
         <h2 className="text-2xl">{pos.title}</h2>
         <div className="mt-2 flex flex-wrap gap-2">
           <Pill>{pos.category}</Pill>
@@ -284,6 +394,17 @@ function Trainer({ pos, onExit, onSave }: { pos: EndgamePos; onExit: () => void;
           <Pill tone="ok">{pos.objective}</Pill>
         </div>
         <p className="mt-3 text-sm text-mist">{pos.notes}</p>
+        <div className="mt-4 grid gap-2">
+          {(["w", "b"] as Side[]).map((side) => (
+            <div key={side} className="flex items-center justify-between gap-2">
+              <span className="text-sm">{side === "w" ? "White" : "Black"}</span>
+              <div className="flex gap-2">
+                <Button variant={seats[side] === "you" ? "primary" : "quiet"} onClick={() => setSeats((current) => ({ ...current, [side]: "you" }))}>Human</Button>
+                <Button variant={seats[side] === "stockfish" ? "primary" : "quiet"} onClick={() => setSeats((current) => ({ ...current, [side]: "stockfish" }))}>Computer</Button>
+              </div>
+            </div>
+          ))}
+        </div>
         {pos.mateIn != null && <p className="mt-2 text-sm">Mate in {pos.mateIn}.</p>}
         <p className="mt-3 text-sm">Moves {judgement.userMoves}{pos.maxMoves ? ` / ${pos.maxMoves}` : ""}{pos.holdMoves ? ` · hold ${pos.holdMoves}` : ""}</p>
         {pos.solution.length > 0 && <p className="mt-3 text-sm">Solution: {pos.solution.join(" ")}</p>}

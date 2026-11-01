@@ -1,0 +1,9 @@
+Cburnett piece set, the flat pieces used by default on lichess.org.
+
+Author: Colin M.L. Burnett
+Source: https://github.com/lichess-org/lila/tree/master/public/piece/cburnett
+The same drawings are published on Wikimedia Commons as the standard SVG chess pieces.
+License: GNU General Public License, version 2 or later.
+https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+
+OE Chess uses these files unchanged. Other free Lichess sets (merida, alpha, and others) live in the same GitHub folder if you want to add one later.

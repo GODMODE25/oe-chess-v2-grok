@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { parsePgn, splitPgnGames } from "@/lib/chess/rules";
 import { useOe } from "@/lib/chess/store";
 import { importOpeningsFromPgn } from "./OpeningsView";
 import { Button, Panel } from "./ui";
 
 export function LibraryView() {
-  const games = useOe((s) => s.games.filter((game) => !game.deleted));
+  const allGames = useOe((s) => s.games);
+  const games = useMemo(() => allGames.filter((game) => !game.deleted), [allGames]);
   const saveGame = useOe((s) => s.saveGame);
   const deleteGame = useOe((s) => s.deleteGame);
   const setLaunch = useOe((s) => s.setLaunch);
