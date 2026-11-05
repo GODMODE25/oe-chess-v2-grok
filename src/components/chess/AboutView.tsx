@@ -34,7 +34,7 @@ export function AboutView() {
         </p>
       </Panel>
       <a
-        href="https://github.com/godmode25"
+        href="https://github.com/GODMODE25/oe-chess-v2-grok"
         target="_blank"
         rel="noopener noreferrer"
         aria-label="GitHub"
