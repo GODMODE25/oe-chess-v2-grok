@@ -11,7 +11,7 @@ The app that runs here is the full trainer: a local chessboard, a bundled Stockf
 - **Endgames** use dropdowns for category, difficulty, pieces, side, and progress. Every shipped position is listed. Each side can be Human or Computer, and premoved. A prompt appears when you solve or fail, with Next or Back to the menu.
 - **Library** keeps saved games and imports PGN.
 - **About** explains what the trainer does and what it leaves out.
-- **Settings** chooses a board color and a piece set (Classic photos or Diagram silhouettes), exports a backup, and optionally syncs to Google Drive.
+- **Settings** chooses a board color and the piece set, sets engine strength on a slider (about 1320 up to full strength), exports a backup, and optionally syncs to Google Drive.
 
 You can use everything with no network. Google sign-in is only for sync.
 
@@ -26,7 +26,19 @@ The dev server listens on port 8080. `npm test` checks the rules, spaced repetit
 
 ## Pieces
 
-The default set is the flat Cburnett set used on lichess.org. The files are in `public/pieces/standard/` and the license is in `public/pieces/standard/LICENSE.txt` (Colin M.L. Burnett, GPL-2.0-or-later). More free sets from the same project are at [lichess-org/lila public/piece](https://github.com/lichess-org/lila/tree/master/public/piece). Diagram and Classic stay available in Settings.
+Settings offers five flat (non-3D) piece sets, ordered by how widely they are used on Lichess:
+
+| Rank | Label in Settings | Lichess folder | Author | Licence |
+| --- | --- | --- | --- | --- |
+| 1 | Standard | `cburnett` | Colin M.L. Burnett | GPL-2.0-or-later (the Lichess default; about 94% of users never change it) |
+| 2 | Merida | `merida` | Armando Hernandez Marroquin | GPL-2.0-or-later |
+| 3 | Alpha | `alpha` | Eric Bentzen | personal, non-commercial use only |
+| 4 | Staunty | `staunty` | sadsnake1 | CC BY-NC-SA 4.0 |
+| 5 | Maestro | `maestro` | sadsnake1 | CC BY-NC-SA 4.0 |
+
+Files live in `public/pieces/<label>/` and each folder keeps its own `LICENSE.txt` with the source link. Lichess names its files `bB.svg`, `wK.svg` and so on; OE Chess renames them to `bb.svg`, `wk.svg` at download time, which is the only change to the artwork. Three of the five forbid commercial use, so check the licence before shipping anything paid.
+
+To add another set, drop the twelve renamed SVGs in `public/pieces/<name>/`, add the id to `PieceSet` and a label to `PIECE_SET_LABELS` in `src/lib/chess/types.ts`, then confirm the author and licence in [lila COPYING.md](https://github.com/lichess-org/lila/blob/master/COPYING.md). More free sets are in [lichess-org/lila public/piece](https://github.com/lichess-org/lila/tree/master/public/piece).
 
 ## Data
 
@@ -73,3 +85,7 @@ Covers rules, PGN comments, spaced repetition, endgame results, sync merge, and 
 ## Fonts
 
 Fraunces and Outfit via Fontsource, SIL Open Font License.
+
+## Built with
+
+Grok 4.7, in the Grok app-builder sandbox, and Qwen3.8-Flash on Qoder. Both are recorded as co-authors in the commit history.

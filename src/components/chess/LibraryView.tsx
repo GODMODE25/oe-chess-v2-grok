@@ -48,14 +48,14 @@ export function LibraryView() {
         <h2 className="text-2xl">Library</h2>
         <p className="mt-1 text-sm text-mist">Saved games stay on this device. Import a PGN as games or as repertoire lines.</p>
         <div className="mt-3 flex flex-wrap gap-2">
-          <label className="inline-flex h-11 cursor-pointer items-center rounded-lg border border-line bg-panel px-4 text-sm">
+          <label className="inline-flex h-11 cursor-pointer items-center rounded-lg border border-line bg-surface-2 px-4 text-sm">
             Import games
             <input className="sr-only" type="file" accept=".pgn,text/plain" onChange={(event) => {
               const file = event.target.files?.[0];
               if (file) void onFile(file, false);
             }} />
           </label>
-          <label className="inline-flex h-11 cursor-pointer items-center rounded-lg border border-line bg-panel px-4 text-sm">
+          <label className="inline-flex h-11 cursor-pointer items-center rounded-lg border border-line bg-surface-2 px-4 text-sm">
             Import as openings
             <input className="sr-only" type="file" accept=".pgn,text/plain" onChange={(event) => {
               const file = event.target.files?.[0];

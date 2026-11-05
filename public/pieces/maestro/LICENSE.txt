@@ -1,0 +1,6 @@
+Maestro piece set.
+
+Author: sadsnake1
+Source: https://github.com/lichess-org/lila/tree/master/public/piece/maestro
+Licence: CC BY-NC-SA 4.0 (per lila COPYING.md) - attribution, non-commercial, share alike.
+Files are unmodified except for lowercased names: bB.svg -> bb.svg.

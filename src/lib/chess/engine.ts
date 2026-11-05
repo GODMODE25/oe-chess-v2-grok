@@ -1,5 +1,6 @@
 import { Chess, type Square } from "chess.js";
 import { assetUrl } from "./asset-url";
+import { beginEngineBoot, markEngineFailed, markEngineHandshake, markEngineReady, reportEngineBytes } from "./engine-boot";
 import { logDiag } from "./diag";
 import type { EngineInfo } from "./types";
 import { parseBestmove, parseInfo } from "./uci";
@@ -35,6 +36,7 @@ function opponentInCheck(fen: string) {
 
 export class EngineClient {
   private worker: Worker | null = null;
+  private progressPort: MessagePort | null = null;
   private waiter: Waiter | null = null;
   private uciok: (() => void) | null = null;
   private readyok: (() => void) | null = null;
@@ -50,41 +52,73 @@ export class EngineClient {
 
   private boot(): Promise<void> {
     return new Promise((resolve, reject) => {
+      beginEngineBoot();
       try {
         this.worker = new Worker(assetUrl(ENGINE_JS));
       } catch (error) {
         const err = error instanceof Error ? error : new Error("Could not start Stockfish");
-        this.failed = err;
-        logDiag("error", err.message);
+        this.fail(err);
         reject(err);
         return;
       }
+      this.attachProgressPort();
       this.worker.onmessage = (event) => this.onMessage(event.data);
-      this.worker.onerror = () => {
-        const err = new Error("Stockfish stopped. It will load again for the next move.");
+      this.worker.onerror = (e) => {
+        const err = new Error(e.message || "Stockfish stopped. It will load again for the next move.");
         this.fail(err);
         reject(err);
       };
       const timer = setTimeout(() => {
         const err = new Error("Stockfish did not answer. Reload and try again.");
-        this.failed = err;
-        logDiag("error", err.message);
+        this.fail(err);
         reject(err);
-      }, 12000);
-      void this.waitFor("uciok", () => this.send("uci"))
+      }, 60000);
+      void this.waitFor("uciok", () => this.send("uci"), 45000)
         .then(async () => {
           this.send("setoption name Hash value 32");
           this.send("ucinewgame");
-          await this.waitFor("readyok", () => this.send("isready"));
+          await this.waitFor("readyok", () => this.send("isready"), 30000);
           clearTimeout(timer);
+          this.closeProgressPort();
+          markEngineReady();
           logDiag("info", "Stockfish 19 lite is ready");
           resolve();
         })
         .catch((error) => {
           clearTimeout(timer);
-          reject(error instanceof Error ? error : new Error("Stockfish boot failed"));
+          const err = error instanceof Error ? error : new Error("Stockfish boot failed");
+          this.fail(err);
+          reject(err);
         });
     });
+  }
+
+  /**
+   * The vendored worker streams wasm byte progress on a port it is handed, and
+   * the `setoption name CanOutputEngineDownloadProgress` line only makes it
+   * acknowledge that it will. Absence of events is a normal state (cached
+   * response, or a download that finished before the port attached), so the
+   * consumer treats silence as "unknown", never as failure.
+   */
+  private attachProgressPort() {
+    if (!this.worker || typeof MessageChannel !== "function") return;
+    try {
+      const channel = new MessageChannel();
+      channel.port2.onmessage = (event) => reportEngineBytes(event.data);
+      this.worker.postMessage({ progressPort: channel.port1 }, [channel.port1]);
+      this.progressPort = channel.port2;
+      this.send("setoption name CanOutputEngineDownloadProgress");
+    } catch {
+      this.progressPort = null;
+    }
+  }
+
+  private closeProgressPort() {
+    const port = this.progressPort;
+    this.progressPort = null;
+    if (!port) return;
+    port.onmessage = null;
+    port.close();
   }
 
   private onMessage(data: unknown) {
@@ -92,7 +126,10 @@ export class EngineClient {
     for (const raw of text.split("\n")) {
       const line = raw.trim();
       if (!line) continue;
-      if (line === "uciok") this.uciok?.();
+      if (line === "uciok") {
+        markEngineHandshake();
+        this.uciok?.();
+      }
       if (line === "readyok") this.readyok?.();
       if (line.includes("CRITICAL ERROR")) {
         this.fail(new Error("Stockfish rejected that position."));
@@ -116,16 +153,40 @@ export class EngineClient {
     this.worker?.postMessage(command);
   }
 
-  private waitFor(token: "uciok" | "readyok", fire: () => void): Promise<void> {
+  private waitFor(token: "uciok" | "readyok", fire: () => void, timeoutMs = 45000): Promise<void> {
     return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => reject(new Error(`Timed out waiting for ${token}`)), 10000);
+      let retryTimer: ReturnType<typeof setInterval> | null = null;
+      const timer = setTimeout(() => {
+        if (retryTimer) clearInterval(retryTimer);
+        if (token === "uciok") this.uciok = null;
+        else this.readyok = null;
+        reject(new Error(`Timed out waiting for ${token}`));
+      }, timeoutMs);
+
       const done = () => {
         clearTimeout(timer);
+        if (retryTimer) clearInterval(retryTimer);
+        if (token === "uciok") this.uciok = null;
+        else this.readyok = null;
         resolve();
       };
+
       if (token === "uciok") this.uciok = done;
       else this.readyok = done;
+
       fire();
+
+      // For uciok during initial startup, retry sending "uci" every 1.5s
+      // until received or timeout, in case the worker was still loading.
+      if (token === "uciok") {
+        retryTimer = setInterval(() => {
+          if (this.uciok) {
+            fire();
+          } else if (retryTimer) {
+            clearInterval(retryTimer);
+          }
+        }, 1500);
+      }
     });
   }
 
@@ -142,7 +203,7 @@ export class EngineClient {
       this.send("setoption name UCI_LimitStrength value true");
       this.send("setoption name UCI_Elo value " + elo);
     }
-    await this.waitFor("readyok", () => this.send("isready"));
+    await this.waitFor("readyok", () => this.send("isready"), 30000);
   }
 
   async go(options: {
@@ -241,6 +302,8 @@ export class EngineClient {
 
   private fail(err: Error) {
     this.failed = err;
+    this.closeProgressPort();
+    markEngineFailed(err.message);
     logDiag("error", err.message);
     const waiter = this.waiter;
     this.waiter = null;
@@ -255,6 +318,7 @@ export class EngineClient {
 
   destroy() {
     this.stop();
+    this.closeProgressPort();
     this.worker?.terminate();
     this.worker = null;
   }

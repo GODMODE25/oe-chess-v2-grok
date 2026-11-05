@@ -12,8 +12,29 @@ export type SyncStatus =
   | "conflict"
   | "error";
 export type NavId = "play" | "openings" | "endgames" | "library" | "stats" | "about" | "settings";
-export type BoardTheme = "walnut" | "ink" | "stone";
-export type PieceSet = "standard" | "diagram" | "classic";
+/** `theme` leaves the squares to whichever app theme is selected. */
+export type BoardTheme = "theme" | "walnut" | "ink" | "stone";
+export type PieceSet = "standard" | "merida" | "alpha" | "staunty" | "maestro";
+export type AppTheme = "brass" | "print" | "graphite" | "atelier" | "cyber" | "glass";
+
+/** Picker order, and the whitelist the settings loader validates against. */
+export const PIECE_SET_LABELS: Record<PieceSet, string> = {
+  standard: "Standard",
+  merida: "Merida",
+  alpha: "Alpha",
+  staunty: "Staunty",
+  maestro: "Maestro",
+};
+
+/** `brass` is what `@theme` already declares, so styles.css restyles the other five. */
+export const APP_THEME_LABELS: Record<AppTheme, string> = {
+  brass: "Brass & Ink",
+  print: "Printed Line",
+  graphite: "Graphite Studio",
+  atelier: "Atelier",
+  cyber: "Cyber",
+  glass: "Glassmorphism",
+};
 export type PieceGroup = "pawn" | "knight" | "bishop" | "rook" | "queen" | "mixed" | "basic";
 
 export type OpeningLine = {
@@ -102,6 +123,9 @@ export type Profile = {
   updatedAt: number;
 };
 
+export type PlayPanelId = "new" | "presets" | "moves" | "engine";
+export type PanelPref = { visible: boolean; collapsed: boolean };
+
 export type Settings = {
   id: string;
   updatedAt: number;
@@ -115,6 +139,8 @@ export type Settings = {
   analysisDepth: number;
   googleClientId: string;
   pieceSet?: PieceSet;
+  appTheme?: AppTheme;
+  playPanels?: Partial<Record<PlayPanelId, PanelPref>>;
 };
 
 export type Repertoire = {

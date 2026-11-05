@@ -7,14 +7,23 @@
 @theme {
   --font-sans: "Outfit", "Avenir Next", "Segoe UI", sans-serif;
   --font-display: "Fraunces", "Iowan Old Style", Palatino, serif;
-  --color-ink: #141611;
-  --color-ink-2: #1c1f19;
-  --color-panel: #242920;
+  --font-mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  /* Roles, not hues. A theme re-points these and nothing else: `ivory` is the
+     primary text colour and `brass` the primary accent even where their values
+     are neither ivory nor brass. */
+  --color-canvas: #141611;
+  --color-surface: #1c1f19;
+  --color-surface-2: #242920;
   --color-line: #3a4034;
   --color-ivory: #f4efe4;
   --color-mist: #b7b1a4;
   --color-brass: #c9923a;
   --color-brass-2: #e4b56a;
+  --color-on-accent: #141611;
+  --color-scrim: #141611;
+  --color-board-mark: #141611;
+  --color-coord-light: #6e5340;
+  --color-coord-dark: #f4efe4;
   --color-walnut: #6e5340;
   --color-board-light: #ead9bc;
   --color-board-dark: #8a6748;
@@ -26,7 +35,7 @@
 @layer base {
   html {
     -webkit-font-smoothing: antialiased;
-    background: var(--color-ink);
+    background: var(--color-canvas);
     color: var(--color-ivory);
   }
   body {
@@ -63,4 +72,313 @@
 [data-board="stone"] {
   --color-board-light: #e6e1d6;
   --color-board-dark: #6e6b63;
+}
+
+/* App themes. `useAppThemeSync` puts the chosen one on <html>; because these
+   selectors match any element carrying the attribute, the Appearance picker can
+   preview a theme inside the live app without importing its palette. `brass`
+   needs no block — the @theme above is it. Text and accent keep their role names
+   (`ivory`, `brass`) even where the value is neither. */
+[data-app-theme="print"] {
+  --color-canvas: #f7f3ea;
+  --color-surface: #fffdf6;
+  --color-surface-2: #efe7d7;
+  --color-line: #cdc2ab;
+  --color-ivory: #171a15;
+  --color-mist: #6d6759;
+  --color-brass: #8b5e2a;
+  --color-brass-2: #171a15;
+  --color-on-accent: #f7f3ea;
+  --color-scrim: #f7f3ea;
+  --color-board-mark: #171a15;
+  --color-coord-light: #6d6759;
+  --color-coord-dark: #171a15;
+  --color-walnut: #6d6759;
+  --color-board-light: #fffdf6;
+  --color-board-dark: #ded2ba;
+  --color-danger: #a8431f;
+  --color-ok: #4f6b31;
+  --radius-lg: 3px;
+  --radius-xl: 4px;
+  --radius-md: 2px;
+  --radius-sm: 2px;
+}
+
+[data-app-theme="graphite"] {
+  --color-canvas: #0d1013;
+  --color-surface: #14181d;
+  --color-surface-2: #1c222a;
+  --color-line: #293139;
+  --color-ivory: #e9eef4;
+  --color-mist: #8b98a6;
+  --color-brass: #c9f24d;
+  --color-brass-2: #58dcf0;
+  --color-on-accent: #0d1013;
+  --color-scrim: #0d1013;
+  --color-board-mark: #13181e;
+  --color-coord-light: #1b222a;
+  --color-coord-dark: #e9eef4;
+  --color-walnut: #8b98a6;
+  --color-board-light: #cfd8e2;
+  --color-board-dark: #33404d;
+  --color-danger: #ff6b5e;
+  --color-ok: #7ddc9a;
+  --font-display: "Outfit", "Avenir Next", "Segoe UI", sans-serif;
+  --radius-lg: 8px;
+  --radius-xl: 8px;
+  --radius-md: 6px;
+  --radius-sm: 5px;
+}
+
+[data-app-theme="atelier"] {
+  --color-canvas: #241a2b;
+  --color-surface: #2e2136;
+  --color-surface-2: #3b2a44;
+  --color-line: #55385f;
+  --color-ivory: #f6e9dd;
+  --color-mist: #c3a9bd;
+  --color-brass: #e3bd7c;
+  --color-brass-2: #f4d9a6;
+  --color-on-accent: #241a2b;
+  --color-scrim: #1b1322;
+  --color-board-mark: #2b1e30;
+  --color-coord-light: #6d4360;
+  --color-coord-dark: #f6e9dd;
+  --color-walnut: #c3a9bd;
+  --color-board-light: #eddcb9;
+  --color-board-dark: #6d4360;
+  --color-danger: #d97057;
+  --color-ok: #a9c68e;
+  --radius-lg: 22px;
+  --radius-xl: 20px;
+  --radius-md: 14px;
+  --radius-sm: 12px;
+}
+
+[data-app-theme="cyber"] {
+  --color-canvas: #07090d;
+  --color-surface: #0c1118;
+  --color-surface-2: #111a24;
+  --color-line: #1d2b38;
+  --color-ivory: #dff2ff;
+  --color-mist: #6f8ea3;
+  --color-brass: #2ee6ff;
+  --color-brass-2: #ffb03a;
+  --color-on-accent: #04121a;
+  --color-scrim: #04070c;
+  --color-board-mark: #0b1218;
+  --color-coord-light: #172936;
+  --color-coord-dark: #dff2ff;
+  --color-walnut: #6f8ea3;
+  --color-board-light: #cfe3ee;
+  --color-board-dark: #2b4453;
+  --color-danger: #ff7a5c;
+  --color-ok: #63e6a6;
+  --font-display: "Outfit", "Avenir Next", "Segoe UI", sans-serif;
+  --radius-lg: 6px;
+  --radius-xl: 6px;
+  --radius-md: 4px;
+  --radius-sm: 3px;
+}
+
+[data-app-theme="glass"] {
+  --color-canvas: #0a0f14;
+  --color-surface: #16202a;
+  --color-surface-2: #1b2733;
+  --color-line: #2b3a46;
+  --color-ivory: #f6f8fb;
+  --color-mist: #a8bccc;
+  --color-brass: #7fd6ff;
+  --color-brass-2: #f4efe4;
+  --color-on-accent: #0a0f14;
+  --color-scrim: #05080b;
+  --color-board-mark: #0d1620;
+  --color-coord-light: #385061;
+  --color-coord-dark: #f6f8fb;
+  --color-walnut: #a8bccc;
+  --color-board-light: #d9e6ef;
+  --color-board-dark: #385061;
+  --color-danger: #ff8a70;
+  --color-ok: #8fd6a0;
+  --radius-lg: 20px;
+  --radius-xl: 18px;
+  --radius-md: 12px;
+  --radius-sm: 10px;
+}
+
+/* Effect variables. Each palette above is complete without them; these carry the
+   one signature touch a theme adds on top of colour, and are neutral by default. */
+:root {
+  --sq-line: transparent;
+  --shadow-glow: none;
+  --banner-filter: none;
+  --glass-panel: 100%;
+  --glass-tile: 100%;
+  --glass-list: 100%;
+  --glass-chrome: 100%;
+  --glass-blur: 0px;
+}
+[data-app-theme="print"] {
+  --sq-line: rgba(23, 26, 21, 0.16);
+  --banner-filter: grayscale(1) contrast(1.3) brightness(1.12);
+}
+[data-app-theme="graphite"] {
+  --banner-filter: saturate(0.32) contrast(1.05);
+}
+[data-app-theme="atelier"] {
+  --banner-filter: saturate(0.9) sepia(0.22) hue-rotate(8deg);
+}
+[data-app-theme="cyber"] {
+  --sq-line: rgba(46, 230, 255, 0.18);
+  --shadow-glow: 0 0 18px -6px #2ee6ff;
+  --banner-filter: saturate(0.42) hue-rotate(-18deg) contrast(1.15);
+}
+[data-app-theme="glass"] {
+  --banner-filter: saturate(1.05);
+  --glass-panel: 78%;
+  --glass-tile: 72%;
+  --glass-list: 88%;
+  --glass-chrome: 72%;
+  --glass-blur: 18px;
+}
+
+.banner-art {
+  filter: var(--banner-filter);
+}
+
+/* Board furniture. Both layers sit above the squares and ignore the pointer, so
+   dragging, clicking and the promotion overlay behave as they did before. */
+[data-app-theme="print"] .board-frame::before,
+[data-app-theme="cyber"] .board-frame::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, var(--sq-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--sq-line) 1px, transparent 1px);
+  background-size: 12.5% 12.5%;
+}
+/* Scanlines stay on the frame: the 64 squares have no texture of their own. */
+[data-app-theme="cyber"] .board-frame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(46, 230, 255, 0.05) 0px,
+    rgba(46, 230, 255, 0.05) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+/* Arrows read as brighter, not blurred: a shadow on a live SVG repaints every frame. */
+[data-app-theme="cyber"] .board-arrow {
+  stroke-width: 0.26;
+}
+[data-app-theme="cyber"] .bg-brass {
+  box-shadow: var(--shadow-glow);
+}
+[data-app-theme="print"] .board-frame {
+  box-shadow: 0 1px 0 rgba(23, 26, 21, 0.1);
+}
+[data-app-theme="print"] nav button {
+  font-variant: small-caps;
+  letter-spacing: 0.06em;
+}
+[data-app-theme="graphite"] nav button,
+[data-app-theme="cyber"] nav button {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+[data-app-theme="atelier"] nav button {
+  border-radius: 999px;
+}
+[data-app-theme="atelier"] .bg-surface {
+  background-image: linear-gradient(180deg, var(--color-surface), var(--color-canvas));
+}
+
+/* Glass puts the banner into the shell and reads the panels through it. Blur is
+   deliberately kept off anything wrapping the board, the drag ghost or a modal:
+   backdrop-filter makes an element the anchor for its fixed descendants. */
+[data-app-theme="glass"] .app-shell {
+  background-image: linear-gradient(rgba(5, 8, 11, 0.55), rgba(5, 8, 11, 0.72)), var(--shell-art);
+  background-size: cover;
+  background-position: 62% 40%;
+  background-color: transparent;
+}
+[data-app-theme="glass"] .bg-surface {
+  background-color: color-mix(in oklab, var(--color-surface) var(--glass-panel), transparent);
+}
+[data-app-theme="glass"] .bg-surface-2 {
+  background-color: color-mix(in oklab, var(--color-surface-2) var(--glass-tile), transparent);
+}
+[data-app-theme="glass"] .bg-canvas {
+  background-color: color-mix(in oklab, var(--color-canvas) var(--glass-list), transparent);
+}
+[data-app-theme="glass"] aside,
+[data-app-theme="glass"] :is(header, footer, nav.fixed).bg-canvas {
+  background-color: color-mix(in oklab, var(--color-canvas) var(--glass-chrome), transparent);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.15);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.15);
+}
+/* Where blur cannot be had, or is not wanted, the fills go nearly opaque instead. */
+@supports not ((backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px))) {
+  [data-app-theme="glass"] {
+    --glass-panel: 96%;
+    --glass-tile: 96%;
+    --glass-list: 96%;
+    --glass-chrome: 96%;
+    --glass-blur: 0px;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  [data-app-theme="glass"] {
+    --glass-panel: 96%;
+    --glass-tile: 96%;
+    --glass-list: 96%;
+    --glass-chrome: 96%;
+    --glass-blur: 0px;
+  }
+}
+
+.scrollbar-hidden {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}
+
+/* Stripes the counted part of a bar whose remainder has no byte counter. */
+.meter-indeterminate {
+  background-image: linear-gradient(
+    115deg,
+    color-mix(in oklab, var(--color-scrim) 55%, transparent) 25%,
+    transparent 25%,
+    transparent 50%,
+    color-mix(in oklab, var(--color-scrim) 55%, transparent) 50%,
+    color-mix(in oklab, var(--color-scrim) 55%, transparent) 75%,
+    transparent 75%
+  );
+  background-size: 22px 22px;
+  animation: meter-stripe 0.9s linear infinite;
+}
+@keyframes meter-stripe {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 22px 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .meter-indeterminate {
+    animation: none;
+  }
 }

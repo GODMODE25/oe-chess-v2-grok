@@ -1,0 +1,8 @@
+Alpha piece set.
+
+Author: Eric Bentzen
+Source: https://github.com/lichess-org/lila/tree/master/public/piece/alpha
+Licence: "free for personal non commercial use" (per lila COPYING.md).
+Files are unmodified except for lowercased names: bB.svg -> bb.svg.
+
+Do not ship this set in anything commercial. See the licence notes in the sibling folders.

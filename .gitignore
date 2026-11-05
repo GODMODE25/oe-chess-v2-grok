@@ -3,3 +3,9 @@ node_modules/
 .github_repo
 .env
 .env.*
+.vercel/
+dist/
+# Grok app-builder platform docs and sandbox state. `.grok/app-env.json` stays tracked — `npm run dev` needs it.
+.grok/skills/
+.grok/references/
+.grok/status

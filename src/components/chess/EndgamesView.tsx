@@ -17,7 +17,7 @@ function MenuSelect({ label, value, options, onChange }: { label: string; value:
     <label className="grid gap-1 text-xs text-mist">
       {label}
       <select
-        className="h-11 rounded-lg border border-line bg-ink px-3 text-sm text-ivory outline-none"
+        className="h-11 rounded-lg border border-line bg-canvas px-3 text-sm text-ivory outline-none"
         value={value}
         onChange={(event) => onChange(event.target.value)}
       >
@@ -169,7 +169,7 @@ export function EndgamesView() {
             {filtered.map((pos) => {
               const row = stats.get(pos.id);
               return (
-                <button key={pos.id} type="button" className="rounded-xl border border-line bg-ink-2 p-3 text-left hover:border-brass" onClick={() => setActiveId(pos.id)}>
+                <button key={pos.id} type="button" className="rounded-xl border border-line bg-surface p-3 text-left hover:border-brass" onClick={() => setActiveId(pos.id)}>
                   <div className="flex items-center justify-between gap-2">
                     <h2 className="text-lg">{pos.title}</h2>
                     <Pill tone={pos.difficulty === "beginner" ? "ok" : "brass"}>{pos.difficulty}</Pill>
@@ -199,8 +199,8 @@ function Trainer({ pos, onExit, onNext, onSave }: { pos: EndgamePos; onExit: () 
   const [sans, setSans] = useState<string[]>([]);
   const [hints, setHints] = useState(0);
   const [arrow, setArrow] = useState<{ from: string; to: string }[]>([]);
-  const [started] = useState(() => Date.now());
-  const [attemptId] = useState(() => crypto.randomUUID());
+  const [started, setStarted] = useState(() => Date.now());
+  const [attemptId, setAttemptId] = useState(() => crypto.randomUUID());
   const [settled, setSettled] = useState(false);
   const [note, setNote] = useState("");
   const [thinking, setThinking] = useState(false);
@@ -210,7 +210,7 @@ function Trainer({ pos, onExit, onNext, onSave }: { pos: EndgamePos; onExit: () 
   });
   const [engineError, setEngineError] = useState("");
   const [engineNonce, setEngineNonce] = useState(0);
-  const [premove, setPremove] = useState<{ from: string; to: string; promotion?: string } | null>(null);
+  const [premoves, setPremoves] = useState<{ from: string; to: string; promotion?: string }[]>([]);
   const saved = useRef(false);
   const tries = useRef(0);
   const played = useMemo(() => replay(pos.fen, sans), [pos.fen, sans]);
@@ -297,7 +297,6 @@ function Trainer({ pos, onExit, onNext, onSave }: { pos: EndgamePos; onExit: () 
       const moved = played.chess.move({ from, to, promotion: promotion as "q" | "r" | "b" | "n" | undefined });
       setSans((rows) => [...rows, moved.san]);
       setArrow([]);
-      setPremove(null);
       playTone(moved.captured ? "capture" : "move");
       return true;
     } catch {
@@ -305,22 +304,32 @@ function Trainer({ pos, onExit, onNext, onSave }: { pos: EndgamePos; onExit: () 
     }
   }
 
+  function queuePremove(from: string, to: string, promotion?: string) {
+    setPremoves((queue) => {
+      const next = { from, to, promotion };
+      if (queue.length >= 2) return [queue[0], next];
+      return [...queue, next];
+    });
+  }
+
   function onMove(from: string, to: string, promotion?: string) {
     if (settled) return;
     const piece = played.chess.get(from as "a1");
     if (!piece || seats[piece.color] !== "you") return;
     if (thinking || piece.color !== turn) {
-      setPremove({ from, to, promotion });
+      queuePremove(from, to, promotion);
       return;
     }
     playMove(from, to, promotion);
   }
 
   useEffect(() => {
-    if (!premove || settled || thinking || seats[turn] !== "you" || judgement.state !== "playing") return;
-    if (!playMove(premove.from, premove.to, premove.promotion)) setPremove(null);
+    if (settled || thinking || seats[turn] !== "you" || judgement.state !== "playing" || premoves.length === 0) return;
+    const [head, ...rest] = premoves;
+    setPremoves(rest);
+    playMove(head.from, head.to, head.promotion);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [premove, turn, thinking, settled, sans]);
+  }, [premoves, turn, thinking, settled, sans]);
 
   async function hint() {
     const engine = getEngine();
@@ -334,12 +343,25 @@ function Trainer({ pos, onExit, onNext, onSave }: { pos: EndgamePos; onExit: () 
     setSettled(false);
     saved.current = false;
     setNote("");
+    setPremoves([]);
     setSans((rows) => {
       if (rows.length === 0) return rows;
       const lastColor = replay(pos.fen, rows).chess.history({ verbose: true }).at(-1)?.color;
       if (lastColor && lastColor !== pos.userSide) return rows.slice(0, -2);
       return rows.slice(0, -1);
     });
+  }
+
+  function retry() {
+    saved.current = false;
+    setSans([]);
+    setSettled(false);
+    setNote("");
+    setArrow([]);
+    setPremoves([]);
+    // Fresh attempt identity so the retry is recorded as a new row instead of overwriting.
+    setAttemptId(crypto.randomUUID());
+    setStarted(Date.now());
   }
 
   return (
@@ -350,12 +372,12 @@ function Trainer({ pos, onExit, onNext, onSave }: { pos: EndgamePos; onExit: () 
           orientation={seats.b === "you" && seats.w !== "you" ? "black" : "white"}
           interactive={!settled && humans.length > 0}
           humanColors={humans}
-          onPremove={(from, to, promotion) => setPremove({ from, to, promotion })}
+          onPremove={queuePremove}
           coordinates={settings.coordinates}
           theme={settings.boardTheme}
           pieceSet={settings.pieceSet ?? "standard"}
           lastMove={last ? { from: last.from, to: last.to } : null}
-          highlights={premove ? [premove.from, premove.to] : []}
+          premoveSquares={premoves.flatMap((p) => [p.from, p.to])}
           arrows={arrow}
           onMove={onMove}
         />
@@ -363,7 +385,7 @@ function Trainer({ pos, onExit, onNext, onSave }: { pos: EndgamePos; onExit: () 
           <Button variant="quiet" onClick={onExit}>Back</Button>
           <Button variant="quiet" onClick={() => void hint()}>Hint</Button>
           <Button variant="quiet" onClick={takeback}>Takeback</Button>
-          <Button variant="quiet" onClick={() => { saved.current = false; setSans([]); setSettled(false); setNote(""); setArrow([]); }}>Retry</Button>
+          <Button variant="quiet" onClick={retry}>Retry</Button>
         </div>
         {thinking && <p className="text-sm text-mist">Stockfish is thinking.</p>}
         {engineError && (
@@ -372,14 +394,15 @@ function Trainer({ pos, onExit, onNext, onSave }: { pos: EndgamePos; onExit: () 
             <button type="button" className="underline" onClick={() => setEngineNonce((value) => value + 1)}>Try again</button>
           </p>
         )}
-        {premove && <p className="text-sm text-mist">Premove set.</p>}
+        {premoves.length > 0 && <p className="text-sm text-mist">{premoves.length} premove{premoves.length > 1 ? "s" : ""} set.</p>}
         {settled && (
-          <div className="fixed inset-0 z-40 grid place-items-center bg-ink/70 p-4">
-            <Panel className="w-full max-w-md">
-              <h2 className="text-2xl">{judgement.state === "solved" ? "Solved" : "Not this time"}</h2>
+          <div className="fixed inset-0 z-40 grid place-items-center bg-scrim/70 p-4">
+            <Panel className="w-full max-w-md text-center">
+              <h2 className="text-2xl">{judgement.state === "solved" ? "Solved" : judgement.reason.includes("Move budget") ? "Move budget exhausted. Try again?" : "Not this time"}</h2>
               <p className="mt-2 text-sm text-mist">{note}</p>
-              <div className="mt-4 flex flex-wrap gap-2">
+              <div className="mt-4 flex flex-wrap justify-center gap-2">
                 <Button onClick={onNext}>Next position</Button>
+                <Button variant="quiet" onClick={retry}>Try again</Button>
                 <Button variant="quiet" onClick={onExit}>Back to menu</Button>
               </div>
             </Panel>

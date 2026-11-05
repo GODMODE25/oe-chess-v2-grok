@@ -23,6 +23,11 @@ export function OpeningsView() {
   const [family, setFamily] = useState("All");
   const [trainSide, setTrainSide] = useState<Side>("w");
   const [ghost, setGhost] = useState<Course | null>(null);
+  const carouselRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  function scrollCarousel(side: Side, dir: -1 | 1) {
+    carouselRefs.current[side]?.scrollBy({ left: dir * 312, behavior: "smooth" });
+  }
 
   const shelf = {
     w: repertoire.carousel?.w ?? DEFAULT_CAROUSEL.w,
@@ -57,7 +62,21 @@ export function OpeningsView() {
     setLineId(row.id);
   }
 
-  if (line && activeCourse) return <VariationSession course={activeCourse} line={line} onExit={() => { setLineId(null); setGhost(null); }} />;
+  if (line && activeCourse) {
+    const rows = variationsFor(activeCourse);
+    const idx = rows.findIndex((row) => row.id === line.id);
+    const hasNext = idx >= 0 && idx < rows.length - 1;
+    return (
+      <VariationSession
+        key={line.id}
+        course={activeCourse}
+        line={line}
+        hasNext={hasNext}
+        onNext={() => setLineId(hasNext ? rows[idx + 1].id : null)}
+        onExit={() => { setLineId(null); setGhost(null); }}
+      />
+    );
+  }
 
   if (course) {
     return (
@@ -71,7 +90,7 @@ export function OpeningsView() {
             pieceSet={settings.pieceSet ?? "standard"}
             interactive={false}
           />
-          <p className="text-sm text-mist">The board faces you. You play {course.side === "w" ? "White" : "Black"}.</p>
+          <p className="text-sm text-mist">You'll play {course.side === "w" ? "White" : "Black"} here. Pick a variation and we'll walk through it together.</p>
         </div>
         <div className="grid content-start gap-3">
           <Panel>
@@ -91,7 +110,7 @@ export function OpeningsView() {
               <button
                 key={variation.id}
                 type="button"
-                className="rounded-xl border border-line bg-ink-2 p-3 text-left hover:border-brass"
+                className="rounded-xl border border-line bg-surface p-3 text-left hover:border-brass"
                 onClick={() => setLineId(variation.id)}
               >
                 <h3 className="text-lg">{variation.name}</h3>
@@ -119,7 +138,7 @@ export function OpeningsView() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-2xl">Openings</h2>
-            <p className="mt-1 text-sm text-mist">The shelf starts with three white and three black courses. The full book stays in Explorer and in Add.</p>
+            <p className="mt-1 text-sm text-mist">Your shelf starts with three white and three black courses. The full book is one tap away in Explorer and Add.</p>
           </div>
           <div className="flex gap-2">
             <Button variant={tab === "shelf" ? "primary" : "quiet"} onClick={() => setTab("shelf")}>Shelf</Button>
@@ -131,7 +150,7 @@ export function OpeningsView() {
         <Panel>
           <div className="grid gap-3 md:grid-cols-[1fr_12rem_10rem]">
             <TextInput value={query} placeholder="Search the book" onChange={(event) => setQuery(event.target.value)} />
-            <select className="h-11 rounded-lg border border-line bg-ink px-3 text-sm" value={family} onChange={(event) => setFamily(event.target.value)}>
+            <select className="h-11 rounded-lg border border-line bg-canvas px-3 text-sm" value={family} onChange={(event) => setFamily(event.target.value)}>
               {families.map((item) => <option key={item}>{item}</option>)}
             </select>
             <div className="flex gap-2">
@@ -155,9 +174,28 @@ export function OpeningsView() {
             <section key={side} className="grid gap-3">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl">{side === "w" ? "White" : "Black"}</h2>
-                <Button variant="quiet" onClick={() => setAdding(side)}>Add</Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="quiet"
+                    className="h-9 w-9 px-0"
+                    aria-label={`${side === "w" ? "White" : "Black"} shelf: scroll left`}
+                    onClick={() => scrollCarousel(side, -1)}
+                  >
+                    ←
+                  </Button>
+                  <Button
+                    variant="quiet"
+                    className="h-9 w-9 px-0"
+                    aria-label={`${side === "w" ? "White" : "Black"} shelf: scroll right`}
+                    onClick={() => scrollCarousel(side, 1)}
+                  >
+                    →
+                  </Button>
+                  <Button variant="quiet" onClick={() => setAdding(side)}>Add</Button>
+                </div>
               </div>
-              <div className="flex gap-3 overflow-x-auto pb-2">
+              <div ref={(el) => { carouselRefs.current[side] = el; }} className="scrollbar-hidden overflow-x-auto pb-2">
+                <div className="mx-auto flex w-max gap-3">
                 {shelf[side].map((id) => {
                   const solo = id.startsWith("line:") ? book.find((row) => row.id === id.slice(5)) : undefined;
                   const item = solo ? null : courseById(id);
@@ -168,7 +206,7 @@ export function OpeningsView() {
                     ? progressFor(item)
                     : reviewProgress(reviews.find((review) => review.id === reviewId(solo!.id, side)));
                   return (
-                    <div key={id} className="w-72 shrink-0 rounded-xl border border-line bg-ink-2 p-4">
+                    <div key={id} className="w-72 shrink-0 rounded-xl border border-line bg-surface p-4">
                       <div className="flex items-start justify-between gap-2">
                         <Pill tone="brass">{item ? (item.tier === "legendary" ? "Legendary" : "S-tier") : "Line"}</Pill>
                         <Button variant="ghost" className="h-8 px-2" onClick={() => setCarousel(side, shelf[side].filter((row) => row !== id))}>Remove</Button>
@@ -191,6 +229,7 @@ export function OpeningsView() {
                     </div>
                   );
                 })}
+                </div>
               </div>
             </section>
           ))}
@@ -214,7 +253,7 @@ export function OpeningsView() {
                 ))}
               </div>
               <div className="mt-4 grid gap-2 md:grid-cols-[12rem_1fr]">
-                <select className="h-11 rounded-lg border border-line bg-ink px-3 text-sm" value={family} onChange={(event) => setFamily(event.target.value)}>
+                <select className="h-11 rounded-lg border border-line bg-canvas px-3 text-sm" value={family} onChange={(event) => setFamily(event.target.value)}>
                   {families.map((item) => <option key={item}>{item}</option>)}
                 </select>
                 <TextInput value={query} placeholder="Find any other line" onChange={(event) => setQuery(event.target.value)} />
@@ -244,7 +283,7 @@ export function OpeningsView() {
   );
 }
 
-function VariationSession({ course, line, onExit }: { course: Course; line: OpeningLine; onExit: () => void }) {
+function VariationSession({ course, line, hasNext, onNext, onExit }: { course: Course; line: OpeningLine; hasNext: boolean; onNext: () => void; onExit: () => void }) {
   const settings = useOe((s) => s.settings);
   const gradeLine = useOe((s) => s.gradeLine);
   const noteSuccess = useOe((s) => s.noteSuccess);
@@ -282,7 +321,7 @@ function VariationSession({ course, line, onExit }: { course: Course; line: Open
       gradeLine(line.id, course.side, grade, Date.now() - started);
       if (grade !== "fail") noteSuccess();
       setDone(true);
-      setBanner(grade === "fail" ? "Logged as a miss. Retry the variation." : "Variation complete.");
+      setBanner(grade === "fail" ? "Let's run that one again — a couple of spots slipped." : "That variation felt solid. Well played.");
       return;
     }
     if (position.chess.turn() === course.side) return;
@@ -316,21 +355,40 @@ function VariationSession({ course, line, onExit }: { course: Course; line: Open
     };
   }, [offBook, done, position.chess, position.uci, course.side, prefix]);
 
+  // Undo resets the student's last move: step back (max 2) to the previous position where it is the student's turn.
+  const onBookUndoTarget = useMemo(() => {
+    for (let i = ply - 1; i >= Math.max(0, ply - 2); i--) {
+      if (replay(START_FEN, line.moves.slice(0, i)).chess.turn() === course.side) return i;
+    }
+    return -1;
+  }, [ply, line.moves, course.side]);
+  const canUndo = offBook ? extra.length > 0 : onBookUndoTarget >= 0;
+  const hasProgress = ply > 0 || extra.length > 0 || done;
+
   function undoLast() {
     setDone(false);
     graded.current = false;
-    setBanner("Last move taken back.");
-    setHold(true);
+    setBanner("No rush — take that move back and try again.");
     if (offBook) {
       if (extra.length <= 1) {
         setOffBook(false);
         setExtra([]);
       } else {
-        setExtra((rows) => rows.slice(0, -1));
+        // Pop the engine reply plus the student's wrong move so the landing state stays a student turn.
+        const trimmed = extra.slice(0, -2);
+        if (trimmed.length === 0) {
+          setOffBook(false);
+          setExtra([]);
+        } else {
+          setExtra(trimmed);
+        }
       }
+      setHold(false);
       return;
     }
-    setPly((value) => Math.max(0, value - 1));
+    if (onBookUndoTarget >= 0) setPly(onBookUndoTarget);
+    // hold=false is the freeze fix: the advance effect waits for the student instead of stalling.
+    setHold(false);
   }
 
   function onMove(from: string, to: string, promotion?: string) {
@@ -349,7 +407,7 @@ function VariationSession({ course, line, onExit }: { course: Course; line: Open
         setMistakes((value) => value + 1);
         setOffBook(true);
         setExtra([moved.san]);
-        setBanner(`That leaves the book. The variation move was ${expected}. Stockfish will answer.`);
+        setBanner(`You've left the book — the variation move was ${expected}, but let's keep playing.`);
         return;
       }
       setBanner("");
@@ -387,26 +445,39 @@ function VariationSession({ course, line, onExit }: { course: Course; line: Open
         <div className="flex flex-wrap justify-center gap-2">
           <Button variant="quiet" onClick={onExit}>Back</Button>
           <Button variant="quiet" disabled={!studentTurn || offBook} onClick={() => setHints((value) => value + 1)}>Hint</Button>
-          <Button variant="quiet" disabled={ply === 0 && extra.length === 0} onClick={undoLast}>Undo</Button>
-          <Button
-            variant="quiet"
-            onClick={() => {
-              graded.current = false;
-              setPly(0);
-              setOffBook(false);
-              setExtra([]);
-              setHints(0);
-              setMistakes(0);
-              setDone(false);
-              setHold(false);
-              setBanner("");
-            }}
-          >
-            Retry
-          </Button>
+          <Button variant="quiet" disabled={!canUndo} onClick={undoLast}>Undo</Button>
+          {hasProgress && (
+            <Button
+              variant="quiet"
+              onClick={() => {
+                graded.current = false;
+                setPly(0);
+                setOffBook(false);
+                setExtra([]);
+                setHints(0);
+                setMistakes(0);
+                setDone(false);
+                setHold(false);
+                setBanner("");
+              }}
+            >
+              Let's try that again
+            </Button>
+          )}
+          {done && <Button onClick={onNext}>{hasNext ? "Next variation" : "Back to course"}</Button>}
         </div>
-        <p className="text-sm text-mist">
-          {thinking ? "Stockfish is answering." : studentTurn ? "Your move in the variation." : offBook ? "Stockfish to move." : "Book reply."}
+        <p className="text-center text-sm text-mist">
+          {done
+            ? "That one's logged — nice work."
+            : thinking
+              ? "Stockfish is answering — you went off book."
+              : studentTurn && offBook
+                ? "Your move — you're off book, play on."
+                : studentTurn && expected
+                  ? `Your move — try ${expected}.`
+                  : studentTurn
+                    ? "Your move."
+                    : "Let's see how the book answers."}
         </p>
       </div>
       <Panel>
@@ -423,7 +494,7 @@ function VariationSession({ course, line, onExit }: { course: Course; line: Open
             </span>
           ))}
         </p>
-        {banner && <p className="mt-3 text-sm text-brass-2">{banner}</p>}
+        {banner && <p className="mt-3 text-center text-sm text-brass-2">{banner}</p>}
       </Panel>
     </div>
   );

@@ -12,6 +12,7 @@ type BoardProps = {
   lastMove?: { from: string; to: string } | null;
   arrows?: Arrow[];
   highlights?: string[];
+  premoveSquares?: string[];
   coordinates?: boolean;
   theme?: BoardTheme;
   pieceSet?: PieceSet;
@@ -49,9 +50,10 @@ export function Board({
   lastMove = null,
   arrows = [],
   highlights = [],
+  premoveSquares = [],
   coordinates = true,
   theme = "walnut",
-  pieceSet = "classic",
+  pieceSet = "standard",
   humanColors,
   onPremove,
   onMove,
@@ -133,9 +135,11 @@ export function Board({
   }
 
   return (
-    <div className="relative w-full max-w-xl" data-board={theme}>
+    // No data-board for "theme": that attribute re-declares the square tokens on a
+    // nearer element, which would outrank the app theme's own board palette.
+    <div className="relative w-full max-w-xl" data-board={theme === "theme" ? undefined : theme}>
       <div
-        className="relative grid aspect-square w-full grid-cols-8 overflow-hidden rounded-xl border border-line shadow-lg touch-none select-none"
+        className="board-frame relative grid aspect-square w-full grid-cols-8 overflow-hidden rounded-xl border border-line shadow-lg touch-none select-none"
         onPointerMove={(event) => drag && setDrag({ ...drag, x: event.clientX, y: event.clientY })}
         onPointerUp={onPointerUp}
       >
@@ -146,6 +150,7 @@ export function Board({
             const piece = chess?.get(sq as Square);
             const isLast = lastMove && (lastMove.from === sq || lastMove.to === sq);
             const isTarget = targets.includes(sq as Square);
+            const isPremove = premoveSquares.includes(sq);
             const hide = drag?.from === sq;
             return (
               <button
@@ -161,18 +166,19 @@ export function Board({
                 {checked === sq && <span className="absolute inset-0 bg-danger/55" />}
                 {selected === sq && <span className="absolute inset-1 rounded-sm ring-2 ring-brass" />}
                 {highlights.includes(sq) && <span className="absolute inset-0 bg-ok/35" />}
+                {isPremove && <span className="absolute inset-0 bg-danger/45" />}
                 {isTarget && !piece && (
                   <span className="absolute inset-0 flex items-center justify-center">
-                    <span className="h-3 w-3 rounded-full bg-ink/50" />
+                    <span className="h-3 w-3 rounded-full bg-board-mark/50" />
                   </span>
                 )}
-                {isTarget && piece && <span className="absolute inset-1 rounded-full border-4 border-ink/50" />}
+                {isTarget && piece && <span className="absolute inset-1 rounded-full border-4 border-board-mark/50" />}
                 {piece && !hide && <PieceGlyph type={piece.type} color={piece.color} set={pieceSet} className="relative z-10 h-full w-full p-1" />}
                 {coordinates && file === files[0] && (
-                  <span className={`absolute top-0.5 left-1 text-xs ${light ? "text-walnut" : "text-ivory"}`}>{rank}</span>
+                  <span className={`absolute top-0.5 left-1 text-xs ${light ? "text-coord-light" : "text-coord-dark"}`}>{rank}</span>
                 )}
                 {coordinates && rank === ranks[ranks.length - 1] && (
-                  <span className={`absolute right-1 bottom-0 text-xs ${light ? "text-walnut" : "text-ivory"}`}>{file}</span>
+                  <span className={`absolute right-1 bottom-0 text-xs ${light ? "text-coord-light" : "text-coord-dark"}`}>{file}</span>
                 )}
               </button>
             );
@@ -185,6 +191,7 @@ export function Board({
             return (
               <line
                 key={`${arrow.from}${arrow.to}`}
+                className="board-arrow"
                 x1={a.x}
                 y1={a.y}
                 x2={b.x}
@@ -204,8 +211,8 @@ export function Board({
         </div>
       )}
       {pending && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center bg-ink/70">
-          <div className="flex gap-2 rounded-xl bg-ink-2 p-3" role="dialog" aria-label="Choose promotion">
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-scrim/70">
+          <div className="flex gap-2 rounded-xl bg-surface p-3" role="dialog" aria-label="Choose promotion">
             {["q", "r", "b", "n"].map((type) => (
               <button
                 key={type}

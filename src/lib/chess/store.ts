@@ -8,6 +8,7 @@ import { logDiag } from "./diag";
 import { downloadSyncFile, findSyncFile, requestGoogleToken, uploadSyncFile } from "./google-drive";
 import { applyGrade, blankReview, reviewId } from "./srs";
 import { mergeEnvelopes } from "./sync-merge";
+import { APP_THEME_LABELS, PIECE_SET_LABELS } from "./types";
 import type {
   EndgameAttempt,
   EndgamePos,
@@ -58,7 +59,8 @@ export function defaultSettings(now = Date.now()): Settings {
     updatedAt: now,
     coordinates: true,
     sound: true,
-    boardTheme: "walnut",
+    boardTheme: "theme",
+    appTheme: "brass",
     playStrength: 2000,
     endgameMaximum: true,
     playThinkMs: 900,
@@ -556,7 +558,9 @@ export function bootStore(): Promise<void> {
             ...base.settings,
             ...loaded,
             googleClientId: loaded.googleClientId?.trim() || GOOGLE_CLIENT_ID,
-            pieceSet: loaded.pieceSet === "diagram" ? "diagram" : "standard",
+            // Old snapshots can still name sets that no longer ship.
+            pieceSet: loaded.pieceSet && loaded.pieceSet in PIECE_SET_LABELS ? loaded.pieceSet : "standard",
+            appTheme: loaded.appTheme && loaded.appTheme in APP_THEME_LABELS ? loaded.appTheme : "brass",
           },
           games: snap.games.length ? snap.games : base.games,
           openings: snap.openings,

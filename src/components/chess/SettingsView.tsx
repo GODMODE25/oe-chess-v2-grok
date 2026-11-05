@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { readDiag } from "@/lib/chess/diag";
 import { exportBackup, useOe } from "@/lib/chess/store";
-import type { BoardTheme, PieceSet, SyncStatus } from "@/lib/chess/types";
+import { APP_THEME_LABELS, PIECE_SET_LABELS } from "@/lib/chess/types";
+import type { AppTheme, BoardTheme, PieceSet, SyncStatus } from "@/lib/chess/types";
 import { PieceGlyph } from "./pieces";
 import { Button, Field, Panel, Pill, TextInput } from "./ui";
 
@@ -14,6 +15,34 @@ const STATUS: Record<SyncStatus, string> = {
   conflict: "Conflict",
   error: "Error",
 };
+
+const ELO_FLOOR = 1320;
+const ELO_CEILING = 3190;
+
+/** The board either follows the app theme or keeps one of the three fixed woods. */
+const BOARD_LABELS: Record<BoardTheme, string> = {
+  theme: "Match theme",
+  walnut: "Walnut",
+  ink: "Ink",
+  stone: "Stone",
+};
+
+const APP_THEME_HINTS: Record<AppTheme, string> = {
+  brass: "Default: warm near-black with brass.",
+  print: "Ivory paper, hairline rules, ink text.",
+  graphite: "Cool graphite studio with a lime accent.",
+  atelier: "Aubergine and champagne, generous corners.",
+  cyber: "Near-black blue, cyan signal, amber second accent.",
+  glass: "Translucent panels — the splash is where it shows best.",
+};
+
+function strengthWord(elo: number) {
+  if (elo < 1500) return "learning the ropes";
+  if (elo < 1800) return "club player";
+  if (elo < 2100) return "strong club";
+  if (elo < 2400) return "expert";
+  return "near master";
+}
 
 export function SettingsView() {
   const settings = useOe((s) => s.settings);
@@ -29,6 +58,7 @@ export function SettingsView() {
   const dismissNotes = useOe((s) => s.dismissNotes);
   const googleToken = useOe((s) => s.googleToken);
   const [importNote, setImportNote] = useState("");
+  const sliderValue = settings.playStrength === "max" ? ELO_CEILING : settings.playStrength;
 
   async function onBackup(file: File) {
     try {
@@ -51,24 +81,59 @@ export function SettingsView() {
         </div>
       </Panel>
       <Panel>
+        <h2 className="text-2xl">Appearance</h2>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          {(Object.entries(APP_THEME_LABELS) as Array<[AppTheme, string]>).map(([id, label]) => {
+            const active = (settings.appTheme ?? "brass") === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => patchSettings({ appTheme: id })}
+                aria-pressed={active}
+                className={`rounded-xl border p-3 text-left ${active ? "border-brass" : "border-line"}`}
+              >
+                <span className="text-sm">{label}</span>
+                {/* Previewed in place: this wrapper carries the attribute, so the swatches
+                    below resolve against the theme on show rather than the one in use. */}
+                <span className="mt-2 flex h-12 gap-1 overflow-hidden rounded-md border border-line" data-app-theme={id} aria-hidden="true">
+                  <span className="grid flex-1 grid-cols-2 grid-rows-2">
+                    <span className="bg-board-light" />
+                    <span className="bg-board-dark" />
+                    <span className="bg-board-dark" />
+                    <span className="bg-board-light" />
+                  </span>
+                  <span className="flex w-6 flex-col">
+                    <span className="h-1/2 bg-surface-2" />
+                    <span className="h-1/2 bg-brass" />
+                  </span>
+                  <span className="w-6 bg-canvas" />
+                </span>
+                <span className="mt-2 block text-xs text-mist">{APP_THEME_HINTS[id]}</span>
+              </button>
+            );
+          })}
+        </div>
+        <p className="mt-3 text-xs text-mist">
+          Each theme repaints the app and the splash. Choose Match theme for the board and the squares follow too.
+        </p>
+      </Panel>
+      <Panel>
         <h2 className="text-2xl">Board</h2>
         <div className="mt-3 flex flex-wrap gap-2">
-          {(["walnut", "ink", "stone"] as BoardTheme[]).map((theme) => (
+          {(Object.entries(BOARD_LABELS) as Array<[BoardTheme, string]>).map(([theme, label]) => (
             <Button key={theme} variant={settings.boardTheme === theme ? "primary" : "quiet"} onClick={() => patchSettings({ boardTheme: theme })}>
-              {theme}
+              {label}
             </Button>
           ))}
         </div>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          {([
-            ["standard", "Standard"],
-            ["diagram", "Diagram"],
-            ["classic", "Classic"],
-          ] as Array<[PieceSet, string]>).map(([id, label]) => (
+          {(Object.entries(PIECE_SET_LABELS) as Array<[PieceSet, string]>).map(([id, label]) => (
             <button
               key={id}
               type="button"
               onClick={() => patchSettings({ pieceSet: id })}
+              aria-pressed={settings.pieceSet === id || (!settings.pieceSet && id === "standard")}
               className={`rounded-xl border p-3 text-left ${settings.pieceSet === id || (!settings.pieceSet && id === "standard") ? "border-brass" : "border-line"}`}
             >
               <span className="text-sm">{label}</span>
@@ -80,6 +145,9 @@ export function SettingsView() {
             </button>
           ))}
         </div>
+        <p className="mt-3 text-xs text-mist">
+          All five sets come from Lichess. Merida and Standard are GPL; Alpha, Staunty and Maestro are non-commercial. Each folder keeps its own licence note.
+        </p>
         <div className="mt-3 flex flex-wrap gap-2">
           <Button variant={settings.coordinates ? "primary" : "quiet"} onClick={() => patchSettings({ coordinates: !settings.coordinates })}>Coordinates</Button>
           <Button variant={settings.sound ? "primary" : "quiet"} onClick={() => patchSettings({ sound: !settings.sound })}>Sound</Button>
@@ -87,14 +155,30 @@ export function SettingsView() {
       </Panel>
       <Panel>
         <h2 className="text-2xl">Engine</h2>
-        <p className="mt-2 text-sm text-mist">Play strength {settings.playStrength === "max" ? "maximum" : settings.playStrength}. Endgames use maximum strength unless you turn that off.</p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {[1400, 1800, 2200, "max" as const].map((value) => (
-            <Button key={String(value)} variant={settings.playStrength === value ? "primary" : "quiet"} onClick={() => patchSettings({ playStrength: value })}>
-              {value === "max" ? "Maximum" : value}
-            </Button>
-          ))}
+        <div className="mt-3">
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="text-sm text-mist">Play strength</span>
+            <span className="text-sm tabular-nums">{sliderValue >= ELO_CEILING ? "Maximum" : `${sliderValue} · ${strengthWord(sliderValue)}`}</span>
+          </div>
+          <input
+            type="range"
+            min={ELO_FLOOR}
+            max={ELO_CEILING}
+            step={10}
+            value={sliderValue}
+            aria-label="Engine playing strength"
+            className="mt-2 w-full accent-brass"
+            onChange={(event) => {
+              const next = Number(event.target.value);
+              patchSettings({ playStrength: next >= ELO_CEILING ? "max" : next });
+            }}
+          />
+          <div className="mt-1 flex justify-between text-xs text-mist">
+            <span>{ELO_FLOOR}</span>
+            <span>{ELO_CEILING}</span>
+          </div>
         </div>
+        <p className="mt-2 text-xs text-mist">Stockfish's rating scale starts around {ELO_FLOOR} and the top of the slider runs it uncut. Endgames use maximum strength unless you turn that off.</p>
         <div className="mt-3">
           <Button variant={settings.endgameMaximum ? "primary" : "quiet"} onClick={() => patchSettings({ endgameMaximum: !settings.endgameMaximum })}>
             {settings.endgameMaximum ? "Endgames at full strength" : "Endgames use play strength"}
@@ -134,7 +218,7 @@ export function SettingsView() {
         <p className="mt-2 text-sm text-mist">A local backup is written automatically before a database upgrade. Export one whenever you want a copy you can move by hand.</p>
         <div className="mt-3 flex flex-wrap gap-2">
           <Button onClick={exportBackup}>Export local backup</Button>
-          <label className="inline-flex h-11 cursor-pointer items-center rounded-lg border border-line bg-panel px-4 text-sm">
+          <label className="inline-flex h-11 cursor-pointer items-center rounded-lg border border-line bg-surface-2 px-4 text-sm">
             Merge a backup
             <input className="sr-only" type="file" accept="application/json" onChange={(event) => {
               const file = event.target.files?.[0];
