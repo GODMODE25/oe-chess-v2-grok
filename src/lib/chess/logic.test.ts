@@ -138,7 +138,6 @@ function envelope(input: { openings: ReturnType<typeof line>[]; settingsAt: numb
       playThinkMs: 900,
       endgameThinkMs: 1600,
       analysisDepth: 14,
-      googleClientId: "",
     },
     games: [],
     openings: input.openings,

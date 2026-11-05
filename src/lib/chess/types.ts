@@ -137,7 +137,6 @@ export type Settings = {
   playThinkMs: number;
   endgameThinkMs: number;
   analysisDepth: number;
-  googleClientId: string;
   pieceSet?: PieceSet;
   appTheme?: AppTheme;
   playPanels?: Partial<Record<PlayPanelId, PanelPref>>;

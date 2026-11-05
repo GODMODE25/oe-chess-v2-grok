@@ -2,10 +2,18 @@ import { create } from "zustand";
 import { ENDGAMES } from "@/lib/data/endgames";
 import { EXTRA_OPENINGS } from "@/lib/data/extra-openings";
 import { OPENINGS } from "@/lib/data/openings";
+import { readCloudSnapshot, writeCloudSnapshot } from "./cloud-sync";
 import { DEFAULT_CAROUSEL } from "./courses";
 import { loadSnapshot, saveSnapshot, type LocalSnapshot } from "./db";
 import { logDiag } from "./diag";
-import { downloadSyncFile, findSyncFile, requestGoogleToken, uploadSyncFile } from "./google-drive";
+import {
+  authReady,
+  onAuthChange,
+  registerWithEmail,
+  signInWithEmail,
+  signInWithGoogle,
+  signOutCloud as cloudSignOut,
+} from "./firebase";
 import { applyGrade, blankReview, reviewId } from "./srs";
 import { mergeEnvelopes } from "./sync-merge";
 import { APP_THEME_LABELS, PIECE_SET_LABELS } from "./types";
@@ -51,8 +59,6 @@ const BLACK_STARTERS = [
   "Grunfeld Defense",
 ];
 
-const GOOGLE_CLIENT_ID = "363429370732-ojtbmms9c0grpepguv6on4us3upcd86o.apps.googleusercontent.com";
-
 export function defaultSettings(now = Date.now()): Settings {
   return {
     id: "main",
@@ -66,7 +72,6 @@ export function defaultSettings(now = Date.now()): Settings {
     playThinkMs: 900,
     endgameThinkMs: 1600,
     analysisDepth: 14,
-    googleClientId: GOOGLE_CLIENT_ID,
     pieceSet: "standard",
   };
 }
@@ -117,8 +122,8 @@ export type OeState = {
   extraTags: TagSet;
   sync: SyncState;
   queue: SyncQueueItem[];
-  googleToken: string;
-  googleExpires: number;
+  /** Firebase keeps its own session; only the uid is mirrored here for the UI. */
+  cloudUid: string;
   launch: { startFen: string; sans: string[]; player: Side } | null;
   setNav: (nav: NavId) => void;
   setLaunch: (launch: { startFen: string; sans: string[]; player: Side } | null) => void;
@@ -138,7 +143,8 @@ export type OeState = {
   deleteEndgame: (id: string) => void;
   noteSuccess: () => void;
   signInGoogle: () => Promise<void>;
-  signOutGoogle: () => void;
+  signInEmail: (email: string, password: string, register: boolean) => Promise<void>;
+  signOutCloud: () => Promise<void>;
   syncNow: () => Promise<void>;
   restoreCloud: () => Promise<void>;
   importEnvelope: (raw: unknown, mode: "merge" | "replace") => string;
@@ -201,7 +207,7 @@ function touchSync(state: OeState, kind: string, summary: string): Pick<OeState,
   const offline = typeof navigator !== "undefined" && !navigator.onLine;
   let status = state.sync.status;
   if (offline) status = "offline";
-  else if (status === "up-to-date") status = state.googleToken ? "signed-in" : "signed-out";
+  else if (status === "up-to-date") status = state.cloudUid ? "signed-in" : "signed-out";
   return {
     queue: [...state.queue, item].slice(-200),
     sync: { ...state.sync, status, dirty: true, updatedAt: Date.now(), lastError: offline ? state.sync.lastError : "" },
@@ -230,6 +236,19 @@ function applySnapshot(base: OeState, env: SyncEnvelope): Partial<OeState> {
   };
 }
 
+/** A signed-in account mirrors its uid here; Firebase holds the session itself. */
+function authSettled(state: OeState, user: { uid: string } | null): Pick<OeState, "cloudUid" | "sync"> {
+  return {
+    cloudUid: user?.uid ?? "",
+    sync: { ...state.sync, status: user ? "signed-in" : "signed-out", lastError: "", updatedAt: Date.now() },
+  };
+}
+
+function authFailed(state: OeState, message: string): Pick<OeState, "sync"> {
+  logDiag("error", message);
+  return { sync: { ...state.sync, status: "error", lastError: message, updatedAt: Date.now() } };
+}
+
 const now = Date.now();
 
 export const useOe = create<OeState>((set, get) => ({
@@ -248,8 +267,7 @@ export const useOe = create<OeState>((set, get) => ({
   extraTags: { id: "main", map: {}, updatedAt: now },
   sync: defaultSync(now),
   queue: [],
-  googleToken: "",
-  googleExpires: 0,
+  cloudUid: "",
   launch: null,
   setNav: (nav) => set({ nav }),
   setLaunch: (launch) => set({ launch, nav: launch ? "play" : get().nav }),
@@ -371,37 +389,42 @@ export const useOe = create<OeState>((set, get) => ({
   },
   signInGoogle: async () => {
     const state = get();
-    const clientId = state.settings.googleClientId.trim();
-    if (!clientId) {
-      set({ sync: { ...state.sync, status: "error", lastError: "Add a Google OAuth client id in Settings first.", updatedAt: Date.now() } });
-      return;
-    }
-    if (typeof navigator !== "undefined" && !navigator.onLine) {
+    if (!navigator.onLine) {
       set({ sync: { ...state.sync, status: "offline", updatedAt: Date.now() } });
       return;
     }
-    set({ sync: { ...get().sync, status: "syncing", lastError: "", updatedAt: Date.now() } });
+    set({ sync: { ...state.sync, status: "syncing", lastError: "", updatedAt: Date.now() } });
     try {
-      const token = await requestGoogleToken(clientId);
-      set({
-        googleToken: token.token,
-        googleExpires: token.expiresAt,
-        sync: { ...get().sync, status: "signed-in", lastError: "", updatedAt: Date.now() },
-      });
+      set(authSettled(get(), await signInWithGoogle()));
       schedulePersist();
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Google sign-in failed";
-      logDiag("error", message);
-      set({ sync: { ...get().sync, status: "error", lastError: message, updatedAt: Date.now() } });
+      set(authFailed(get(), error instanceof Error ? error.message : "Cloud sign-in failed."));
     }
   },
-  signOutGoogle: () => {
+  signInEmail: async (email, password, register) => {
     const state = get();
-    set({
-      googleToken: "",
-      googleExpires: 0,
-      sync: { ...state.sync, status: navigator.onLine ? "signed-out" : "offline", updatedAt: Date.now() },
-    });
+    if (!email.trim() || !password) {
+      set(authFailed(state, "Enter an email and a password."));
+      return;
+    }
+    if (!navigator.onLine) {
+      set({ sync: { ...state.sync, status: "offline", updatedAt: Date.now() } });
+      return;
+    }
+    set({ sync: { ...state.sync, status: "syncing", lastError: "", updatedAt: Date.now() } });
+    try {
+      const user = register ? await registerWithEmail(email, password) : await signInWithEmail(email, password);
+      set(authSettled(get(), user));
+      schedulePersist();
+      logDiag("info", register ? "Cloud account created" : "Signed in to the cloud");
+    } catch (error) {
+      set(authFailed(get(), error instanceof Error ? error.message : "Cloud sign-in failed."));
+    }
+  },
+  signOutCloud: async () => {
+    await cloudSignOut().catch(() => undefined);
+    set(authSettled(get(), null));
+    schedulePersist();
   },
   syncNow: async () => {
     const state = get();
@@ -409,12 +432,13 @@ export const useOe = create<OeState>((set, get) => ({
       set({ sync: { ...state.sync, status: "offline", updatedAt: Date.now() } });
       return;
     }
-    if (!state.googleToken || state.googleExpires < Date.now()) {
+    const uid = state.cloudUid || (await authReady())?.uid || "";
+    if (!uid) {
       set({
         sync: {
           ...state.sync,
           status: "signed-out",
-          lastError: "Sign in to Google before syncing.",
+          lastError: "Sign in before syncing.",
           updatedAt: Date.now(),
         },
       });
@@ -422,21 +446,19 @@ export const useOe = create<OeState>((set, get) => ({
     }
     set({ sync: { ...state.sync, status: "syncing", lastError: "", updatedAt: Date.now() } });
     try {
-      const token = get().googleToken;
-      const fileId = await findSyncFile(token);
+      const remoteRaw = await readCloudSnapshot(uid);
       let merged = envelopeOf(get());
       let notes: string[] = [];
       let hadConflict = false;
-      if (fileId) {
-        const remoteRaw = await downloadSyncFile(token, fileId);
-        if (!isEnvelope(remoteRaw)) throw new Error("The Drive file is not an OE Chess sync manifest.");
+      if (remoteRaw !== null) {
+        if (!isEnvelope(remoteRaw)) throw new Error("The cloud copy is not an OE Chess sync manifest.");
         const result = mergeEnvelopes(envelopeOf(get()), remoteRaw);
         merged = result.merged;
         notes = result.notes;
         hadConflict = result.hadConflict;
       }
       merged.exportedAt = Date.now();
-      await uploadSyncFile(token, fileId, merged);
+      await writeCloudSnapshot(uid, merged);
       set({
         ...applySnapshot(get(), merged),
         sync: {
@@ -459,16 +481,16 @@ export const useOe = create<OeState>((set, get) => ({
   },
   restoreCloud: async () => {
     const state = get();
-    if (!state.googleToken) {
+    const uid = state.cloudUid || (await authReady())?.uid || "";
+    if (!uid) {
       set({ sync: { ...state.sync, status: "signed-out", lastError: "Sign in before restoring.", updatedAt: Date.now() } });
       return;
     }
     set({ sync: { ...state.sync, status: "syncing", updatedAt: Date.now() } });
     try {
-      const fileId = await findSyncFile(state.googleToken);
-      if (!fileId) throw new Error("No OE Chess file in Drive app data yet.");
-      const remoteRaw = await downloadSyncFile(state.googleToken, fileId);
-      if (!isEnvelope(remoteRaw)) throw new Error("The Drive file is not an OE Chess sync manifest.");
+      const remoteRaw = await readCloudSnapshot(uid);
+      if (remoteRaw === null) throw new Error("No cloud copy for this account yet.");
+      if (!isEnvelope(remoteRaw)) throw new Error("The cloud copy is not an OE Chess sync manifest.");
       const backup = envelopeOf(get());
       downloadText(JSON.stringify(backup, null, 2), "oe-chess-backup-before-restore.json");
       set({
@@ -495,7 +517,7 @@ export const useOe = create<OeState>((set, get) => ({
     if (mode === "replace") {
       set({
         ...applySnapshot(state, raw),
-        sync: { ...state.sync, dirty: true, notes: ["Imported a backup over this device."], status: state.googleToken ? "signed-in" : state.sync.status, updatedAt: Date.now() },
+        sync: { ...state.sync, dirty: true, notes: ["Imported a backup over this device."], status: state.cloudUid ? "signed-in" : state.sync.status, updatedAt: Date.now() },
       });
     } else {
       const result = mergeEnvelopes(envelopeOf(state), raw);
@@ -505,7 +527,7 @@ export const useOe = create<OeState>((set, get) => ({
           ...state.sync,
           dirty: true,
           notes: result.notes.length ? result.notes : ["Merged the backup into this device."],
-          status: result.hadConflict ? "conflict" : state.googleToken ? "signed-in" : state.sync.status,
+          status: result.hadConflict ? "conflict" : state.cloudUid ? "signed-in" : state.sync.status,
           updatedAt: Date.now(),
         },
       });
@@ -519,7 +541,7 @@ export const useOe = create<OeState>((set, get) => ({
       sync: {
         ...state.sync,
         notes: [],
-        status: state.sync.status === "conflict" ? (state.googleToken ? "up-to-date" : "signed-out") : state.sync.status,
+        status: state.sync.status === "conflict" ? (state.cloudUid ? "up-to-date" : "signed-out") : state.sync.status,
       },
     });
     schedulePersist();
@@ -557,7 +579,6 @@ export function bootStore(): Promise<void> {
           settings: {
             ...base.settings,
             ...loaded,
-            googleClientId: loaded.googleClientId?.trim() || GOOGLE_CLIENT_ID,
             // Old snapshots can still name sets that no longer ship.
             pieceSet: loaded.pieceSet && loaded.pieceSet in PIECE_SET_LABELS ? loaded.pieceSet : "standard",
             appTheme: loaded.appTheme && loaded.appTheme in APP_THEME_LABELS ? loaded.appTheme : "brass",
@@ -577,6 +598,15 @@ export function bootStore(): Promise<void> {
         });
         if (!snap.profile) schedulePersist();
         logDiag("info", "Local database ready");
+        // The first callback reports the session Firebase already restored, so a reload
+        // returns to the same signed-in state without another popup.
+        onAuthChange((user) => {
+          const state = useOe.getState();
+          useOe.setState({
+            cloudUid: user?.uid ?? "",
+            sync: { ...state.sync, status: user && state.sync.status === "signed-out" ? "signed-in" : state.sync.status },
+          });
+        });
       } catch (error) {
         const message = error instanceof Error ? error.message : "Could not open the local database";
         logDiag("error", message);

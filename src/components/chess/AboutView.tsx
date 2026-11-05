@@ -24,7 +24,7 @@ export function AboutView() {
       <Panel>
         <h3 className="text-xl">Offline first</h3>
         <p className="mt-2 text-sm text-mist">
-          The board, the courses, and the endgames work with no network. Google sign-in is optional and only copies your progress into your own Drive app-data folder. Nothing is sent to an OE Chess server.
+          The board, the courses, and the endgames work with no network. Cloud sign-in is optional and only keeps a copy of your progress so another device can pick it up. Nothing is sent to an OE Chess server.
         </p>
       </Panel>
       <Panel>

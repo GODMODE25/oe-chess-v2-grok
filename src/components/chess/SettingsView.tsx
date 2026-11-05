@@ -51,13 +51,16 @@ export function SettingsView() {
   const patchSettings = useOe((s) => s.patchSettings);
   const setProfileName = useOe((s) => s.setProfileName);
   const signInGoogle = useOe((s) => s.signInGoogle);
-  const signOutGoogle = useOe((s) => s.signOutGoogle);
+  const signInEmail = useOe((s) => s.signInEmail);
+  const signOutCloud = useOe((s) => s.signOutCloud);
   const syncNow = useOe((s) => s.syncNow);
   const restoreCloud = useOe((s) => s.restoreCloud);
   const importEnvelope = useOe((s) => s.importEnvelope);
   const dismissNotes = useOe((s) => s.dismissNotes);
-  const googleToken = useOe((s) => s.googleToken);
+  const cloudUid = useOe((s) => s.cloudUid);
   const [importNote, setImportNote] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const sliderValue = settings.playStrength === "max" ? ELO_CEILING : settings.playStrength;
 
   async function onBackup(file: File) {
@@ -193,14 +196,40 @@ export function SettingsView() {
           </Pill>
         </div>
         <p className="mt-2 text-sm text-mist">
-          Progress is stored on this device first. Google Drive sync is optional and writes only to your Drive app-data folder. Nothing is sent to an OE Chess server.
+          Progress is stored on this device first. Cloud sync is optional and keeps one copy per account, so two devices meet in the middle when you sync. Nothing is sent to an OE Chess server.
         </p>
         <div className="mt-3 grid gap-2">
-          <Field label="Google OAuth web client id">
-            <TextInput value={settings.googleClientId} placeholder="apps.googleusercontent.com" onChange={(event) => patchSettings({ googleClientId: event.target.value })} />
-          </Field>
+          {cloudUid ? (
+            <div className="flex flex-wrap gap-2">
+              <Button variant="quiet" onClick={() => void signOutCloud()}>Sign out</Button>
+            </div>
+          ) : (
+            <div className="grid gap-2">
+              <div className="flex flex-wrap gap-2">
+                <Button onClick={() => void signInGoogle()}>Sign in with Google</Button>
+              </div>
+              <form
+                className="grid gap-2 sm:grid-cols-2"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void signInEmail(email, password, false);
+                  setPassword("");
+                }}
+              >
+                <Field label="Email">
+                  <TextInput type="email" autoComplete="email" value={email} placeholder="you@example.com" onChange={(event) => setEmail(event.target.value)} />
+                </Field>
+                <Field label="Password">
+                  <TextInput type="password" autoComplete="current-password" value={password} placeholder="At least six characters" onChange={(event) => setPassword(event.target.value)} />
+                </Field>
+                <div className="flex flex-wrap gap-2 sm:col-span-2">
+                  <Button variant="quiet" type="submit">Sign in with email</Button>
+                  <Button variant="quiet" type="button" onClick={() => { void signInEmail(email, password, true); setPassword(""); }}>Create account</Button>
+                </div>
+              </form>
+            </div>
+          )}
           <div className="flex flex-wrap gap-2">
-            {googleToken ? <Button variant="quiet" onClick={signOutGoogle}>Sign out</Button> : <Button onClick={() => void signInGoogle()}>Sign in with Google</Button>}
             <Button variant="quiet" onClick={() => void syncNow()}>Sync now</Button>
             <Button variant="quiet" onClick={() => void restoreCloud()}>Restore from cloud</Button>
           </div>
@@ -247,7 +276,7 @@ export function SettingsView() {
         <div className="mt-3 grid gap-3 text-sm text-mist md:grid-cols-3">
           <p><strong className="text-ivory">Openings.</strong> Put lines in a White or Black repertoire, then drill them. A miss or a slow answer comes back sooner. Blind drill hides the book move until you ask.</p>
           <p><strong className="text-ivory">Endgames.</strong> You play the assigned side against Stockfish. Mate, promote, or hold, depending on the card. Hints show the engine move. Retry starts the same position again.</p>
-          <p><strong className="text-ivory">Offline.</strong> The board, the openings, and the endgames work with no network. Sign-in is only for copying progress into your own Google Drive.</p>
+          <p><strong className="text-ivory">Offline.</strong> The board, the openings, and the endgames work with no network. Sign-in is only for keeping a cloud copy of your progress.</p>
         </div>
       </Panel>
     </div>

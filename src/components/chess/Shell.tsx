@@ -74,7 +74,7 @@ export function Shell() {
   useEffect(() => {
     function onLine() {
       const state = useOe.getState();
-      useOe.setState({ sync: { ...state.sync, status: navigator.onLine ? (state.googleToken ? "signed-in" : "signed-out") : "offline", updatedAt: Date.now() } });
+      useOe.setState({ sync: { ...state.sync, status: navigator.onLine ? (state.cloudUid ? "signed-in" : "signed-out") : "offline", updatedAt: Date.now() } });
     }
     window.addEventListener("online", onLine);
     window.addEventListener("offline", onLine);

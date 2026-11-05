@@ -2,7 +2,7 @@
 
 Personal opening and endgame trainer. No puzzles, tactics trainer, online play, tournaments, or chat.
 
-The app that runs here is the full trainer: a local chessboard, a bundled Stockfish 19 engine, a shipped opening book, and 300+ endgame positions. Progress stays in the browser database and can optionally sync to your own Google Drive.
+The app that runs here is the full trainer: a local chessboard, a bundled Stockfish 19 engine, a shipped opening book, and 300+ endgame positions. Progress stays in the browser database and can optionally sync to the cloud.
 
 ## Train
 
@@ -11,9 +11,9 @@ The app that runs here is the full trainer: a local chessboard, a bundled Stockf
 - **Endgames** use dropdowns for category, difficulty, pieces, side, and progress. Every shipped position is listed. Each side can be Human or Computer, and premoved. A prompt appears when you solve or fail, with Next or Back to the menu.
 - **Library** keeps saved games and imports PGN.
 - **About** explains what the trainer does and what it leaves out.
-- **Settings** chooses a board color and the piece set, sets engine strength on a slider (about 1320 up to full strength), exports a backup, and optionally syncs to Google Drive.
+- **Settings** chooses a board color and the piece set, sets engine strength on a slider (about 1320 up to full strength), exports a backup, and optionally syncs to the cloud.
 
-You can use everything with no network. Google sign-in is only for sync.
+You can use everything with no network. Cloud sign-in is only for sync.
 
 ## Run
 
@@ -64,13 +64,23 @@ Stockfish 19 lite, single-threaded WebAssembly, from the `stockfish` npm package
 
 Syzygy tablebases are not bundled. `probeTablebase` in `src/lib/chess/endgame-result.ts` returns null until tablebase files are added.
 
-## Google Drive
+## Cloud sync
 
-1. In Google Cloud, create an OAuth client of type **Web application**.
-2. Add this site’s origin as an authorized JavaScript origin.
-3. Enable the Drive API.
-4. The client id for this personal install is already filled in Settings. Change it if you use a different Google Cloud project. The scope requested is `drive.appdata` only.
-5. Sign in, then use **Sync now** or **Restore from cloud**.
+Progress goes to one Cloud Firestore document per account, `users/{uid}/oeChess/snapshot`, in the same Firebase project that Memorize Digits uses. The web config is in `src/lib/chess/firebase.ts`, and a Firebase web `apiKey` is a public client identifier rather than a secret, so it is safe to read in the open.
+
+Three switches live in the Firebase console, outside this repo:
+
+1. **Authentication → Sign-in method**: turn on Google, and Email/Password if you want that path.
+2. **Authentication → Settings → Authorized domains**: add the domain you serve this from; `localhost` covers a local run. An unlisted origin fails with `auth/unauthorized-domain`.
+3. **Firestore → Rules**: cover the chess path, or every read and write comes back `permission-denied`.
+
+```
+match /users/{uid}/oeChess/snapshot {
+  allow read, write: if request.auth != null && request.auth.uid == uid;
+}
+```
+
+One Firestore document holds 1 MB, so a large saved-game library can reach that ceiling. `writeCloudSnapshot` refuses the write and names the size rather than failing quietly.
 
 Sync is local-first. Simple fields use the newest edit. Records merge by id. A newer edit beats an older delete. Equal timestamps keep the content. Restore downloads a local backup before replacing this device.
 
