@@ -9,3 +9,12 @@ dist/
 .grok/skills/
 .grok/references/
 .grok/status
+# raw Lichess dump aggregates (local only, regenerable)
+scripts/cache/
+# transient typecheck artifacts
+.tc.log
+.tc.done
+probe.json
+.dev-server.log
+# vendored Stockfish copy the Node UCI harness runs against (regenerable)
+scripts/.engine/

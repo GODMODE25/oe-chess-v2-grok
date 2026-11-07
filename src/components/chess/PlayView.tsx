@@ -1,14 +1,20 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getEngine } from "@/lib/chess/engine";
-import { applyUciMove, fenOk, replay, START_FEN, statusOf } from "@/lib/chess/rules";
+import { dequeuePremove, dropAnsweredPremove, enqueuePremove, premoveLabel, type QueuedMove } from "@/lib/chess/premove";
+import { applyUciMove, capturedPieces, fenOk, materialLead, replay, START_FEN, statusOf } from "@/lib/chess/rules";
 import { playTone, setSoundEnabled } from "@/lib/chess/sound";
 import { useOe } from "@/lib/chess/store";
-import type { EngineInfo, PanelPref, PlayPanelId, Side } from "@/lib/chess/types";
+import type { EngineInfo, PanelPref, PieceSet, PlayPanelId, Prefs, Side } from "@/lib/chess/types";
 import { Board } from "./Board";
-import { Button, cn, Field, Panel, TextInput } from "./ui";
+import { EnginePanelBody } from "./EnginePanel";
+import { EvalBar } from "./EvalBar";
+import { PieceGlyph } from "./pieces";
+import { Button, cn, CollapsiblePanel, Field, TextInput } from "./ui";
 
 const TIMES = [
   { id: "unlimited", label: "Unlimited", ms: 0, inc: 0 },
+  { id: "1+0", label: "1", ms: 60_000, inc: 0 },
+  { id: "2+1", label: "2+1", ms: 2 * 60_000, inc: 1_000 },
   { id: "3+2", label: "3+2", ms: 3 * 60_000, inc: 2_000 },
   { id: "5+0", label: "5+0", ms: 5 * 60_000, inc: 0 },
   { id: "10+0", label: "10+0", ms: 10 * 60_000, inc: 0 },
@@ -20,6 +26,38 @@ function clockText(ms: number) {
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
 }
 
+const PIECE_NAMES: Record<string, string> = { p: "pawn", n: "knight", b: "bishop", r: "rook", q: "queen" };
+
+/** The pieces one player has taken, plus how much they are up — the way a board tray reads. */
+function MaterialRow({ side, taken, takenColor, lead, pieceSet }: {
+  side: Side;
+  taken: string[];
+  takenColor: Side;
+  lead: number;
+  pieceSet: PieceSet;
+}) {
+  const name = side === "w" ? "White" : "Black";
+  const label = taken.length
+    ? `${name} took ${taken.map((type) => PIECE_NAMES[type] ?? type).join(", ")}`
+    : `${name} has taken nothing`;
+  return (
+    <div
+      role="img"
+      aria-label={lead > 0 ? `${label}. ${name} is up ${lead}.` : label}
+      className="flex min-h-7 w-full items-center gap-1 text-xs"
+      title={lead > 0 ? `${name} is up ${lead}` : undefined}
+    >
+      {taken.map((type, index) => (
+        <PieceGlyph key={`${type}-${index}`} type={type} color={takenColor} set={pieceSet} className="h-5 w-5 opacity-80" />
+      ))}
+      {lead > 0 && <span className="ml-1 font-medium tabular-nums text-brass">+{lead}</span>}
+    </div>
+  );
+}
+
+const DEFAULT_SEATS: Record<Side, "you" | "stockfish"> = { w: "you", b: "stockfish" };
+const NO_PREFS: Prefs = {};
+
 const PANELS: { id: PlayPanelId; label: string }[] = [
   { id: "presets", label: "Presets" },
   { id: "new", label: "New game" },
@@ -29,64 +67,10 @@ const PANELS: { id: PlayPanelId; label: string }[] = [
 
 const DEFAULT_PREF: PanelPref = { visible: true, collapsed: false };
 
-function EvalBar({ info, stm, flipped }: { info: EngineInfo | null; stm: Side; flipped: boolean }) {
-  let pct = 50;
-  if (info) {
-    if (info.mate != null) {
-      const mateForWhite = stm === "w" ? info.mate > 0 : info.mate < 0;
-      pct = mateForWhite ? 100 : 0;
-    } else if (info.cp != null) {
-      const cpWhite = stm === "w" ? info.cp : -info.cp;
-      pct = 100 / (1 + Math.exp(-0.004 * cpWhite));
-    }
-  }
-  const whitePct = flipped ? 100 - pct : pct;
-  return (
-    <div
-      className="relative w-2.5 shrink-0 self-stretch overflow-hidden rounded-full border border-line bg-surface"
-      title={info ? info.score : "No evaluation yet"}
-      aria-label="Evaluation bar"
-    >
-      <div className="absolute inset-x-0 top-0 bg-ivory" style={{ height: `${whitePct}%` }} />
-    </div>
-  );
-}
-
-function CollapsiblePanel({
-  title,
-  collapsed,
-  onToggle,
-  bodyClassName,
-  children,
-}: {
-  title: string;
-  collapsed: boolean;
-  onToggle: () => void;
-  bodyClassName?: string;
-  children: ReactNode;
-}) {
-  return (
-    <Panel className={cn("min-w-0", collapsed ? "py-2" : "p-3")}>
-      <div className="flex items-center justify-between gap-2">
-        <h2 className={collapsed ? "text-sm font-medium text-mist" : "text-lg"}>{title}</h2>
-        <button
-          type="button"
-          onClick={onToggle}
-          aria-expanded={!collapsed}
-          aria-label={collapsed ? `Expand ${title}` : `Collapse ${title}`}
-          className="rounded-md px-2 py-1 text-xs text-mist hover:bg-surface-2 hover:text-ivory"
-        >
-          {collapsed ? "Expand" : "Collapse"}
-        </button>
-      </div>
-      {!collapsed && <div className={cn("mt-2 min-w-0", bodyClassName)}>{children}</div>}
-    </Panel>
-  );
-}
-
 export function PlayView() {
   const settings = useOe((s) => s.settings);
   const patchSettings = useOe((s) => s.patchSettings);
+  const patchPrefs = useOe((s) => s.patchPrefs);
   const profile = useOe((s) => s.profile);
   const launch = useOe((s) => s.launch);
   const setLaunch = useOe((s) => s.setLaunch);
@@ -95,10 +79,9 @@ export function PlayView() {
   const [sans, setSans] = useState<string[]>([]);
   const [cursor, setCursor] = useState<number | null>(null);
   const [player, setPlayer] = useState<Side>("w");
-  const [seats, setSeats] = useState<Record<Side, "you" | "stockfish">>({ w: "you", b: "stockfish" });
-  const [premoves, setPremoves] = useState<{ from: string; to: string; promotion?: string }[]>([]);
-  const [orientation, setOrientation] = useState<"white" | "black">("white");
-  const [timeId, setTimeId] = useState("unlimited");
+  const [premoves, setPremoves] = useState<QueuedMove[]>([]);
+  const [premoveNote, setPremoveNote] = useState("");
+  const [activeInc, setActiveInc] = useState(0);
   const [clock, setClock] = useState<{ w: number; b: number } | null>(null);
   const [gameId, setGameId] = useState(() => crypto.randomUUID());
   const [result, setResult] = useState("*");
@@ -110,7 +93,26 @@ export function PlayView() {
   const [fenDraft, setFenDraft] = useState("");
   const [phase, setPhase] = useState<"idle" | "playing" | "paused">("idle");
 
-  const time = TIMES.find((row) => row.id === timeId) ?? TIMES[0];
+  // Every setup choice lives in settings.prefs, so a reload or another device opens on the same position.
+  const prefs = settings.prefs ?? NO_PREFS;
+  const seats = prefs.playSeats ?? DEFAULT_SEATS;
+  const setSeats = (next: Record<Side, "you" | "stockfish">) => patchPrefs({ playSeats: next });
+  const orientation = prefs.orientation ?? "white";
+  const setOrientation = (next: "white" | "black") => patchPrefs({ orientation: next });
+  const timeId = prefs.timeId ?? "unlimited";
+  const setTimeId = (next: string) => patchPrefs({ timeId: next });
+  const customMinutes = prefs.customMinutes ?? "5";
+  const setCustomMinutes = (next: string) => patchPrefs({ customMinutes: next });
+  const customSeconds = prefs.customSeconds ?? "3";
+  const setCustomSeconds = (next: string) => patchPrefs({ customSeconds: next });
+
+  const customControl = useMemo(() => {
+    const minutes = Math.min(180, Math.max(1, Number.parseInt(customMinutes, 10) || 0));
+    const seconds = Math.min(180, Math.max(0, Number.parseInt(customSeconds, 10) || 0));
+    return { id: "custom", label: `${minutes}+${seconds}`, ms: minutes * 60_000, inc: seconds * 1000 };
+  }, [customMinutes, customSeconds]);
+  const time = timeId === "custom" ? customControl : (TIMES.find((row) => row.id === timeId) ?? TIMES[0]);
+  const timeControlLabel = time.id === "custom" ? time.label : time.id;
   const viewedSans = cursor == null ? sans : sans.slice(0, cursor);
   const viewed = useMemo(() => replay(startFen, viewedSans), [startFen, viewedSans]);
   const full = useMemo(() => replay(startFen, sans), [startFen, sans]);
@@ -121,6 +123,9 @@ export function PlayView() {
   const engineTurn = phase === "playing" && !browsing && !over && seats[turn] === "stockfish";
   const humans = (["w", "b"] as Side[]).filter((side) => seats[side] === "you");
   const last = viewed.chess.history({ verbose: true }).at(-1);
+  const lost = useMemo(() => capturedPieces(viewed.chess), [viewed.chess]);
+  const topColor: Side = orientation === "white" ? "b" : "w";
+  const bottomColor: Side = orientation === "white" ? "w" : "b";
   const uciKey = full.uci.join(" ");
 
   useEffect(() => setSoundEnabled(settings.sound), [settings.sound]);
@@ -135,12 +140,15 @@ export function PlayView() {
       b: launch.player === "b" ? "you" : "stockfish",
     });
     setPremoves([]);
+    setPremoveNote("");
+    premoveSlot.current = "";
     setOrientation(launch.player === "w" ? "white" : "black");
     setCursor(null);
     setResult("*");
     setFinished(false);
     setClock(null);
     setTimeId("unlimited");
+    setActiveInc(0);
     setGameId(crypto.randomUUID());
     setPhase("playing");
     setInfo(null);
@@ -170,11 +178,20 @@ export function PlayView() {
     setClock(time.ms ? { w: time.ms, b: time.ms } : null);
   }, [phase, time.ms, timeId]);
 
+  const seatedOnce = useRef(false);
   useEffect(() => {
+    // Only a seat change follows the board around; the first run must leave the remembered view alone.
+    if (!seatedOnce.current) {
+      seatedOnce.current = true;
+      return;
+    }
     if (seats.b === "you" && seats.w !== "you") setOrientation("black");
     else if (seats.w === "you" && seats.b !== "you") setOrientation("white");
   }, [seats]);
 
+  // Move search and analysis share one effect on purpose: the move search must own the
+  // engine slot while it runs, so analysis only kicks in when there is no engine turn.
+  // (useEngineAnalysis serves the trainers, where there is no move search to interleave.)
   useEffect(() => {
     const wantMove = engineTurn;
     const wantAnalysis = analysis && !engineTurn;
@@ -195,8 +212,12 @@ export function PlayView() {
       })
       .then((best) => {
         if (cancel || !best || !wantMove) return;
-        setSans((current) => applyUciMove(startFen, current, best) ?? current);
+        const engineColor = full.chess.turn();
+        const next = applyUciMove(startFen, sans, best);
+        if (!next) return;
+        setSans(next);
         setCursor(null);
+        awardIncrement(engineColor);
         playTone("move");
       })
       .catch((error: unknown) => {
@@ -209,7 +230,7 @@ export function PlayView() {
       cancel = true;
       engine.stop();
     };
-  }, [engineTurn, analysis, startFen, uciKey, settings.playThinkMs, settings.playStrength, settings.analysisDepth, viewed.chess, full.uci]);
+  }, [engineTurn, analysis, startFen, uciKey, sans, settings.playThinkMs, settings.playStrength, settings.analysisDepth, viewed.chess, full.uci]);
 
   useEffect(() => {
     if (status.over && result === "*") {
@@ -231,14 +252,20 @@ export function PlayView() {
         sans,
         event: "Casual game",
         playerColor: seats.w === "you" && seats.b === "you" ? "either" : seats.b === "you" ? "b" : "w",
-        timeControl: time?.id ?? "unlimited",
+        timeControl: timeControlLabel,
         finished,
         createdAt: Date.now(),
         updatedAt: Date.now(),
       });
     }, 400);
     return () => window.clearTimeout(handle);
-  }, [sans, finished, result, gameId, startFen, seats, profile.name, time?.id, saveGame]);
+  }, [sans, finished, result, gameId, startFen, seats, profile.name, timeControlLabel, saveGame]);
+
+  // Increment comes from the control frozen at Start, so switching chips mid-game cannot change what a move adds.
+  function awardIncrement(side: Side) {
+    if (!clock || !activeInc) return;
+    setClock((current) => (current ? { ...current, [side]: current[side] + activeInc } : current));
+  }
 
   function playSan(from: string, to: string, promotion?: string) {
     let moved;
@@ -247,22 +274,16 @@ export function PlayView() {
     } catch {
       return false;
     }
-    if (clock && time && time.inc) {
-      const side = moved.color;
-      setClock((current) => (current ? { ...current, [side]: current[side] + time.inc } : current));
-    }
+    awardIncrement(moved.color);
     setSans((rows) => [...rows, moved.san]);
     setCursor(null);
     playTone(moved.captured ? "capture" : "move");
     return true;
   }
 
-  function queuePremove(from: string, to: string, promotion?: string) {
-    setPremoves((queue) => {
-      const next = { from, to, promotion };
-      if (queue.length >= 2) return [queue[0], next];
-      return [...queue, next];
-    });
+  function queuePremove(move: QueuedMove) {
+    setPremoveNote("");
+    setPremoves((queue) => enqueuePremove(queue, move));
   }
 
   function pushMove(from: string, to: string, promotion?: string) {
@@ -270,18 +291,33 @@ export function PlayView() {
     const piece = full.chess.get(from as "a1");
     if (!piece || seats[piece.color] !== "you") return;
     if (thinking || piece.color !== turn) {
-      queuePremove(from, to, promotion);
+      queuePremove({ from, to, promotion, color: piece.color });
       return;
     }
+    // A move made by hand answers the queued head that was waiting for this turn — unless the flush
+    // already spent it, in which case the next entry is aimed at a later turn and stays put.
+    if (claimPremoveTurn()) setPremoves((queue) => dropAnsweredPremove(queue, piece.color));
     playSan(from, to, promotion);
+  }
+
+  const premoveSlot = useRef("");
+  // One queue entry per turn, so an illegal head is cancelled alone instead of cascading into the next.
+  function claimPremoveTurn() {
+    const slot = `${turn}${sans.length}`;
+    if (premoveSlot.current === slot) return false;
+    premoveSlot.current = slot;
+    return true;
   }
 
   useEffect(() => {
     if (browsing || over || thinking || seats[turn] !== "you" || premoves.length === 0) return;
-    const [head, ...rest] = premoves;
-    setPremoves(rest);
-    // An illegal head just fails and is dropped with it; the rest wait for the next turn.
-    playSan(head.from, head.to, head.promotion);
+    // The head waits for its own side's turn, so a two-human queue is not judged against the other clock.
+    if (premoves[0].color !== turn) return;
+    if (!claimPremoveTurn()) return;
+    const { move, cancelled, remaining } = dequeuePremove(full.chess.fen(), premoves);
+    setPremoves(remaining);
+    if (cancelled) setPremoveNote(`${premoveLabel(cancelled)} is no longer legal, so it was dropped.`);
+    if (move) playSan(move.from, move.to, move.promotion);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [premoves, turn, thinking, browsing, over, sans]);
 
@@ -293,6 +329,8 @@ export function PlayView() {
     setFinished(false);
     setResult("*");
     setPremoves([]);
+    setPremoveNote("");
+    premoveSlot.current = "";
   }
 
   function begin(next: Record<Side, "you" | "stockfish"> = seats) {
@@ -308,8 +346,11 @@ export function PlayView() {
     setInfo(null);
     setEngineError("");
     setPremoves([]);
+    setPremoveNote("");
+    premoveSlot.current = "";
     setGameId(crypto.randomUUID());
     setClock(time && time.ms ? { w: time.ms, b: time.ms } : null);
+    setActiveInc(time.inc);
     setPhase("playing");
   }
 
@@ -322,6 +363,8 @@ export function PlayView() {
     setInfo(null);
     setEngineError("");
     setPremoves([]);
+    setPremoveNote("");
+    premoveSlot.current = "";
     setGameId(crypto.randomUUID());
     setClock(time && time.ms ? { w: time.ms, b: time.ms } : null);
   }
@@ -330,7 +373,7 @@ export function PlayView() {
     function onKey(event: KeyboardEvent) {
       const tag = (event.target as HTMLElement | null)?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
-      if (event.key === "f") setOrientation((side) => (side === "white" ? "black" : "white"));
+      if (event.key === "f") setOrientation(orientation === "white" ? "black" : "white");
       if (event.key === "u") undo();
       if (event.key === "ArrowLeft") setCursor((value) => Math.max(0, (value ?? sans.length) - 1));
       if (event.key === "ArrowRight") {
@@ -343,7 +386,7 @@ export function PlayView() {
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [sans, turn, seats]);
+  }, [sans, turn, seats, orientation]);
 
   const arrow = info?.pvUci[0] ? [{ from: info.pvUci[0].slice(0, 2), to: info.pvUci[0].slice(2, 4) }] : [];
   const label = phase === "idle" ? "Press Start" : phase === "paused" ? "Paused" : thinking ? "Stockfish is thinking" : status.label;
@@ -370,27 +413,31 @@ export function PlayView() {
           <span className="text-center text-ivory">{label}</span>
           <span className="tabular-nums text-ivory">{clock ? clockText(orientation === "white" ? clock.w : clock.b) : "No clock"}</span>
         </div>
-        <div className="flex w-full max-w-xl items-stretch gap-2">
-          {analysis && <EvalBar info={info} stm={viewed.chess.turn()} flipped={orientation === "black"} />}
-          <div className="min-w-0 flex-1">
-            <Board
-              fen={viewed.chess.fen()}
-              orientation={orientation}
-              interactive={phase === "playing" && !browsing && !over && humans.length > 0}
-              humanColors={humans}
-              onPremove={queuePremove}
-              coordinates={settings.coordinates}
-              theme={settings.boardTheme}
-              pieceSet={settings.pieceSet ?? "standard"}
-              lastMove={last ? { from: last.from, to: last.to } : null}
-              premoveSquares={premoves.flatMap((p) => [p.from, p.to])}
-              arrows={analysis || thinking ? arrow : []}
-              onMove={pushMove}
-            />
+        <div className="flex w-full max-w-xl flex-col gap-1">
+          <MaterialRow side={topColor} taken={lost[bottomColor]} takenColor={bottomColor} lead={materialLead(viewed.chess, topColor)} pieceSet={settings.pieceSet ?? "standard"} />
+          <div className="flex w-full items-stretch gap-2">
+            {analysis && <EvalBar info={info} stm={viewed.chess.turn()} flipped={orientation === "black"} />}
+            <div className="min-w-0 flex-1">
+              <Board
+                fen={viewed.chess.fen()}
+                orientation={orientation}
+                interactive={phase === "playing" && !browsing && !over && humans.length > 0}
+                humanColors={humans}
+                onPremove={queuePremove}
+                coordinates={settings.coordinates}
+                theme={settings.boardTheme}
+                pieceSet={settings.pieceSet ?? "standard"}
+                lastMove={last ? { from: last.from, to: last.to } : null}
+                premoves={premoves}
+                arrows={analysis || thinking ? arrow : []}
+                onMove={pushMove}
+              />
+            </div>
           </div>
+          <MaterialRow side={bottomColor} taken={lost[topColor]} takenColor={topColor} lead={materialLead(viewed.chess, bottomColor)} pieceSet={settings.pieceSet ?? "standard"} />
         </div>
         <div className="flex flex-wrap justify-center gap-2">
-          <Button variant="quiet" onClick={() => setOrientation((side) => (side === "white" ? "black" : "white"))}>Flip</Button>
+          <Button variant="quiet" onClick={() => setOrientation(orientation === "white" ? "black" : "white")}>Flip</Button>
           <Button variant="quiet" onClick={undo}>Undo</Button>
           <Button variant="quiet" disabled={phase === "idle"} onClick={() => setPhase((current) => (current === "playing" ? "paused" : "playing"))}>
             {phase === "paused" ? "Resume" : "Pause"}
@@ -399,7 +446,31 @@ export function PlayView() {
           <Button variant="quiet" onClick={() => setAnalysis((on) => !on)}>{analysis ? "Hide analysis" : "Analyze"}</Button>
           <Button variant="quiet" onClick={stopGame}>New game</Button>
         </div>
-        <p className="text-xs text-mist">{premoves.length > 0 ? `${premoves.length} premove${premoves.length > 1 ? "s" : ""} set. They play if still legal.` : "Flip, undo, and the arrow keys also work from the keyboard."}</p>
+        {premoves.length > 0 ? (
+          <div className="flex w-full max-w-xl flex-wrap items-center gap-1.5 text-xs">
+            <span className="text-mist">Queued:</span>
+            {premoves.map((move, index) => (
+              <span key={`${move.from}${move.to}${index}`} className="flex items-center gap-1 rounded-full border border-line bg-surface-2 py-1 pl-2 pr-1">
+                <span className="tabular-nums text-mist">{index + 1}</span>
+                <span className="text-ivory">{premoveLabel(move)}</span>
+                <button
+                  type="button"
+                  aria-label={`Remove ${premoveLabel(move)} from the queue`}
+                  className="grid h-5 w-5 place-items-center rounded-full text-mist hover:bg-surface hover:text-ivory"
+                  onClick={() => setPremoves((queue) => queue.filter((_, i) => i !== index))}
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+            <button type="button" className="rounded-full px-2 py-1 text-mist hover:bg-surface-2 hover:text-ivory" onClick={() => { setPremoves([]); setPremoveNote(""); }}>
+              Clear
+            </button>
+          </div>
+        ) : (
+          <p className="text-xs text-mist">Flip, undo, and the arrow keys also work from the keyboard.</p>
+        )}
+        {premoveNote && <p className="text-xs text-danger">{premoveNote}</p>}
         {engineError && <p className="text-sm text-danger">{engineError}</p>}
       </div>
       <div className="flex w-full min-w-0 flex-col gap-3">
@@ -451,8 +522,35 @@ export function PlayView() {
                       {row.label}
                     </Button>
                   ))}
+                  <Button variant={timeId === "custom" ? "primary" : "quiet"} onClick={() => setTimeId("custom")}>
+                    Custom
+                  </Button>
                 </div>
               </Field>
+              {timeId === "custom" && (
+                <div className="grid grid-cols-2 gap-2">
+                  <Field label="Minutes">
+                    <TextInput
+                      type="number"
+                      min={1}
+                      max={180}
+                      inputMode="numeric"
+                      value={customMinutes}
+                      onChange={(event) => setCustomMinutes(event.target.value)}
+                    />
+                  </Field>
+                  <Field label="Increment, seconds">
+                    <TextInput
+                      type="number"
+                      min={0}
+                      max={180}
+                      inputMode="numeric"
+                      value={customSeconds}
+                      onChange={(event) => setCustomSeconds(event.target.value)}
+                    />
+                  </Field>
+                </div>
+              )}
               <Field label="Starting FEN, optional">
                 <TextInput value={fenDraft} placeholder="Standard position if empty" onChange={(event) => setFenDraft(event.target.value)} />
               </Field>
@@ -461,8 +559,8 @@ export function PlayView() {
                   <div key={side} className="flex items-center justify-between gap-2">
                     <span className="text-sm">{side === "w" ? "White" : "Black"}</span>
                     <div className="flex gap-2">
-                      <Button variant={seats[side] === "you" ? "primary" : "quiet"} onClick={() => setSeats((current) => ({ ...current, [side]: "you" }))}>Human</Button>
-                      <Button variant={seats[side] === "stockfish" ? "primary" : "quiet"} onClick={() => setSeats((current) => ({ ...current, [side]: "stockfish" }))}>Computer</Button>
+                      <Button variant={seats[side] === "you" ? "primary" : "quiet"} onClick={() => setSeats({ ...seats, [side]: "you" })}>Human</Button>
+                      <Button variant={seats[side] === "stockfish" ? "primary" : "quiet"} onClick={() => setSeats({ ...seats, [side]: "stockfish" })}>Computer</Button>
                     </div>
                   </div>
                 ))}
@@ -511,15 +609,7 @@ export function PlayView() {
             collapsed={panelPref("engine").collapsed}
             onToggle={() => patchPanel("engine", { collapsed: !panelPref("engine").collapsed })}
           >
-            {info ? (
-              <>
-                <p className="text-2xl text-brass tabular-nums">{info.score}</p>
-                <p className="mt-1 truncate text-sm text-mist">Depth {info.depth} · {info.nodes.toLocaleString()} nodes</p>
-                <p className="mt-1 truncate text-sm">{info.pv}</p>
-              </>
-            ) : (
-              <p className="text-sm text-mist">{analysis ? "Waiting for Stockfish." : "Analysis is off."}</p>
-            )}
+            <EnginePanelBody info={info} enabled={analysis} />
           </CollapsiblePanel>
         )}
       </div>

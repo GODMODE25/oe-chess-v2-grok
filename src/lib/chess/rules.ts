@@ -1,6 +1,9 @@
 import { Chess, validateFen } from "chess.js";
+import type { Side } from "./types";
 
 export const START_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
+const PIECE_VALUE: Record<string, number> = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
 
 export function replay(startFen: string, sans: string[]) {
   const chess = new Chess();
@@ -25,6 +28,43 @@ export function safeReplay(startFen: string, sans: string[]) {
   } catch (error) {
     return { ok: false as const, error: error instanceof Error ? error.message : "Illegal line" };
   }
+}
+
+export function lastMoveOf(chess: Chess): { from: string; to: string } | null {
+  const history = chess.history({ verbose: true });
+  const last = history[history.length - 1];
+  return last ? { from: last.from, to: last.to } : null;
+}
+
+/** Positive means White is ahead. Pawns 1, knights and bishops 3, rooks 5, queens 9. */
+export function materialBalance(chess: Chess): number {
+  let balance = 0;
+  for (const row of chess.board()) {
+    for (const square of row) {
+      if (!square) continue;
+      balance += (square.color === "w" ? 1 : -1) * (PIECE_VALUE[square.type] ?? 0);
+    }
+  }
+  return balance;
+}
+
+/** What each colour has lost, heaviest piece first. */
+export function capturedPieces(chess: Chess): Record<Side, string[]> {
+  const lost: Record<Side, string[]> = { w: [], b: [] };
+  for (const move of chess.history({ verbose: true })) {
+    if (!move.captured) continue;
+    lost[move.color === "w" ? "b" : "w"].push(move.captured);
+  }
+  for (const side of ["w", "b"] as Side[]) {
+    lost[side].sort((a, b) => (PIECE_VALUE[b] ?? 0) - (PIECE_VALUE[a] ?? 0));
+  }
+  return lost;
+}
+
+/** How much the given colour is up, or 0 when level or behind. */
+export function materialLead(chess: Chess, color: Side): number {
+  const lead = color === "w" ? materialBalance(chess) : -materialBalance(chess);
+  return lead > 0 ? lead : 0;
 }
 
 export function fenOk(fen: string): boolean {

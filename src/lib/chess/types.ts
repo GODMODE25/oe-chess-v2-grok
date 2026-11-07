@@ -37,6 +37,9 @@ export const APP_THEME_LABELS: Record<AppTheme, string> = {
 };
 export type PieceGroup = "pawn" | "knight" | "bishop" | "rook" | "queen" | "mixed" | "basic";
 
+/** Soundness band from the build-time engine pass; undefined behaves like "c". */
+export type LineTier = "s" | "a" | "b" | "c" | "d" | "trash";
+
 export type OpeningLine = {
   id: string;
   eco: string;
@@ -49,6 +52,11 @@ export type OpeningLine = {
   source: "builtin" | "user";
   updatedAt: number;
   deleted?: boolean;
+  tier?: LineTier;
+  /** Games behind the tier; only a Lichess refresh fills this in. */
+  games?: number;
+  /** Owner's expected score, in percent. */
+  scorePct?: number;
 };
 
 export type Review = {
@@ -63,6 +71,8 @@ export type Review = {
   lapses: number;
   lastMs: number | null;
   updatedAt: number;
+  /** Consecutive mistake-free replays; progress banks on the third. */
+  perfectStreak?: number;
 };
 
 export type EndgamePos = {
@@ -126,6 +136,29 @@ export type Profile = {
 export type PlayPanelId = "new" | "presets" | "moves" | "engine";
 export type PanelPref = { visible: boolean; collapsed: boolean };
 
+export type Seat = "you" | "stockfish";
+
+/** The choices the app remembers: what the last setup was, which shelf was open, which filters were on. */
+export type Prefs = {
+  timeId?: string;
+  customMinutes?: string;
+  customSeconds?: string;
+  playSeats?: Record<Side, Seat>;
+  orientation?: "white" | "black";
+  openingsTab?: "shelf" | "explorer";
+  tierFilter?: "all" | LineTier;
+  family?: string;
+  trainSide?: Side;
+  demoSpeedMs?: number;
+  endgameAddCollapsed?: boolean;
+  endgameFilters?: {
+    difficulty?: Difficulty | "all";
+    piece?: PieceGroup | "custom" | "all";
+    status?: string;
+    side?: "all" | Side;
+  };
+};
+
 export type Settings = {
   id: string;
   updatedAt: number;
@@ -140,6 +173,7 @@ export type Settings = {
   pieceSet?: PieceSet;
   appTheme?: AppTheme;
   playPanels?: Partial<Record<PlayPanelId, PanelPref>>;
+  prefs?: Prefs;
 };
 
 export type Repertoire = {

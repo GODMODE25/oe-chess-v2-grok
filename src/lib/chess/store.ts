@@ -1,9 +1,8 @@
 import { create } from "zustand";
 import { ENDGAMES } from "@/lib/data/endgames";
-import { EXTRA_OPENINGS } from "@/lib/data/extra-openings";
 import { OPENINGS } from "@/lib/data/openings";
 import { readCloudSnapshot, writeCloudSnapshot } from "./cloud-sync";
-import { DEFAULT_CAROUSEL } from "./courses";
+import { DEFAULT_CAROUSEL, catalogLines } from "./courses";
 import { loadSnapshot, saveSnapshot, type LocalSnapshot } from "./db";
 import { logDiag } from "./diag";
 import {
@@ -14,7 +13,7 @@ import {
   signInWithGoogle,
   signOutCloud as cloudSignOut,
 } from "./firebase";
-import { applyGrade, blankReview, reviewId } from "./srs";
+import { REPLAY_TARGET, applyGrade, blankReview, nextStreak, reviewId } from "./srs";
 import { mergeEnvelopes } from "./sync-merge";
 import { APP_THEME_LABELS, PIECE_SET_LABELS } from "./types";
 import type {
@@ -24,6 +23,7 @@ import type {
   Grade,
   NavId,
   OpeningLine,
+  Prefs,
   Profile,
   Repertoire,
   Review,
@@ -128,6 +128,7 @@ export type OeState = {
   setNav: (nav: NavId) => void;
   setLaunch: (launch: { startFen: string; sans: string[]; player: Side } | null) => void;
   patchSettings: (patch: Partial<Settings>) => void;
+  patchPrefs: (patch: Partial<Prefs>) => void;
   setProfileName: (name: string) => void;
   saveGame: (game: SavedGame) => void;
   deleteGame: (id: string) => void;
@@ -138,6 +139,8 @@ export type OeState = {
   setRepertoire: (side: Side, ids: string[]) => void;
   setCarousel: (side: Side, ids: string[]) => void;
   gradeLine: (lineId: string, side: Side, grade: Grade, elapsedMs: number) => void;
+  recordReplayAttempt: (lineId: string, side: Side, perfect: boolean, grade: Grade, elapsedMs: number) => { logged: boolean; runsToGo: number };
+  breakStreak: (lineId: string, side: Side) => void;
   saveAttempt: (attempt: EndgameAttempt) => void;
   saveEndgame: (pos: EndgamePos) => void;
   deleteEndgame: (id: string) => void;
@@ -277,6 +280,9 @@ export const useOe = create<OeState>((set, get) => ({
     set({ settings, ...touchSync({ ...state, settings }, "settings", "Settings updated") });
     schedulePersist();
   },
+  patchPrefs: (patch) => {
+    get().patchSettings({ prefs: { ...get().settings.prefs, ...patch } });
+  },
   setProfileName: (name) => {
     const state = get();
     const profile = { ...state.profile, name: name.trim() || "Player", updatedAt: Date.now() };
@@ -351,6 +357,42 @@ export const useOe = create<OeState>((set, get) => ({
     const next = applyGrade(current, grade, Date.now(), elapsedMs);
     const reviews = [next, ...state.reviews.filter((row) => row.id !== next.id)];
     set({ reviews, ...touchSync(state, "review", `Graded a line (${grade})`) });
+    schedulePersist();
+  },
+  recordReplayAttempt: (lineId, side, perfect, grade, elapsedMs) => {
+    const state = get();
+    const current = state.reviews.find((row) => row.id === reviewId(lineId, side));
+    const now = Date.now();
+    if (!perfect) {
+      if (current && (current.perfectStreak ?? 0) > 0) {
+        const reviews = [{ ...current, perfectStreak: 0, updatedAt: now }, ...state.reviews.filter((row) => row.id !== current.id)];
+        set({ reviews, ...touchSync(state, "review", "Streak reset") });
+        schedulePersist();
+      }
+      return { logged: false, runsToGo: REPLAY_TARGET };
+    }
+    const streak = nextStreak(current?.perfectStreak ?? 0, true);
+    if (streak < REPLAY_TARGET) {
+      const base = current ?? blankReview(lineId, side, now);
+      const reviews = [{ ...base, perfectStreak: streak, updatedAt: now }, ...state.reviews.filter((row) => row.id !== base.id)];
+      set({ reviews, ...touchSync(state, "review", "Clean replay") });
+      schedulePersist();
+      return { logged: false, runsToGo: REPLAY_TARGET - streak };
+    }
+    // Third consecutive clean run: this is the only path that touches SM-2.
+    const base = current ?? blankReview(lineId, side, now);
+    const next = { ...applyGrade(base, grade, now, elapsedMs), perfectStreak: 0 };
+    const reviews = [next, ...state.reviews.filter((row) => row.id !== next.id)];
+    set({ reviews, ...touchSync(state, "review", `Banked a line (${grade})`) });
+    schedulePersist();
+    return { logged: true, runsToGo: 0 };
+  },
+  breakStreak: (lineId, side) => {
+    const state = get();
+    const current = state.reviews.find((row) => row.id === reviewId(lineId, side));
+    if (!current || !(current.perfectStreak ?? 0)) return;
+    const reviews = [{ ...current, perfectStreak: 0, updatedAt: Date.now() }, ...state.reviews.filter((row) => row.id !== current.id)];
+    set({ reviews, ...touchSync(state, "review", "Streak reset") });
     schedulePersist();
   },
   saveAttempt: (attempt) => {
@@ -619,7 +661,7 @@ export function bootStore(): Promise<void> {
 
 export function allOpenings(custom: OpeningLine[]): OpeningLine[] {
   const seen = new Set<string>();
-  const rows = [...custom.filter((line) => !line.deleted), ...EXTRA_OPENINGS, ...OPENINGS];
+  const rows = [...custom.filter((line) => !line.deleted), ...catalogLines()];
   return rows.filter((line) => {
     if (seen.has(line.id)) return false;
     seen.add(line.id);

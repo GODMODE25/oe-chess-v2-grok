@@ -1,6 +1,18 @@
 import { EXTRA_OPENINGS } from "../data/extra-openings";
 import { OPENINGS } from "../data/openings";
-import type { OpeningLine, Review, Side } from "./types";
+import { COURSE_VARIATION_IDS, GENERATED_VARIATIONS } from "../data/course-extras";
+import { OPENING_META } from "../data/openings-meta";
+import type { LineTier, OpeningLine, Review, Side } from "./types";
+
+export const TIER_LABEL: Record<LineTier, string> = { s: "S", a: "A", b: "B", c: "C", d: "D", trash: "Trash" };
+
+export const TIER_RANK: Record<LineTier, number> = { s: 0, a: 1, b: 2, c: 3, d: 4, trash: 5 };
+
+function withMeta(line: OpeningLine): OpeningLine {
+  const meta = OPENING_META[line.id];
+  if (!meta || line.tier) return line;
+  return { ...line, tier: meta.tier, games: meta.games, scorePct: meta.scorePct };
+}
 
 export type CourseTier = "legendary" | "s";
 
@@ -102,7 +114,7 @@ export const COURSES: Course[] = [
 ];
 
 export function catalogLines(): OpeningLine[] {
-  return [...EXTRA_OPENINGS, ...OPENINGS];
+  return [...EXTRA_OPENINGS, ...GENERATED_VARIATIONS, ...OPENINGS].map(withMeta);
 }
 
 export function courseById(id: string): Course | undefined {
@@ -111,9 +123,15 @@ export function courseById(id: string): Course | undefined {
 
 export function variationsFor(course: Course): OpeningLine[] {
   const lines = catalogLines();
-  return course.variationNames
+  const named = course.variationNames
     .map((name) => lines.find((line) => line.name === name))
     .filter((line): line is OpeningLine => Boolean(line));
+  const ids = COURSE_VARIATION_IDS[course.id];
+  if (!ids?.length) return named;
+  // Generated variations join by id, so a renamed line no longer silently drops a branch.
+  const seen = new Set(named.map((line) => line.id));
+  const extra = lines.filter((line) => ids.includes(line.id) && !seen.has(line.id));
+  return [...named, ...extra];
 }
 
 export function reviewProgress(review: Review | undefined): number {

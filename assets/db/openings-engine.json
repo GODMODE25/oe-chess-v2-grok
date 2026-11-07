@@ -1,0 +1,24 @@
+{
+  "generatedAt": 1793966927048,
+  "engine": "stockfish-19-lite (vendored, run in Node)",
+  "months": [
+    "stockfish"
+  ],
+  "tune": {
+    "depth": 14,
+    "multipv": 5,
+    "searchBudget": 22,
+    "maxPlies": 26,
+    "tail": 8,
+    "dropBelowCp": -100,
+    "linesPerCourse": 100,
+    "popularityFloor": 55,
+    "baselineCp": 26,
+    "months": null,
+    "tierOnly": false,
+    "expandOnly": false,
+    "onlyCourse": null
+  },
+  "meta": 1156,
+  "lines": 992
+}

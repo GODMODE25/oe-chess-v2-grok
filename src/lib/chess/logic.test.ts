@@ -2,8 +2,9 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { Chess } from "chess.js";
 import { judgeEndgame } from "./endgame-result.ts";
-import { parsePgn, replay, statusOf } from "./rules.ts";
-import { applyGrade, blankReview, gradeFromDrill } from "./srs.ts";
+import { dequeuePremove, dropAnsweredPremove, enqueuePremove, premoveLabel, premoveProjection, premoveSan, premoveTargets, type QueuedMove } from "./premove.ts";
+import { capturedPieces, materialBalance, materialLead, parsePgn, replay, START_FEN, statusOf } from "./rules.ts";
+import { REPLAY_TARGET, applyGrade, blankReview, gradeFromDrill, nextStreak } from "./srs.ts";
 import { mergeEnvelopes } from "./sync-merge.ts";
 import type { SyncEnvelope } from "./types.ts";
 import { parseBestmove, parseInfo } from "./uci.ts";
@@ -41,6 +42,36 @@ describe("chess rules", () => {
   });
 });
 
+describe("material", () => {
+  it("starts level", () => {
+    const start = replay(START_FEN, []);
+    assert.equal(materialBalance(start.chess), 0);
+    assert.deepEqual(capturedPieces(start.chess), { w: [], b: [] });
+    assert.equal(materialLead(start.chess, "w"), 0);
+  });
+
+  it("counts captures, lists them heaviest first, and names who is up", () => {
+    const game = replay(START_FEN, ["e4", "e5", "Bc4", "Nf6", "Nf3", "Nxe4", "Bxf7+", "Kxf7"]);
+    assert.deepEqual(capturedPieces(game.chess).w, ["b", "p"]);
+    assert.deepEqual(capturedPieces(game.chess).b, ["p"]);
+    assert.equal(materialBalance(game.chess), -3);
+    assert.equal(materialLead(game.chess, "b"), 3);
+    assert.equal(materialLead(game.chess, "w"), 0);
+  });
+
+  it("counts an en passant capture as a pawn", () => {
+    const ep = replay(START_FEN, ["e4", "a6", "e5", "d5", "exd6"]);
+    assert.deepEqual(capturedPieces(ep.chess).b, ["p"]);
+    assert.equal(materialLead(ep.chess, "w"), 1);
+  });
+
+  it("reads a promoted piece from the board, not from the captures", () => {
+    const promoted = replay("8/P7/8/8/8/8/k7/7K w - - 0 1", ["a8=Q"]);
+    assert.deepEqual(capturedPieces(promoted.chess), { w: [], b: [] });
+    assert.equal(materialBalance(promoted.chess), 9);
+  });
+});
+
 describe("spaced repetition", () => {
   it("fails come back soon and clean reps become mastered", () => {
     const now = 1_700_000_000_000;
@@ -53,6 +84,13 @@ describe("spaced repetition", () => {
     assert.equal(review.status, "mastered");
     assert.equal(gradeFromDrill({ mistakes: 1, hints: 0, elapsedMs: 1000, studentMoves: 3 }), "fail");
     assert.equal(gradeFromDrill({ mistakes: 0, hints: 0, elapsedMs: 3000, studentMoves: 2 }), "perfect");
+  });
+
+  it("only counts a run toward the target when it was clean", () => {
+    assert.equal(REPLAY_TARGET, 3);
+    assert.equal(nextStreak(0, true), 1);
+    assert.equal(nextStreak(2, true), 3);
+    assert.equal(nextStreak(2, false), 0);
   });
 });
 
@@ -150,3 +188,130 @@ function envelope(input: { openings: ReturnType<typeof line>[]; settingsAt: numb
     queue: [],
   };
 }
+
+describe("premove queue", () => {
+  const START = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
+  it("plays the head and keeps the rest waiting", () => {
+    const queue = [
+      { from: "e2", to: "e4", color: "w" as const },
+      { from: "d2", to: "d4", color: "w" as const },
+    ];
+    const taken = dequeuePremove(START, queue);
+    assert.equal(taken.move?.from, "e2");
+    assert.deepEqual(taken.remaining, [queue[1]]);
+    assert.equal(taken.cancelled, null);
+    assert.equal(premoveSan(START, queue[0]), "e4");
+  });
+
+  it("cancels only the head the opponent's reply killed", () => {
+    const noDpawn = "rnbqkbnr/pppppppp/8/8/8/8/PPP1PPPP/RNBQKBNR w KQkq - 0 1";
+    const queue = [
+      { from: "d2", to: "d4", color: "w" as const },
+      { from: "c2", to: "c4", color: "w" as const },
+    ];
+    const taken = dequeuePremove(noDpawn, queue);
+    assert.equal(taken.move, null);
+    assert.deepEqual(taken.cancelled, queue[0]);
+    assert.deepEqual(taken.remaining, [queue[1]]);
+  });
+
+  it("keeps castling, promotion and en passant legal as queued moves", () => {
+    const castling = "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1";
+    assert.equal(premoveSan(castling, { from: "e1", to: "g1", color: "w" }), "O-O");
+    assert.equal(premoveSan("8/P6k/8/8/8/8/K7/8 w - - 0 1", { from: "a7", to: "a8", promotion: "q", color: "w" }), "a8=Q");
+    assert.equal(premoveSan(castling, { from: "e1", to: "g2", color: "w" }), null);
+    const enPassant = "rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3";
+    assert.equal(premoveSan(enPassant, { from: "e5", to: "f6", color: "w" }), "exf6");
+    assert.equal(premoveLabel({ from: "a7", to: "a8", promotion: "q", color: "w" }), "a7→a8=Q");
+  });
+
+  it("drops only the head that belonged to the side that moved by hand", () => {
+    const queue = [
+      { from: "e7", to: "e5", color: "b" as const },
+      { from: "d7", to: "d5", color: "b" as const },
+    ];
+    // White's own move cannot answer a queue that was black's to play.
+    assert.deepEqual(dropAnsweredPremove(queue, "w"), queue);
+    const mine = [
+      { from: "d2", to: "d4", color: "w" as const },
+      { from: "c2", to: "c4", color: "w" as const },
+    ];
+    assert.deepEqual(dropAnsweredPremove(mine, "w"), [mine[1]]);
+  });
+
+  it("grows to the limit and then replaces the furthest-future intent", () => {
+    let queue: QueuedMove[] = [];
+    for (let rank = 2; rank <= 6; rank++) queue = enqueuePremove(queue, { from: `a${rank}`, to: `b${rank}`, color: "w" }, 5);
+    assert.equal(queue.length, 5);
+    queue = enqueuePremove(queue, { from: "a7", to: "b7", color: "w" }, 5);
+    assert.equal(queue.length, 5);
+    assert.equal(queue[0].from, "a2");
+    assert.equal(queue.at(-1)?.from, "a7");
+    assert.equal(queue.some((move) => move.from === "a6"), false);
+  });
+});
+
+describe("premove targets", () => {
+  const START = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
+  const sorted = (fen: string, from: string) => premoveTargets(fen, from).slice().sort();
+
+  it("lists where a sleeping piece would go if the turn came round", () => {
+    // Black's knight is not moving yet, but g8→f6/h6 is exactly what a premove may plan.
+    assert.deepEqual(sorted(START, "g8"), ["f6", "h6"]);
+    assert.deepEqual(sorted(START, "g1"), []);
+  });
+
+  it("keeps one promotion square instead of four", () => {
+    const promoting = "4k3/8/8/8/8/8/p1P5/1N2K3 w - - 0 1";
+    assert.deepEqual(sorted(promoting, "a2"), ["a1", "b1"]);
+  });
+
+  it("offers only the squares a pinned piece can honestly reach", () => {
+    const pinned = "4k3/4r3/8/8/8/8/8/4R1K1 w - - 0 1";
+    const rook = sorted(pinned, "e7");
+    assert.equal(rook.includes("e6"), true);
+    assert.equal(rook.includes("d7"), false);
+  });
+
+  it("stays quiet on squares it was not asked about", () => {
+    assert.deepEqual(sorted(START, "e4"), []);
+    assert.deepEqual(premoveTargets("not a fen", "a1"), []);
+  });
+});
+
+describe("premove projection", () => {
+  // Black holds the move, so every white entry below is something queued for a later turn.
+  const WAIT = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1";
+  const queued = (from: string, to: string): QueuedMove => ({ from, to, color: "w" });
+
+  it("hands the next click the square the queue already leaves the piece on", () => {
+    const walk = premoveProjection(WAIT, [queued("a2", "a3")], "a2");
+    assert.equal(walk.from, "a3");
+    assert.equal(new Chess(walk.fen).turn(), "b");
+    assert.deepEqual(premoveTargets(walk.fen, walk.from), ["a4"]);
+  });
+
+  it("opens the square the piece came from once a move is queued", () => {
+    const first = premoveProjection(WAIT, [], "g1");
+    assert.equal(premoveTargets(first.fen, first.from).includes("g1"), false);
+    const second = premoveProjection(WAIT, [queued("g1", "f3")], "g1");
+    assert.equal(premoveTargets(second.fen, second.from).includes("g1"), true);
+  });
+
+  it("ignores the entries queued for other pieces", () => {
+    const queue = [queued("b1", "c3"), queued("a2", "a3"), queued("d1", "d2")];
+    assert.equal(premoveProjection(WAIT, queue, "a2").from, "a3");
+  });
+
+  it("stops at a link the chain cannot play", () => {
+    const walk = premoveProjection(WAIT, [queued("a2", "a3"), queued("a3", "a2"), queued("a2", "a4")], "a2");
+    assert.equal(walk.from, "a3");
+    assert.equal(walk.fen.split(" ")[1], "b");
+  });
+
+  it("leaves a piece that is moving right now where it is", () => {
+    assert.deepEqual(premoveProjection(WAIT, [queued("a2", "a3")], "e7"), { fen: WAIT, from: "e7" });
+  });
+});

@@ -33,6 +33,38 @@ export function Panel({ children, className }: { children: ReactNode; className?
   return <section className={cn("rounded-xl border border-line bg-surface p-4", className)}>{children}</section>;
 }
 
+export function CollapsiblePanel({
+  title,
+  collapsed,
+  onToggle,
+  bodyClassName,
+  children,
+}: {
+  title: string;
+  collapsed: boolean;
+  onToggle: () => void;
+  bodyClassName?: string;
+  children: ReactNode;
+}) {
+  return (
+    <Panel className={cn("min-w-0", collapsed ? "py-2" : "p-3")}>
+      <div className="flex items-center justify-between gap-2">
+        <h2 className={collapsed ? "text-sm font-medium text-mist" : "text-lg"}>{title}</h2>
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={!collapsed}
+          aria-label={collapsed ? `Expand ${title}` : `Collapse ${title}`}
+          className="rounded-md px-2 py-1 text-xs text-mist hover:bg-surface-2 hover:text-ivory"
+        >
+          {collapsed ? "Expand" : "Collapse"}
+        </button>
+      </div>
+      {!collapsed && <div className={cn("mt-2 min-w-0", bodyClassName)}>{children}</div>}
+    </Panel>
+  );
+}
+
 export function Field({
   label,
   children,

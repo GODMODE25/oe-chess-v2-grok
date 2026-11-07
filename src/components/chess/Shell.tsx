@@ -93,7 +93,7 @@ export function Shell() {
     >
       <aside className="hidden w-56 shrink-0 flex-col border-r border-line px-4 py-6 md:flex">
         <div className="mb-8 flex items-center gap-3">
-          <img src={assetUrl("/logo-king.jpg")} alt="" className="h-12 w-12 rounded-lg object-cover" />
+          <img src={assetUrl("/logo-piece.svg")} alt="" className="h-12 w-12" />
           <div>
             <p className="font-display text-xl leading-none">OE Chess</p>
             <p className="text-xs text-mist">Openings and endgames</p>
@@ -119,7 +119,7 @@ export function Shell() {
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="z-20 flex items-center justify-between gap-3 border-b border-line bg-canvas px-4 py-3 md:hidden">
           <div className="flex items-center gap-2">
-            <img src={assetUrl("/logo-king.jpg")} alt="" className="h-9 w-9 rounded-md object-cover" />
+            <img src={assetUrl("/logo-piece.svg")} alt="" className="h-9 w-9" />
             <p className="font-display text-xl">OE Chess</p>
           </div>
           <div className="flex flex-col items-end gap-1" role="status">
@@ -127,7 +127,10 @@ export function Shell() {
             <p className="text-xs text-mist">{STATUS[sync.status]}</p>
           </div>
         </header>
-        <main className={cn("min-h-0 flex-1 overflow-y-auto px-4 py-5 pb-20 md:px-6 md:pb-6", nav === "openings" && "scrollbar-hidden")}>
+        {/* `relative` matters: an `sr-only` file input is absolutely positioned, and
+            without a positioned ancestor it anchors to the document, where the shell's
+            overflow cannot clip it — the window then grows a second scrollbar. */}
+        <main className={cn("relative min-h-0 flex-1 overflow-y-auto px-4 py-5 pb-20 md:px-6 md:pb-6", nav === "openings" && "scrollbar-hidden")}>
           {bootError && <p className="mb-4 text-sm text-danger">{bootError}</p>}
           {nav === "play" && <PlayView />}
           {nav === "openings" && <OpeningsView />}

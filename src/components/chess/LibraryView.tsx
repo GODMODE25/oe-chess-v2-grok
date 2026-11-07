@@ -7,6 +7,7 @@ import { Button, Panel } from "./ui";
 export function LibraryView() {
   const allGames = useOe((s) => s.games);
   const games = useMemo(() => allGames.filter((game) => !game.deleted), [allGames]);
+  const finished = games.filter((game) => game.finished).length;
   const saveGame = useOe((s) => s.saveGame);
   const deleteGame = useOe((s) => s.deleteGame);
   const setLaunch = useOe((s) => s.setLaunch);
@@ -46,6 +47,11 @@ export function LibraryView() {
     <div className="grid gap-4">
       <Panel>
         <h2 className="text-2xl">Library</h2>
+        {games.length > 0 && (
+          <p className="mt-1 text-sm tabular-nums">
+            {games.length} game{games.length === 1 ? "" : "s"} played · {finished} finished
+          </p>
+        )}
         <p className="mt-1 text-sm text-mist">Saved games stay on this device. Import a PGN as games or as repertoire lines.</p>
         <div className="mt-3 flex flex-wrap gap-2">
           <label className="inline-flex h-11 cursor-pointer items-center rounded-lg border border-line bg-surface-2 px-4 text-sm">

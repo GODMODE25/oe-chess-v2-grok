@@ -62,6 +62,7 @@ export function SettingsView() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const sliderValue = settings.playStrength === "max" ? ELO_CEILING : settings.playStrength;
+  const atFullStrength = sliderValue >= ELO_CEILING;
 
   async function onBackup(file: File) {
     try {
@@ -75,117 +76,17 @@ export function SettingsView() {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <Panel>
-        <h2 className="text-2xl">Profile</h2>
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-2xl">Profile</h2>
+          <Pill tone="brass">{profile.deviceId.slice(0, 8)}</Pill>
+        </div>
+        <p className="mt-2 text-sm text-mist">
+          Your name travels with the progress you back up or sync. The code in the corner marks this device and stays on it.
+        </p>
         <div className="mt-3 grid gap-3">
           <Field label="Name">
             <TextInput value={profile.name} onChange={(event) => setProfileName(event.target.value)} />
           </Field>
-          <p className="text-xs text-mist">This device id stays local: {profile.deviceId.slice(0, 8)}</p>
-        </div>
-      </Panel>
-      <Panel>
-        <h2 className="text-2xl">Appearance</h2>
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          {(Object.entries(APP_THEME_LABELS) as Array<[AppTheme, string]>).map(([id, label]) => {
-            const active = (settings.appTheme ?? "brass") === id;
-            return (
-              <button
-                key={id}
-                type="button"
-                onClick={() => patchSettings({ appTheme: id })}
-                aria-pressed={active}
-                className={`rounded-xl border p-3 text-left ${active ? "border-brass" : "border-line"}`}
-              >
-                <span className="text-sm">{label}</span>
-                {/* Previewed in place: this wrapper carries the attribute, so the swatches
-                    below resolve against the theme on show rather than the one in use. */}
-                <span className="mt-2 flex h-12 gap-1 overflow-hidden rounded-md border border-line" data-app-theme={id} aria-hidden="true">
-                  <span className="grid flex-1 grid-cols-2 grid-rows-2">
-                    <span className="bg-board-light" />
-                    <span className="bg-board-dark" />
-                    <span className="bg-board-dark" />
-                    <span className="bg-board-light" />
-                  </span>
-                  <span className="flex w-6 flex-col">
-                    <span className="h-1/2 bg-surface-2" />
-                    <span className="h-1/2 bg-brass" />
-                  </span>
-                  <span className="w-6 bg-canvas" />
-                </span>
-                <span className="mt-2 block text-xs text-mist">{APP_THEME_HINTS[id]}</span>
-              </button>
-            );
-          })}
-        </div>
-        <p className="mt-3 text-xs text-mist">
-          Each theme repaints the app and the splash. Choose Match theme for the board and the squares follow too.
-        </p>
-      </Panel>
-      <Panel>
-        <h2 className="text-2xl">Board</h2>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {(Object.entries(BOARD_LABELS) as Array<[BoardTheme, string]>).map(([theme, label]) => (
-            <Button key={theme} variant={settings.boardTheme === theme ? "primary" : "quiet"} onClick={() => patchSettings({ boardTheme: theme })}>
-              {label}
-            </Button>
-          ))}
-        </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          {(Object.entries(PIECE_SET_LABELS) as Array<[PieceSet, string]>).map(([id, label]) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => patchSettings({ pieceSet: id })}
-              aria-pressed={settings.pieceSet === id || (!settings.pieceSet && id === "standard")}
-              className={`rounded-xl border p-3 text-left ${settings.pieceSet === id || (!settings.pieceSet && id === "standard") ? "border-brass" : "border-line"}`}
-            >
-              <span className="text-sm">{label}</span>
-              <span className="mt-2 flex h-16 gap-1">
-                {["k", "q", "n", "p"].map((type) => (
-                  <PieceGlyph key={type} type={type} color="w" set={id} className="h-16 w-12 object-contain" />
-                ))}
-              </span>
-            </button>
-          ))}
-        </div>
-        <p className="mt-3 text-xs text-mist">
-          All five sets come from Lichess. Merida and Standard are GPL; Alpha, Staunty and Maestro are non-commercial. Each folder keeps its own licence note.
-        </p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <Button variant={settings.coordinates ? "primary" : "quiet"} onClick={() => patchSettings({ coordinates: !settings.coordinates })}>Coordinates</Button>
-          <Button variant={settings.sound ? "primary" : "quiet"} onClick={() => patchSettings({ sound: !settings.sound })}>Sound</Button>
-        </div>
-      </Panel>
-      <Panel>
-        <h2 className="text-2xl">Engine</h2>
-        <div className="mt-3">
-          <div className="flex items-baseline justify-between gap-2">
-            <span className="text-sm text-mist">Play strength</span>
-            <span className="text-sm tabular-nums">{sliderValue >= ELO_CEILING ? "Maximum" : `${sliderValue} · ${strengthWord(sliderValue)}`}</span>
-          </div>
-          <input
-            type="range"
-            min={ELO_FLOOR}
-            max={ELO_CEILING}
-            step={10}
-            value={sliderValue}
-            aria-label="Engine playing strength"
-            className="mt-2 w-full accent-brass"
-            onChange={(event) => {
-              const next = Number(event.target.value);
-              patchSettings({ playStrength: next >= ELO_CEILING ? "max" : next });
-            }}
-          />
-          <div className="mt-1 flex justify-between text-xs text-mist">
-            <span>{ELO_FLOOR}</span>
-            <span>{ELO_CEILING}</span>
-          </div>
-        </div>
-        <p className="mt-2 text-xs text-mist">Stockfish's rating scale starts around {ELO_FLOOR} and the top of the slider runs it uncut. Endgames use maximum strength unless you turn that off.</p>
-        <div className="mt-3">
-          <Button variant={settings.endgameMaximum ? "primary" : "quiet"} onClick={() => patchSettings({ endgameMaximum: !settings.endgameMaximum })}>
-            {settings.endgameMaximum ? "Endgames at full strength" : "Endgames use play strength"}
-          </Button>
         </div>
       </Panel>
       <Panel>
@@ -242,7 +143,119 @@ export function SettingsView() {
           )}
         </div>
       </Panel>
-      <Panel className="lg:col-span-2">
+      <Panel>
+        <h2 className="text-2xl">Board</h2>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {(Object.entries(BOARD_LABELS) as Array<[BoardTheme, string]>).map(([theme, label]) => (
+            <Button key={theme} variant={settings.boardTheme === theme ? "primary" : "quiet"} onClick={() => patchSettings({ boardTheme: theme })}>
+              {label}
+            </Button>
+          ))}
+        </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {(Object.entries(PIECE_SET_LABELS) as Array<[PieceSet, string]>).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => patchSettings({ pieceSet: id })}
+              aria-pressed={settings.pieceSet === id || (!settings.pieceSet && id === "standard")}
+              className={`rounded-xl border p-3 text-left ${settings.pieceSet === id || (!settings.pieceSet && id === "standard") ? "border-brass" : "border-line"}`}
+            >
+              <span className="text-sm">{label}</span>
+              <span className="mt-2 flex h-16 gap-1">
+                {["k", "q", "n", "p"].map((type) => (
+                  <PieceGlyph key={type} type={type} color="w" set={id} className="h-16 w-12 object-contain" />
+                ))}
+              </span>
+            </button>
+          ))}
+        </div>
+        <p className="mt-3 text-xs text-mist">
+          All five sets come from Lichess. Merida and Standard are GPL; Alpha, Staunty and Maestro are non-commercial. Each folder keeps its own licence note.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Button variant={settings.coordinates ? "primary" : "quiet"} onClick={() => patchSettings({ coordinates: !settings.coordinates })}>Coordinates</Button>
+          <Button variant={settings.sound ? "primary" : "quiet"} onClick={() => patchSettings({ sound: !settings.sound })}>Sound</Button>
+        </div>
+      </Panel>
+      <Panel>
+        <h2 className="text-2xl">Appearance</h2>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          {(Object.entries(APP_THEME_LABELS) as Array<[AppTheme, string]>).map(([id, label]) => {
+            const active = (settings.appTheme ?? "brass") === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => patchSettings({ appTheme: id })}
+                aria-pressed={active}
+                className={`rounded-xl border p-3 text-left ${active ? "border-brass" : "border-line"}`}
+              >
+                <span className="text-sm">{label}</span>
+                {/* Previewed in place: this wrapper carries the attribute, so the swatches
+                    below resolve against the theme on show rather than the one in use. */}
+                <span className="mt-2 flex h-12 gap-1 overflow-hidden rounded-md border border-line" data-app-theme={id} aria-hidden="true">
+                  <span className="grid flex-1 grid-cols-2 grid-rows-2">
+                    <span className="bg-board-light" />
+                    <span className="bg-board-dark" />
+                    <span className="bg-board-dark" />
+                    <span className="bg-board-light" />
+                  </span>
+                  <span className="flex w-6 flex-col">
+                    <span className="h-1/2 bg-surface-2" />
+                    <span className="h-1/2 bg-brass" />
+                  </span>
+                  <span className="w-6 bg-canvas" />
+                </span>
+                <span className="mt-2 block text-xs text-mist">{APP_THEME_HINTS[id]}</span>
+              </button>
+            );
+          })}
+        </div>
+        <p className="mt-3 text-xs text-mist">
+          Each theme repaints the app and the splash. Choose Match theme for the board and the squares follow too.
+        </p>
+      </Panel>
+      <Panel>
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-2xl">Engine</h2>
+          <Pill tone={atFullStrength ? "brass" : "mist"}>{atFullStrength ? "Maximum" : strengthWord(sliderValue)}</Pill>
+        </div>
+        <p className="mt-2 text-sm text-mist">
+          Stockfish's rating scale starts around {ELO_FLOOR} and the top of the slider runs it uncut. Endgames use maximum strength unless you turn that off.
+        </p>
+        <div className="mt-3 grid gap-3">
+          <div>
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="text-sm text-mist">Play strength</span>
+              <span className="text-sm tabular-nums">{atFullStrength ? "Maximum" : `${sliderValue} Elo`}</span>
+            </div>
+            <input
+              type="range"
+              min={ELO_FLOOR}
+              max={ELO_CEILING}
+              step={10}
+              value={sliderValue}
+              aria-label="Engine playing strength"
+              className="mt-2 w-full accent-brass"
+              onChange={(event) => {
+                const next = Number(event.target.value);
+                patchSettings({ playStrength: next >= ELO_CEILING ? "max" : next });
+              }}
+            />
+            <div className="mt-1 flex justify-between text-xs text-mist">
+              <span>{ELO_FLOOR}</span>
+              <span>{ELO_CEILING}</span>
+            </div>
+          </div>
+          <div>
+            <Button variant={settings.endgameMaximum ? "primary" : "quiet"} onClick={() => patchSettings({ endgameMaximum: !settings.endgameMaximum })}>
+              {settings.endgameMaximum ? "Endgames at full strength" : "Endgames use play strength"}
+            </Button>
+          </div>
+        </div>
+      </Panel>
+      <Panel>
         <h2 className="text-2xl">Backups</h2>
         <p className="mt-2 text-sm text-mist">A local backup is written automatically before a database upgrade. Export one whenever you want a copy you can move by hand.</p>
         <div className="mt-3 flex flex-wrap gap-2">

@@ -45,7 +45,7 @@ function Home() {
         <img src={assetUrl("/banner.jpg")} alt="" className="banner-art pointer-events-none absolute inset-0 h-full w-full object-cover opacity-35" />
         <div className="absolute inset-0 bg-gradient-to-b from-scrim/60 via-scrim/80 to-scrim" aria-hidden />
         <div className="relative z-10 flex w-full max-w-sm flex-col items-center gap-4">
-          <img src={assetUrl("/favicon.svg")} alt="" className="h-16 w-16" />
+          <img src={assetUrl("/logo-piece.svg")} alt="" className="h-16 w-16" />
           <h1 className="font-display text-4xl">OE Chess</h1>
           <Meter value={readout.percent} label={readout.label} detail={readout.detail} indeterminate={readout.indeterminate} />
           {!booted && pastDeadline && (

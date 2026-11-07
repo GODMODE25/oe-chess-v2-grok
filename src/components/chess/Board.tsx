@@ -1,5 +1,6 @@
 import { Chess, type Square } from "chess.js";
-import { useMemo, useState, type PointerEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
+import { premoveProjection, premoveTargets, type QueuedMove } from "@/lib/chess/premove";
 import type { BoardTheme, PieceSet, Side } from "@/lib/chess/types";
 import { PieceGlyph } from "./pieces";
 
@@ -12,12 +13,12 @@ type BoardProps = {
   lastMove?: { from: string; to: string } | null;
   arrows?: Arrow[];
   highlights?: string[];
-  premoveSquares?: string[];
+  premoves?: QueuedMove[];
   coordinates?: boolean;
   theme?: BoardTheme;
   pieceSet?: PieceSet;
   humanColors?: Side[];
-  onPremove?: (from: string, to: string, promotion?: string) => void;
+  onPremove?: (move: QueuedMove) => void;
   onMove?: (from: string, to: string, promotion?: string) => void;
 };
 
@@ -50,7 +51,7 @@ export function Board({
   lastMove = null,
   arrows = [],
   highlights = [],
-  premoveSquares = [],
+  premoves = [],
   coordinates = true,
   theme = "walnut",
   pieceSet = "standard",
@@ -68,12 +69,36 @@ export function Board({
   const [selected, setSelected] = useState<string | null>(null);
   const [drag, setDrag] = useState<{ from: string; x: number; y: number; type: string; color: "w" | "b" } | null>(null);
   const [pending, setPending] = useState<{ from: string; to: string; premove: boolean; color: "w" | "b" } | null>(null);
+  const dragIntent = useRef<{ from: string; to: string } | null>(null);
+
+  // Once the position changes the board has moved under any grabbed piece, so nothing stays selected.
+  useEffect(() => setSelected(null), [fen]);
 
   const files = orientation === "white" ? "abcdefgh".split("") : "hgfedcba".split("");
   const ranks = orientation === "white" ? [8, 7, 6, 5, 4, 3, 2, 1] : [1, 2, 3, 4, 5, 6, 7, 8];
   const legal = chess?.moves({ verbose: true }) ?? [];
   const targets = selected ? legal.filter((move) => move.from === selected).map((move) => move.to) : [];
+  // A piece of the side that is not moving keeps its selection, so one grab can queue several
+  // destinations. Each further click is read from where the piece will already be standing after
+  // the intents queued for it, so one grab walks it: a2→a3 then a3→a4, not a2→a3 and a2→a4.
+  const premoveChain = useMemo(() => {
+    if (!selected || !onPremove) return null;
+    const projected = premoveProjection(fen, premoves, selected);
+    return { ...projected, targets: premoveTargets(projected.fen, projected.from) };
+  }, [fen, premoves, selected, onPremove]);
   const checked = chess ? kingSquare(chess) : null;
+  // One square can be where move 2 lands and where move 3 starts from, so each keeps its own list.
+  const premoveMarks = useMemo(() => {
+    const map = new Map<string, { from: number[]; to: number[] }>();
+    premoves.forEach((move, index) => {
+      for (const key of ["from", "to"] as const) {
+        const row = map.get(move[key]) ?? { from: [], to: [] };
+        row[key].push(index + 1);
+        map.set(move[key], row);
+      }
+    });
+    return map;
+  }, [premoves]);
 
   function owned(sq: string) {
     const piece = chess?.get(sq as Square);
@@ -86,12 +111,14 @@ export function Board({
     const choices = legal.filter((move) => move.from === from && move.to === to);
     const piece = chess?.get(from as Square);
     if (!choices.length) {
-      const rank = to[1];
-      const promo = piece?.type === "p" && ((piece.color === "w" && rank === "8") || (piece.color === "b" && rank === "1"));
-      if (piece && onPremove && piece.color !== chess?.turn()) {
-        if (promo) setPending({ from, to, premove: true, color: piece.color });
-        else onPremove(from, to);
-        setSelected(null);
+      if (piece && premoveChain?.targets.includes(to)) {
+        // The selection stays where it is: the next destination click queues the move this piece
+        // would make from where the queue already leaves it, and clicking another piece moves the grab over.
+        const origin = premoveChain.from;
+        const rank = to[1];
+        const promo = piece.type === "p" && ((piece.color === "w" && rank === "8") || (piece.color === "b" && rank === "1"));
+        if (promo) setPending({ from: origin, to, premove: true, color: piece.color });
+        else onPremove?.({ from: origin, to, color: piece.color });
         return;
       }
       const occupant = chess?.get(to as Square);
@@ -104,13 +131,17 @@ export function Board({
       setSelected(null);
       return;
     }
-    if (piece && piece.color !== chess?.turn() && onPremove) onPremove(from, to);
+    if (piece && piece.color !== chess?.turn() && onPremove) onPremove({ from, to, color: piece.color });
     else onMove?.(from, to);
     setSelected(null);
   }
 
   function onPointerDown(event: PointerEvent, sq: string) {
     if (!interactive || !chess) return;
+    dragIntent.current = null;
+    // A legal target square keeps the selection, or a two-human game re-selects the victim
+    // and click-click captures never fire; only a fresh grab of your own piece re-selects.
+    if (selected && selected !== sq && targets.includes(sq as Square)) return;
     const piece = owned(sq);
     if (piece) {
       setSelected(sq);
@@ -125,12 +156,22 @@ export function Board({
     const sq = el?.closest("[data-sq]")?.getAttribute("data-sq");
     const from = drag.from;
     setDrag(null);
-    if (sq && sq !== from) tryMove(from, sq);
+    if (sq && sq !== from) {
+      dragIntent.current = { from, to: sq };
+      tryMove(from, sq);
+    }
   }
 
   function onClickSquare(sq: string) {
     if (!interactive || drag) return;
-    if (selected && selected !== sq) tryMove(selected, sq);
+    // Releasing a drag also fires a click on the square under the pointer. A queued premove leaves
+    // the piece selected, so that echo would queue the same intent twice; the move already happened.
+    const echoed = dragIntent.current;
+    dragIntent.current = null;
+    if (echoed && selected === echoed.from && sq === echoed.to) return;
+    // A click on the grabbed piece usually just re-arms it, but once a chain is queued the piece's own
+    // square is a real destination — the step back is the move the queue would leave it facing.
+    if (selected && (selected !== sq || premoveChain?.targets.includes(sq))) tryMove(selected, sq);
     else setSelected(owned(sq) ? sq : null);
   }
 
@@ -150,7 +191,9 @@ export function Board({
             const piece = chess?.get(sq as Square);
             const isLast = lastMove && (lastMove.from === sq || lastMove.to === sq);
             const isTarget = targets.includes(sq as Square);
-            const isPremove = premoveSquares.includes(sq);
+            const isPremoveTarget = premoveChain?.targets.includes(sq) ?? false;
+            const isPremove = premoveMarks.has(sq);
+            const premoveOrder = premoveMarks.get(sq)?.to ?? [];
             const hide = drag?.from === sq;
             return (
               <button
@@ -166,13 +209,27 @@ export function Board({
                 {checked === sq && <span className="absolute inset-0 bg-danger/55" />}
                 {selected === sq && <span className="absolute inset-1 rounded-sm ring-2 ring-brass" />}
                 {highlights.includes(sq) && <span className="absolute inset-0 bg-ok/35" />}
-                {isPremove && <span className="absolute inset-0 bg-danger/45" />}
+                {isPremove && <span className="absolute inset-0 bg-danger/35" />}
+                {premoveOrder.map((order) => (
+                  <span
+                    key={order}
+                    className="absolute top-0 right-0 z-20 grid h-4 w-4 place-items-center rounded-bl-md bg-danger text-[10px] font-semibold text-on-accent"
+                  >
+                    {order}
+                  </span>
+                ))}
                 {isTarget && !piece && (
                   <span className="absolute inset-0 flex items-center justify-center">
                     <span className="h-3 w-3 rounded-full bg-board-mark/50" />
                   </span>
                 )}
                 {isTarget && piece && <span className="absolute inset-1 rounded-full border-4 border-board-mark/50" />}
+                {isPremoveTarget && !piece && (
+                  <span className="absolute inset-0 flex items-center justify-center">
+                    <span className="h-3 w-3 rounded-full bg-danger/50" />
+                  </span>
+                )}
+                {isPremoveTarget && piece && <span className="absolute inset-1 rounded-full border-4 border-danger/50" />}
                 {piece && !hide && <PieceGlyph type={piece.type} color={piece.color} set={pieceSet} className="relative z-10 h-full w-full p-1" />}
                 {coordinates && file === files[0] && (
                   <span className={`absolute top-0.5 left-1 text-xs ${light ? "text-coord-light" : "text-coord-dark"}`}>{rank}</span>
@@ -185,6 +242,24 @@ export function Board({
           }),
         )}
         <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 8 8">
+          {premoves.map((move, index) => {
+            const a = squareCenter(move.from, orientation);
+            const b = squareCenter(move.to, orientation);
+            return (
+              <line
+                key={`premove-${index}`}
+                x1={a.x}
+                y1={a.y}
+                x2={b.x}
+                y2={b.y}
+                stroke="var(--color-danger)"
+                strokeWidth="0.12"
+                strokeDasharray="0.26 0.18"
+                strokeLinecap="round"
+                opacity="0.85"
+              />
+            );
+          })}
           {arrows.map((arrow) => {
             const a = squareCenter(arrow.from, orientation);
             const b = squareCenter(arrow.to, orientation);
@@ -219,7 +294,7 @@ export function Board({
                 type="button"
                 className="h-14 w-14 rounded-lg bg-board-light"
                 onClick={() => {
-                  if (pending.premove) onPremove?.(pending.from, pending.to, type);
+                  if (pending.premove) onPremove?.({ from: pending.from, to: pending.to, promotion: type, color: pending.color });
                   else onMove?.(pending.from, pending.to, type);
                   setPending(null);
                 }}

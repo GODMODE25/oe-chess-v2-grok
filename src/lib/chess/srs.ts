@@ -75,6 +75,13 @@ export function isDue(review: Review | undefined, now: number): boolean {
   return review.dueAt <= now;
 }
 
+/** Opening drills bank progress only after this many consecutive clean replays. */
+export const REPLAY_TARGET = 3;
+
+export function nextStreak(streak: number, perfect: boolean): number {
+  return perfect ? streak + 1 : 0;
+}
+
 export function queueRank(review: Review | undefined, now: number): number {
   if (!review || review.status === "new") return 0;
   if (review.dueAt <= now) return 1 + Math.min(10, review.lapses);

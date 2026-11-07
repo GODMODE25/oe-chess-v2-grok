@@ -1,29 +1,66 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { COURSES, DEFAULT_CAROUSEL, courseById, reviewProgress, variationsFor, type Course } from "@/lib/chess/courses";
-import { getEngine } from "@/lib/chess/engine";
-import { parsePgn, replay, splitPgnGames, START_FEN } from "@/lib/chess/rules";
-import { gradeFromDrill, reviewId } from "@/lib/chess/srs";
+import { COURSES, DEFAULT_CAROUSEL, TIER_LABEL, TIER_RANK, courseById, reviewProgress, variationsFor, type Course } from "@/lib/chess/courses";
+import { parsePgn, lastMoveOf, safeReplay, splitPgnGames, START_FEN } from "@/lib/chess/rules";
+import { reviewId } from "@/lib/chess/srs";
 import { allOpenings, useOe } from "@/lib/chess/store";
-import type { OpeningLine, Side } from "@/lib/chess/types";
+import type { LineTier, OpeningLine, Prefs, Side } from "@/lib/chess/types";
+import { OpeningSession } from "./OpeningSession";
 import { Board } from "./Board";
 import { Button, Meter, Panel, Pill, TextInput } from "./ui";
+
+const TIERS = Object.keys(TIER_LABEL) as LineTier[];
+const NO_PREFS: Prefs = {};
+
+function TierPill({ tier }: { tier: LineTier }) {
+  return <Pill tone={tier === "s" ? "brass" : tier === "trash" ? "danger" : "mist"}>{TIER_LABEL[tier]}</Pill>;
+}
+
+function byQuality(a: OpeningLine, b: OpeningLine) {
+  return (TIER_RANK[a.tier ?? "d"] - TIER_RANK[b.tier ?? "d"]) || b.popularity - a.popularity;
+}
 
 export function OpeningsView() {
   const repertoire = useOe((s) => s.repertoire);
   const reviews = useOe((s) => s.reviews);
   const settings = useOe((s) => s.settings);
+  const patchPrefs = useOe((s) => s.patchPrefs);
   const setCarousel = useOe((s) => s.setCarousel);
   const custom = useOe((s) => s.openings);
   const book = useMemo(() => allOpenings(custom), [custom]);
+  // The catalog holds a few same-named twins at different depths; keep the first, which is what each course drills.
+  const bookOnly = useMemo(() => {
+    const named = new Set<string>();
+    return book.filter((row) => {
+      if (row.tags?.includes("generated")) return false;
+      if (named.has(row.name)) return false;
+      named.add(row.name);
+      return true;
+    });
+  }, [book]);
   const [courseId, setCourseId] = useState<string | null>(null);
   const [lineId, setLineId] = useState<string | null>(null);
   const [adding, setAdding] = useState<Side | null>(null);
-  const [tab, setTab] = useState<"shelf" | "explorer">("shelf");
   const [query, setQuery] = useState("");
-  const [family, setFamily] = useState("All");
-  const [trainSide, setTrainSide] = useState<Side>("w");
   const [ghost, setGhost] = useState<Course | null>(null);
+  const [pinnedId, setPinnedId] = useState<string | null>(null);
   const carouselRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const railRef = useRef<HTMLDivElement | null>(null);
+
+  // The view choices are stored, so the shelf opens the way it was left.
+  const prefs = settings.prefs ?? NO_PREFS;
+  const tab = prefs.openingsTab ?? "shelf";
+  const setTab = (next: "shelf" | "explorer") => patchPrefs({ openingsTab: next });
+  const tierFilter = prefs.tierFilter ?? "all";
+  const setTierFilter = (next: "all" | LineTier) => patchPrefs({ tierFilter: next });
+  const trainSide = prefs.trainSide ?? "w";
+  const setTrainSide = (next: Side) => patchPrefs({ trainSide: next });
+
+  function scrollRail(dir: -1 | 1) {
+    const rail = railRef.current;
+    if (!rail) return;
+    const card = rail.firstElementChild as HTMLElement | null;
+    rail.scrollBy({ top: dir * ((card?.offsetHeight ?? 148) + 12), behavior: "smooth" });
+  }
 
   function scrollCarousel(side: Side, dir: -1 | 1) {
     carouselRefs.current[side]?.scrollBy({ left: dir * 312, behavior: "smooth" });
@@ -37,7 +74,10 @@ export function OpeningsView() {
   const variations = course ? variationsFor(course) : [];
   const activeCourse = course ?? ghost ?? undefined;
   const line = lineId ? book.find((row) => row.id === lineId) ?? null : null;
-  const families = ["All", ...Array.from(new Set(book.map((row) => row.family)))];
+  const families = ["All", ...Array.from(new Set(bookOnly.map((row) => row.family)))];
+  // A stored family that no longer ships would read as an empty shelf, so fall back to All.
+  const family = prefs.family && families.includes(prefs.family) ? prefs.family : "All";
+  const setFamily = (next: string) => patchPrefs({ family: next });
 
   function progressFor(target: Course) {
     const rows = variationsFor(target);
@@ -67,11 +107,12 @@ export function OpeningsView() {
     const idx = rows.findIndex((row) => row.id === line.id);
     const hasNext = idx >= 0 && idx < rows.length - 1;
     return (
-      <VariationSession
+      <OpeningSession
         key={line.id}
         course={activeCourse}
         line={line}
         hasNext={hasNext}
+        isCourse={Boolean(course)}
         onNext={() => setLineId(hasNext ? rows[idx + 1].id : null)}
         onExit={() => { setLineId(null); setGhost(null); }}
       />
@@ -79,23 +120,32 @@ export function OpeningsView() {
   }
 
   if (course) {
+    const pinned = variations.find((row) => row.id === pinnedId) ?? variations[0] ?? null;
+    const pinnedPosition = pinned ? safeReplay(START_FEN, pinned.moves) : null;
     return (
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="flex flex-col items-center gap-3">
-          <Board
-            fen={START_FEN}
-            orientation={course.side === "w" ? "white" : "black"}
-            coordinates={settings.coordinates}
-            theme={settings.boardTheme}
-            pieceSet={settings.pieceSet ?? "standard"}
-            interactive={false}
-          />
-          <p className="text-sm text-mist">You'll play {course.side === "w" ? "White" : "Black"} here. Pick a variation and we'll walk through it together.</p>
+        <div className="mx-auto grid w-full max-w-xl content-start justify-items-start gap-3">
+          <Button variant="ghost" onClick={() => setCourseId(null)}>Back to shelf</Button>
+          <div className="flex w-full flex-col items-center gap-3">
+            <Board
+              fen={pinnedPosition?.ok ? pinnedPosition.chess.fen() : START_FEN}
+              lastMove={pinnedPosition?.ok ? lastMoveOf(pinnedPosition.chess) : null}
+              orientation={course.side === "w" ? "white" : "black"}
+              coordinates={settings.coordinates}
+              theme={settings.boardTheme}
+              pieceSet={settings.pieceSet ?? "standard"}
+              interactive={false}
+            />
+            <p className="text-sm text-mist">
+              {pinned
+                ? `Pinned to ${pinned.name}. Pick another variation to move the board — then start the drill.`
+                : "You'll play the course moves here."}
+            </p>
+          </div>
         </div>
         <div className="grid content-start gap-3">
           <Panel>
-            <Button variant="ghost" onClick={() => setCourseId(null)}>Back to shelf</Button>
-            <div className="mt-2 flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-2xl">{course.name}</h2>
               <Pill tone="brass">{course.tier === "legendary" ? "Legendary" : "S-tier"}</Pill>
             </div>
@@ -104,33 +154,78 @@ export function OpeningsView() {
               <Meter value={progressFor(course)} label="Opening progress" />
             </div>
           </Panel>
-          {variations.map((variation) => {
-            const review = reviews.find((item) => item.id === reviewId(variation.id, course.side));
-            return (
-              <button
-                key={variation.id}
-                type="button"
-                className="rounded-xl border border-line bg-surface p-3 text-left hover:border-brass"
-                onClick={() => setLineId(variation.id)}
-              >
-                <h3 className="text-lg">{variation.name}</h3>
-                <p className="mt-1 text-sm text-mist">{variation.moves.length} plies · {variation.eco}</p>
-                <div className="mt-2">
-                  <Meter value={reviewProgress(review)} label={review?.status ?? "new"} />
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm text-mist">{variations.length} variations</p>
+            {variations.length > 3 && (
+              <div className="flex gap-2">
+                <Button
+                  variant="quiet"
+                  className="h-9 w-9 px-0"
+                  aria-label={`${course.name} variations: scroll up`}
+                  onClick={() => scrollRail(-1)}
+                >
+                  ↑
+                </Button>
+                <Button
+                  variant="quiet"
+                  className="h-9 w-9 px-0"
+                  aria-label={`${course.name} variations: scroll down`}
+                  onClick={() => scrollRail(1)}
+                >
+                  ↓
+                </Button>
+              </div>
+            )}
+          </div>
+          <div
+            ref={railRef}
+            className="scrollbar-hidden grid snap-y snap-mandatory content-start gap-3 overflow-y-auto"
+            style={{ maxHeight: "calc(3 * 8.5rem + 2 * 0.75rem)" }}
+          >
+            {variations.map((variation) => {
+              const review = reviews.find((item) => item.id === reviewId(variation.id, course.side));
+              const isPinned = pinned?.id === variation.id;
+              return (
+                <div
+                  key={variation.id}
+                  className={`h-[8.5rem] snap-start rounded-xl border p-3 ${isPinned ? "border-brass bg-surface-2" : "border-line bg-surface"}`}
+                >
+                  <button type="button" className="flex h-full w-full flex-col text-left" onClick={() => setPinnedId(variation.id)}>
+                    <div className="flex items-start gap-2">
+                      <h3 className="text-lg">{variation.name}</h3>
+                      {variation.tier && <TierPill tier={variation.tier} />}
+                    </div>
+                    <p className="mt-1 text-sm text-mist">{variation.moves.length} plies · {variation.eco}</p>
+                    <div className="mt-auto pt-2">
+                      <Meter value={reviewProgress(review)} label={review?.status ?? "new"} />
+                    </div>
+                  </button>
                 </div>
-              </button>
-            );
-          })}
+              );
+            })}
+          </div>
+          {pinned && <Button onClick={() => setLineId(pinned.id)}>Start this variation</Button>}
         </div>
       </div>
     );
   }
 
-  const visible = book.filter((row) => {
+  function matchesSlice(row: OpeningLine) {
     if (family !== "All" && row.family !== family) return false;
     const hay = `${row.name} ${row.eco} ${row.family}`.toLowerCase();
     return hay.includes(query.trim().toLowerCase());
-  });
+  }
+
+  const searched = bookOnly.filter(matchesSlice);
+  const visible = searched
+    .filter((row) => tierFilter === "all" || (row.tier ?? "d") === tierFilter)
+    .sort(byQuality);
+  const tierCounts = TIERS.map((tier) => ({
+    tier,
+    count: searched.filter((row) => (row.tier ?? "d") === tier).length,
+  })).filter((option) => option.count > 0);
+  // Engine continuations stay under their course in Explorer; the Add browser still offers them.
+  const addChoices = book.filter(matchesSlice).sort(byQuality);
 
   return (
     <div className="grid gap-6">
@@ -158,14 +253,35 @@ export function OpeningsView() {
               <Button className="whitespace-nowrap" variant={trainSide === "b" ? "primary" : "quiet"} onClick={() => setTrainSide("b")}>As Black</Button>
             </div>
           </div>
-          <p className="mt-3 text-sm text-mist">{visible.length} lines</p>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm text-mist">{visible.length} openings in the book, best first</p>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <Button variant={tierFilter === "all" ? "primary" : "quiet"} className="h-9 px-3" onClick={() => setTierFilter("all")}>
+                All
+              </Button>
+              {tierCounts.map(({ tier, count }) => (
+                <Button
+                  key={tier}
+                  variant={tierFilter === tier ? "primary" : "quiet"}
+                  className="h-9 px-3"
+                  onClick={() => setTierFilter(tier)}
+                >
+                  {TIER_LABEL[tier]} · {count}
+                </Button>
+              ))}
+            </div>
+          </div>
           <div className="mt-3 grid gap-2 md:grid-cols-2">
             {visible.map((row) => (
               <button key={row.id} type="button" className="rounded-lg border border-line px-3 py-2 text-left hover:border-brass" onClick={() => openLine(row, trainSide)}>
-                <span className="text-xs text-mist">{row.eco} · {row.family}</span>
+                <span className="flex items-center gap-2 text-xs text-mist">
+                  {row.eco} · {row.family}
+                  {row.tier && <TierPill tier={row.tier} />}
+                </span>
                 <span className="block">{row.name}</span>
               </button>
             ))}
+            {!visible.length && <p className="text-sm text-mist">Nothing matches this filter. Set the tier back to All or clear the search.</p>}
           </div>
         </Panel>
       ) : (
@@ -259,7 +375,7 @@ export function OpeningsView() {
                 <TextInput value={query} placeholder="Find any other line" onChange={(event) => setQuery(event.target.value)} />
               </div>
               <div className="mt-3 grid max-h-80 gap-2 overflow-auto">
-                {visible.filter((row) => !shelf[adding].includes(`line:${row.id}`)).slice(0, 40).map((row) => (
+                {addChoices.filter((row) => !shelf[adding].includes(`line:${row.id}`)).slice(0, 40).map((row) => (
                   <button
                     key={row.id}
                     type="button"
@@ -279,223 +395,6 @@ export function OpeningsView() {
           )}
         </>
       )}
-    </div>
-  );
-}
-
-function VariationSession({ course, line, hasNext, onNext, onExit }: { course: Course; line: OpeningLine; hasNext: boolean; onNext: () => void; onExit: () => void }) {
-  const settings = useOe((s) => s.settings);
-  const gradeLine = useOe((s) => s.gradeLine);
-  const noteSuccess = useOe((s) => s.noteSuccess);
-  const [ply, setPly] = useState(0);
-  const [offBook, setOffBook] = useState(false);
-  const [extra, setExtra] = useState<string[]>([]);
-  const [banner, setBanner] = useState("");
-  const [hints, setHints] = useState(0);
-  const [mistakes, setMistakes] = useState(0);
-  const [started] = useState(() => Date.now());
-  const [done, setDone] = useState(false);
-  const [thinking, setThinking] = useState(false);
-  const [hold, setHold] = useState(false);
-  const graded = useRef(false);
-  const prefix = useMemo(
-    () => (offBook ? [...line.moves.slice(0, ply), ...extra] : line.moves.slice(0, ply)),
-    [offBook, line.moves, ply, extra],
-  );
-  const position = useMemo(() => replay(START_FEN, prefix), [prefix]);
-  const studentTurn = !done && position.chess.turn() === course.side && !thinking;
-  const expected = !offBook && ply < line.moves.length ? line.moves[ply] : "";
-  const sessionPct = line.moves.length ? Math.min(100, (Math.min(ply, line.moves.length) / line.moves.length) * 100) : 0;
-
-  useEffect(() => {
-    if (done || offBook || hold) return;
-    if (ply >= line.moves.length) {
-      if (graded.current) return;
-      graded.current = true;
-      const grade = gradeFromDrill({
-        mistakes,
-        hints,
-        elapsedMs: Date.now() - started,
-        studentMoves: line.moves.filter((_, index) => (index % 2 === 0 ? "w" : "b") === course.side).length,
-      });
-      gradeLine(line.id, course.side, grade, Date.now() - started);
-      if (grade !== "fail") noteSuccess();
-      setDone(true);
-      setBanner(grade === "fail" ? "Let's run that one again — a couple of spots slipped." : "That variation felt solid. Well played.");
-      return;
-    }
-    if (position.chess.turn() === course.side) return;
-    const timer = window.setTimeout(() => setPly((value) => value + 1), 420);
-    return () => window.clearTimeout(timer);
-  }, [ply, offBook, done, hold, line, course.side, position.chess, mistakes, hints, started, gradeLine, noteSuccess]);
-
-  useEffect(() => {
-    if (!offBook || done || position.chess.turn() === course.side || position.chess.isGameOver()) return;
-    let cancel = false;
-    const engine = getEngine();
-    setThinking(true);
-    engine
-      .go({ fen: START_FEN, uciMoves: position.uci, movetime: 700, strength: "max" })
-      .then((best) => {
-        if (cancel || !best) return;
-        const next = replay(START_FEN, prefix);
-        const moved = next.chess.move({
-          from: best.slice(0, 2),
-          to: best.slice(2, 4),
-          promotion: (best[4] as "q" | "r" | "b" | "n" | undefined) || undefined,
-        });
-        if (moved) setExtra((rows) => [...rows, moved.san]);
-      })
-      .finally(() => {
-        if (!cancel) setThinking(false);
-      });
-    return () => {
-      cancel = true;
-      engine.stop();
-    };
-  }, [offBook, done, position.chess, position.uci, course.side, prefix]);
-
-  // Undo resets the student's last move: step back (max 2) to the previous position where it is the student's turn.
-  const onBookUndoTarget = useMemo(() => {
-    for (let i = ply - 1; i >= Math.max(0, ply - 2); i--) {
-      if (replay(START_FEN, line.moves.slice(0, i)).chess.turn() === course.side) return i;
-    }
-    return -1;
-  }, [ply, line.moves, course.side]);
-  const canUndo = offBook ? extra.length > 0 : onBookUndoTarget >= 0;
-  const hasProgress = ply > 0 || extra.length > 0 || done;
-
-  function undoLast() {
-    setDone(false);
-    graded.current = false;
-    setBanner("No rush — take that move back and try again.");
-    if (offBook) {
-      if (extra.length <= 1) {
-        setOffBook(false);
-        setExtra([]);
-      } else {
-        // Pop the engine reply plus the student's wrong move so the landing state stays a student turn.
-        const trimmed = extra.slice(0, -2);
-        if (trimmed.length === 0) {
-          setOffBook(false);
-          setExtra([]);
-        } else {
-          setExtra(trimmed);
-        }
-      }
-      setHold(false);
-      return;
-    }
-    if (onBookUndoTarget >= 0) setPly(onBookUndoTarget);
-    // hold=false is the freeze fix: the advance effect waits for the student instead of stalling.
-    setHold(false);
-  }
-
-  function onMove(from: string, to: string, promotion?: string) {
-    if (!studentTurn) return;
-    setHold(false);
-    let moved;
-    try {
-      moved = position.chess.move({ from, to, promotion: promotion as "q" | "r" | "b" | "n" | undefined });
-    } catch {
-      return;
-    }
-    if (!offBook) {
-      const played = moved.san.replace(/[+#]/g, "");
-      const book = expected.replace(/[+#]/g, "");
-      if (played !== book) {
-        setMistakes((value) => value + 1);
-        setOffBook(true);
-        setExtra([moved.san]);
-        setBanner(`You've left the book — the variation move was ${expected}, but let's keep playing.`);
-        return;
-      }
-      setBanner("");
-      setPly((value) => value + 1);
-      return;
-    }
-    setExtra((rows) => [...rows, moved.san]);
-  }
-
-  const hintSquares = useMemo(() => {
-    if (!hints || !expected) return [] as string[];
-    try {
-      const probe = replay(START_FEN, line.moves.slice(0, ply));
-      const moved = probe.chess.move(expected);
-      return moved ? [moved.from, moved.to] : [];
-    } catch {
-      return [];
-    }
-  }, [hints, expected, ply, line.moves]);
-
-  return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
-      <div className="flex flex-col items-center gap-3">
-        <Board
-          fen={position.chess.fen()}
-          orientation={course.side === "w" ? "white" : "black"}
-          interactive={studentTurn}
-          coordinates={settings.coordinates}
-          theme={settings.boardTheme}
-          pieceSet={settings.pieceSet ?? "standard"}
-          highlights={hintSquares}
-          arrows={hints > 1 && hintSquares.length === 2 ? [{ from: hintSquares[0]!, to: hintSquares[1]! }] : []}
-          onMove={onMove}
-        />
-        <div className="flex flex-wrap justify-center gap-2">
-          <Button variant="quiet" onClick={onExit}>Back</Button>
-          <Button variant="quiet" disabled={!studentTurn || offBook} onClick={() => setHints((value) => value + 1)}>Hint</Button>
-          <Button variant="quiet" disabled={!canUndo} onClick={undoLast}>Undo</Button>
-          {hasProgress && (
-            <Button
-              variant="quiet"
-              onClick={() => {
-                graded.current = false;
-                setPly(0);
-                setOffBook(false);
-                setExtra([]);
-                setHints(0);
-                setMistakes(0);
-                setDone(false);
-                setHold(false);
-                setBanner("");
-              }}
-            >
-              Let's try that again
-            </Button>
-          )}
-          {done && <Button onClick={onNext}>{hasNext ? "Next variation" : "Back to course"}</Button>}
-        </div>
-        <p className="text-center text-sm text-mist">
-          {done
-            ? "That one's logged — nice work."
-            : thinking
-              ? "Stockfish is answering — you went off book."
-              : studentTurn && offBook
-                ? "Your move — you're off book, play on."
-                : studentTurn && expected
-                  ? `Your move — try ${expected}.`
-                  : studentTurn
-                    ? "Your move."
-                    : "Let's see how the book answers."}
-        </p>
-      </div>
-      <Panel>
-        <p className="text-sm text-brass">{course.name}</p>
-        <h2 className="text-2xl">{line.name}</h2>
-        <p className="mt-2 text-sm text-mist">{line.note}</p>
-        <div className="mt-3">
-          <Meter value={done ? 100 : sessionPct} label="This variation" />
-        </div>
-        <p className="mt-3 h-48 overflow-auto text-sm leading-6">
-          {line.moves.map((san, index) => (
-            <span key={`${san}${index}`} className={index < ply ? "text-ivory" : index === ply && !offBook ? "text-brass" : "text-mist"}>
-              {index % 2 === 0 ? ` ${Math.floor(index / 2) + 1}.` : ""} {san}
-            </span>
-          ))}
-        </p>
-        {banner && <p className="mt-3 text-center text-sm text-brass-2">{banner}</p>}
-      </Panel>
     </div>
   );
 }
