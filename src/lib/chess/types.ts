@@ -125,6 +125,8 @@ export type SavedGame = {
 export type Profile = {
   id: string;
   name: string;
+  /** Square image as a data URL, set from an uploaded avatar. */
+  avatar?: string;
   deviceId: string;
   createdAt: number;
   streak: number;
@@ -171,6 +173,8 @@ export type Settings = {
   endgameThinkMs: number;
   analysisDepth: number;
   pieceSet?: PieceSet;
+  /** Slides, capture fades and the check flash on the board. Absent means on. */
+  animations?: boolean;
   appTheme?: AppTheme;
   playPanels?: Partial<Record<PlayPanelId, PanelPref>>;
   prefs?: Prefs;

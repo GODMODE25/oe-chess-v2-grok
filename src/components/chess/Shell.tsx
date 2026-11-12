@@ -96,7 +96,7 @@ export function Shell() {
           <img src={assetUrl("/logo-piece.svg")} alt="" className="h-12 w-12" />
           <div>
             <p className="font-display text-xl leading-none">OE Chess</p>
-            <p className="text-xs text-mist">Openings and endgames</p>
+            <p className="text-xs text-mist">Openings and Endgames</p>
           </div>
         </div>
         <nav className="flex flex-col gap-1">

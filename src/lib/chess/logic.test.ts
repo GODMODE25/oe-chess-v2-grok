@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 import { Chess } from "chess.js";
 import { judgeEndgame } from "./endgame-result.ts";
 import { dequeuePremove, dropAnsweredPremove, enqueuePremove, premoveLabel, premoveProjection, premoveSan, premoveTargets, type QueuedMove } from "./premove.ts";
-import { capturedPieces, materialBalance, materialLead, parsePgn, replay, START_FEN, statusOf } from "./rules.ts";
+import { advantageSeries, capturedPieces, materialBalance, materialLead, parsePgn, replay, START_FEN, statusOf } from "./rules.ts";
 import { REPLAY_TARGET, applyGrade, blankReview, gradeFromDrill, nextStreak } from "./srs.ts";
 import { mergeEnvelopes } from "./sync-merge.ts";
 import type { SyncEnvelope } from "./types.ts";
@@ -69,6 +69,19 @@ describe("material", () => {
     const promoted = replay("8/P7/8/8/8/8/k7/7K w - - 0 1", ["a8=Q"]);
     assert.deepEqual(capturedPieces(promoted.chess), { w: [], b: [] });
     assert.equal(materialBalance(promoted.chess), 9);
+  });
+
+  it("graphs the advantage after every ply", () => {
+    assert.deepEqual(advantageSeries(START_FEN, []), [0]);
+    assert.deepEqual(advantageSeries(START_FEN, ["e4", "e5", "Bc4", "Nf6", "Nf3", "Nxe4", "Bxf7+", "Kxf7"]), [
+      0, 0, 0, 0, 0, 0, -1, 0, -3,
+    ]);
+  });
+
+  it("keeps the part of the graph it can replay", () => {
+    assert.deepEqual(advantageSeries(START_FEN, ["e4", "e5", "Qxd8"]), [0, 0, 0]);
+    assert.deepEqual(advantageSeries("not a fen", ["e4"]), []);
+    assert.deepEqual(advantageSeries("8/P7/8/8/8/8/k7/7K w - - 0 1", ["a8=Q"]), [1, 9]);
   });
 });
 

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { assetUrl } from "@/lib/chess/asset-url";
 import { readDiag } from "@/lib/chess/diag";
 import { exportBackup, useOe } from "@/lib/chess/store";
 import { APP_THEME_LABELS, PIECE_SET_LABELS } from "@/lib/chess/types";
@@ -44,12 +45,28 @@ function strengthWord(elo: number) {
   return "near master";
 }
 
+/** Centre-crop to a square and downscale, so an upload never bloats the local database or a cloud snapshot. */
+async function toSquareDataUrl(file: File): Promise<string> {
+  const bitmap = await createImageBitmap(file);
+  const side = Math.min(bitmap.width, bitmap.height);
+  const size = 128;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas unavailable");
+  ctx.drawImage(bitmap, (bitmap.width - side) / 2, (bitmap.height - side) / 2, side, side, 0, 0, size, size);
+  bitmap.close();
+  return canvas.toDataURL("image/png");
+}
+
 export function SettingsView() {
   const settings = useOe((s) => s.settings);
   const profile = useOe((s) => s.profile);
   const sync = useOe((s) => s.sync);
   const patchSettings = useOe((s) => s.patchSettings);
   const setProfileName = useOe((s) => s.setProfileName);
+  const setProfileAvatar = useOe((s) => s.setProfileAvatar);
   const signInGoogle = useOe((s) => s.signInGoogle);
   const signInEmail = useOe((s) => s.signInEmail);
   const signOutCloud = useOe((s) => s.signOutCloud);
@@ -58,7 +75,9 @@ export function SettingsView() {
   const importEnvelope = useOe((s) => s.importEnvelope);
   const dismissNotes = useOe((s) => s.dismissNotes);
   const cloudUid = useOe((s) => s.cloudUid);
+  const cloudEmail = useOe((s) => s.cloudEmail);
   const [importNote, setImportNote] = useState("");
+  const [avatarNote, setAvatarNote] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const sliderValue = settings.playStrength === "max" ? ELO_CEILING : settings.playStrength;
@@ -70,6 +89,19 @@ export function SettingsView() {
       setImportNote(importEnvelope(parsed, "merge") || "Backup merged.");
     } catch {
       setImportNote("Could not read that backup.");
+    }
+  }
+
+  async function onAvatar(file: File) {
+    if (!file.type.startsWith("image/")) {
+      setAvatarNote("That file is not an image.");
+      return;
+    }
+    try {
+      setProfileAvatar(await toSquareDataUrl(file));
+      setAvatarNote("");
+    } catch {
+      setAvatarNote("Could not read that image.");
     }
   }
 
@@ -87,6 +119,27 @@ export function SettingsView() {
           <Field label="Name">
             <TextInput value={profile.name} onChange={(event) => setProfileName(event.target.value)} />
           </Field>
+          <div className="flex items-center gap-3">
+            {profile.avatar ? (
+              <img src={profile.avatar} alt="Your avatar" className="h-14 w-14 rounded-full border border-line object-cover" />
+            ) : (
+              <span className="grid h-14 w-14 place-items-center rounded-full border border-line bg-surface-2 text-lg text-mist" aria-hidden>
+                {(profile.name.trim()[0] ?? "P").toUpperCase()}
+              </span>
+            )}
+            <label className="inline-flex h-11 cursor-pointer items-center rounded-lg border border-line bg-surface-2 px-4 text-sm">
+              Upload an image
+              <input className="sr-only" type="file" accept="image/*" onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) void onAvatar(file);
+                event.target.value = "";
+              }} />
+            </label>
+            {profile.avatar && (
+              <Button variant="quiet" onClick={() => { setProfileAvatar(null); setAvatarNote(""); }}>Remove</Button>
+            )}
+          </div>
+          {avatarNote && <p className="text-sm text-danger">{avatarNote}</p>}
         </div>
       </Panel>
       <Panel>
@@ -101,8 +154,17 @@ export function SettingsView() {
         </p>
         <div className="mt-3 grid gap-2">
           {cloudUid ? (
-            <div className="flex flex-wrap gap-2">
-              <Button variant="quiet" onClick={() => void signOutCloud()}>Sign out</Button>
+            <div className="grid gap-2">
+              <p className="text-sm text-ivory">
+                {cloudEmail ? (
+                  <>Signed in as <span className="font-medium">{cloudEmail}</span></>
+                ) : (
+                  "Signed in, but this account has no email address."
+                )}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="quiet" onClick={() => void signOutCloud()}>Sign out</Button>
+              </div>
             </div>
           ) : (
             <div className="grid gap-2">
@@ -176,6 +238,7 @@ export function SettingsView() {
         <div className="mt-3 flex flex-wrap gap-2">
           <Button variant={settings.coordinates ? "primary" : "quiet"} onClick={() => patchSettings({ coordinates: !settings.coordinates })}>Coordinates</Button>
           <Button variant={settings.sound ? "primary" : "quiet"} onClick={() => patchSettings({ sound: !settings.sound })}>Sound</Button>
+          <Button variant={settings.animations ?? true ? "primary" : "quiet"} onClick={() => patchSettings({ animations: !(settings.animations ?? true) })}>Animations</Button>
         </div>
       </Panel>
       <Panel>

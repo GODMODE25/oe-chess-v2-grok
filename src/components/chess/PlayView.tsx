@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { assetUrl } from "@/lib/chess/asset-url";
 import { getEngine } from "@/lib/chess/engine";
 import { dequeuePremove, dropAnsweredPremove, enqueuePremove, premoveLabel, type QueuedMove } from "@/lib/chess/premove";
-import { applyUciMove, capturedPieces, fenOk, materialLead, replay, START_FEN, statusOf } from "@/lib/chess/rules";
+import { applyUciMove, advantageSeries, capturedPieces, fenOk, materialLead, replay, START_FEN, statusOf } from "@/lib/chess/rules";
 import { playTone, setSoundEnabled } from "@/lib/chess/sound";
 import { useOe } from "@/lib/chess/store";
 import type { EngineInfo, PanelPref, PieceSet, PlayPanelId, Prefs, Side } from "@/lib/chess/types";
 import { Board } from "./Board";
-import { EnginePanelBody } from "./EnginePanel";
+import { EnginePanelBody, MovesGraph } from "./EnginePanel";
 import { EvalBar } from "./EvalBar";
 import { PieceGlyph } from "./pieces";
 import { Button, cn, CollapsiblePanel, Field, TextInput } from "./ui";
@@ -27,6 +28,13 @@ function clockText(ms: number) {
 }
 
 const PIECE_NAMES: Record<string, string> = { p: "pawn", n: "knight", b: "bishop", r: "rook", q: "queen" };
+
+/** The engine's number in pawns from White's view; a forced mate is drawn as a decisive edge. */
+function evalForWhite(info: EngineInfo, stm: Side): number | null {
+  if (info.mate != null) return (stm === "w" ? 1 : -1) * (info.mate > 0 ? 9 : -9);
+  if (info.cp != null) return ((stm === "w" ? 1 : -1) * info.cp) / 100;
+  return null;
+}
 
 /** The pieces one player has taken, plus how much they are up — the way a board tray reads. */
 function MaterialRow({ side, taken, takenColor, lead, pieceSet }: {
@@ -58,6 +66,38 @@ function MaterialRow({ side, taken, takenColor, lead, pieceSet }: {
 const DEFAULT_SEATS: Record<Side, "you" | "stockfish"> = { w: "you", b: "stockfish" };
 const NO_PREFS: Prefs = {};
 
+/** The face of the player sitting in one seat: the Stockfish logo for the engine, the uploaded avatar for a person. */
+function SeatAvatar({ seat, name, avatar }: { seat: "you" | "stockfish"; name: string; avatar?: string }) {
+  const size = "h-13.5 w-13.5 shrink-0 rounded-full border border-line";
+  if (seat === "stockfish") {
+    return <img src={assetUrl("/stockfish-avatar.png")} alt="Stockfish" className={`${size} bg-surface object-cover`} />;
+  }
+  if (avatar) {
+    return <img src={avatar} alt="" className={`${size} object-cover`} />;
+  }
+  return (
+    <span className={`grid ${size} place-items-center bg-surface text-base text-mist`} aria-hidden>
+      {(name.trim()[0] ?? "P").toUpperCase()}
+    </span>
+  );
+}
+
+/** One seat in the rail beside the board: face over clock, so the column stays narrow enough to sit next to the eval bar. */
+function SeatChip({ seat, name, avatar, clockMs }: {
+  seat: "you" | "stockfish";
+  name: string;
+  avatar?: string;
+  clockMs: number | null;
+}) {
+  return (
+    <div className="flex w-14 flex-col items-center gap-0.5">
+      <SeatAvatar seat={seat} name={name} avatar={avatar} />
+      <span className="w-full truncate text-center text-[10px] text-mist" title={name}>{name}</span>
+      <span className="tabular-nums text-xs text-ivory">{clockMs == null ? "—" : clockText(clockMs)}</span>
+    </div>
+  );
+}
+
 const PANELS: { id: PlayPanelId; label: string }[] = [
   { id: "presets", label: "Presets" },
   { id: "new", label: "New game" },
@@ -88,10 +128,13 @@ export function PlayView() {
   const [finished, setFinished] = useState(false);
   const [analysis, setAnalysis] = useState(false);
   const [info, setInfo] = useState<EngineInfo | null>(null);
+  // Engine numbers already seen, keyed by ply, so the graph keeps its history while analysis moves on.
+  const [evalLog, setEvalLog] = useState<Record<number, number>>({});
   const [thinking, setThinking] = useState(false);
   const [engineError, setEngineError] = useState("");
   const [fenDraft, setFenDraft] = useState("");
   const [phase, setPhase] = useState<"idle" | "playing" | "paused">("idle");
+  const marqueeRef = useRef<HTMLDivElement | null>(null);
 
   // Every setup choice lives in settings.prefs, so a reload or another device opens on the same position.
   const prefs = settings.prefs ?? NO_PREFS;
@@ -127,8 +170,17 @@ export function PlayView() {
   const topColor: Side = orientation === "white" ? "b" : "w";
   const bottomColor: Side = orientation === "white" ? "w" : "b";
   const uciKey = full.uci.join(" ");
+  // Stockfish's number where it actually looked at a position; the material count everywhere else.
+  const graph = useMemo(() => advantageSeries(startFen, sans).map((value, ply) => evalLog[ply] ?? value), [startFen, sans, evalLog]);
+  const graphPly = cursor ?? sans.length;
 
   useEffect(() => setSoundEnabled(settings.sound), [settings.sound]);
+
+  // The moves marquee lives above the board; keep the newest ply in view as the game runs on.
+  useEffect(() => {
+    const el = marqueeRef.current;
+    if (el) el.scrollLeft = el.scrollWidth;
+  }, [sans.length]);
 
   useEffect(() => {
     if (!launch) return;
@@ -152,6 +204,7 @@ export function PlayView() {
     setGameId(crypto.randomUUID());
     setPhase("playing");
     setInfo(null);
+    setEvalLog({});
     setLaunch(null);
   }, [launch, setLaunch]);
 
@@ -207,7 +260,13 @@ export function PlayView() {
         depth: wantMove ? undefined : settings.analysisDepth,
         strength: settings.playStrength,
         onInfo: (next) => {
-          if (!cancel) setInfo(next);
+          if (cancel) return;
+          setInfo(next);
+          const board = wantMove ? full.chess : viewed.chess;
+          const score = evalForWhite(next, board.turn());
+          if (score == null) return;
+          const ply = board.history().length;
+          setEvalLog((log) => (log[ply] === score ? log : { ...log, [ply]: score }));
         },
       })
       .then((best) => {
@@ -324,7 +383,14 @@ export function PlayView() {
   function undo() {
     const opponent = turn === "w" ? "b" : "w";
     const drop = sans.length >= 2 && seats[turn] === "you" && seats[opponent] === "stockfish" ? 2 : 1;
-    setSans((rows) => rows.slice(0, Math.max(0, rows.length - drop)));
+    const kept = Math.max(0, sans.length - drop);
+    setSans((rows) => rows.slice(0, kept));
+    // A replayed ply can be a different move, so numbers recorded past the cut are no longer about this game.
+    setEvalLog((log) => {
+      const trimmed: Record<number, number> = {};
+      for (const [ply, value] of Object.entries(log)) if (Number(ply) <= kept) trimmed[Number(ply)] = value;
+      return trimmed;
+    });
     setCursor(null);
     setFinished(false);
     setResult("*");
@@ -344,6 +410,7 @@ export function PlayView() {
     setResult("*");
     setFinished(false);
     setInfo(null);
+    setEvalLog({});
     setEngineError("");
     setPremoves([]);
     setPremoveNote("");
@@ -361,6 +428,7 @@ export function PlayView() {
     setResult("*");
     setFinished(false);
     setInfo(null);
+    setEvalLog({});
     setEngineError("");
     setPremoves([]);
     setPremoveNote("");
@@ -408,33 +476,81 @@ export function PlayView() {
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
       <div className="flex min-w-0 flex-col items-center gap-3">
-        <div className="flex w-full max-w-xl items-center justify-between gap-3 text-sm">
-          <span className="tabular-nums text-mist">{clock ? clockText(orientation === "white" ? clock.b : clock.w) : "No clock"}</span>
-          <span className="text-center text-ivory">{label}</span>
-          <span className="tabular-nums text-ivory">{clock ? clockText(orientation === "white" ? clock.w : clock.b) : "No clock"}</span>
-        </div>
-        <div className="flex w-full max-w-xl flex-col gap-1">
-          <MaterialRow side={topColor} taken={lost[bottomColor]} takenColor={bottomColor} lead={materialLead(viewed.chess, topColor)} pieceSet={settings.pieceSet ?? "standard"} />
-          <div className="flex w-full items-stretch gap-2">
-            {analysis && <EvalBar info={info} stm={viewed.chess.turn()} flipped={orientation === "black"} />}
-            <div className="min-w-0 flex-1">
-              <Board
-                fen={viewed.chess.fen()}
-                orientation={orientation}
-                interactive={phase === "playing" && !browsing && !over && humans.length > 0}
-                humanColors={humans}
-                onPremove={queuePremove}
-                coordinates={settings.coordinates}
-                theme={settings.boardTheme}
-                pieceSet={settings.pieceSet ?? "standard"}
-                lastMove={last ? { from: last.from, to: last.to } : null}
-                premoves={premoves}
-                arrows={analysis || thinking ? arrow : []}
-                onMove={pushMove}
-              />
-            </div>
+        {sans.length > 0 && (
+          <div
+            ref={marqueeRef}
+            role="region"
+            aria-label="Moves"
+            className="scrollbar-hidden flex w-full max-w-xl gap-1.5 overflow-x-auto rounded-lg border border-line bg-surface px-2 py-1.5 text-xs"
+          >
+            {Array.from({ length: Math.ceil(sans.length / 2) }, (_, index) => (
+              <span key={index} className="flex shrink-0 items-center gap-1">
+                <span className="tabular-nums text-mist">{index + 1}.</span>
+                {[0, 1].map((offset) => {
+                  const san = sans[index * 2 + offset];
+                  if (!san) return null;
+                  return (
+                    <button
+                      key={offset}
+                      type="button"
+                      className="rounded px-1.5 py-0.5 text-ivory hover:bg-surface-2"
+                      onClick={() => {
+                        const next = index * 2 + offset + 1;
+                        setCursor(next >= sans.length ? null : next);
+                      }}
+                    >
+                      {san}
+                    </button>
+                  );
+                })}
+              </span>
+            ))}
           </div>
-          <MaterialRow side={bottomColor} taken={lost[topColor]} takenColor={topColor} lead={materialLead(viewed.chess, bottomColor)} pieceSet={settings.pieceSet ?? "standard"} />
+        )}
+        <p className="w-full max-w-xl text-xs text-ivory">{label}</p>
+        <div className="grid w-full max-w-xl grid-cols-[auto_auto_minmax(0,1fr)] gap-y-1">
+          <div className="col-start-1 row-start-2 mr-2 flex w-14 shrink-0 flex-col items-center justify-between">
+            <SeatChip
+              seat={seats[topColor]}
+              name={seats[topColor] === "you" ? profile.name : "Stockfish"}
+              avatar={seats[topColor] === "you" ? profile.avatar : undefined}
+              clockMs={clock ? clock[topColor] : null}
+            />
+            <SeatChip
+              seat={seats[bottomColor]}
+              name={seats[bottomColor] === "you" ? profile.name : "Stockfish"}
+              avatar={seats[bottomColor] === "you" ? profile.avatar : undefined}
+              clockMs={clock ? clock[bottomColor] : null}
+            />
+          </div>
+          {analysis && (
+            <div className="col-start-2 row-start-2 mr-2 flex">
+              <EvalBar info={info} stm={viewed.chess.turn()} flipped={orientation === "black"} />
+            </div>
+          )}
+          <div className="col-start-3 row-start-1">
+            <MaterialRow side={topColor} taken={lost[bottomColor]} takenColor={bottomColor} lead={materialLead(viewed.chess, topColor)} pieceSet={settings.pieceSet ?? "standard"} />
+          </div>
+          <div className="col-start-3 row-start-2 min-w-0">
+            <Board
+              fen={viewed.chess.fen()}
+              orientation={orientation}
+              interactive={phase === "playing" && !browsing && !over && humans.length > 0}
+              humanColors={humans}
+              onPremove={queuePremove}
+              coordinates={settings.coordinates}
+              theme={settings.boardTheme}
+              pieceSet={settings.pieceSet ?? "standard"}
+              animate={settings.animations ?? true}
+              lastMove={last ? { from: last.from, to: last.to } : null}
+              premoves={premoves}
+              arrows={analysis || thinking ? arrow : []}
+              onMove={pushMove}
+            />
+          </div>
+          <div className="col-start-3 row-start-3">
+            <MaterialRow side={bottomColor} taken={lost[topColor]} takenColor={topColor} lead={materialLead(viewed.chess, bottomColor)} pieceSet={settings.pieceSet ?? "standard"} />
+          </div>
         </div>
         <div className="flex flex-wrap justify-center gap-2">
           <Button variant="quiet" onClick={() => setOrientation(orientation === "white" ? "black" : "white")}>Flip</Button>
@@ -475,7 +591,6 @@ export function PlayView() {
       </div>
       <div className="flex w-full min-w-0 flex-col gap-3">
         <div className="flex flex-wrap items-center gap-1.5 text-xs">
-          <span className="text-mist">Panels:</span>
           {PANELS.map((p) => {
             const pref = panelPref(p.id);
             return (
@@ -610,6 +725,7 @@ export function PlayView() {
             onToggle={() => patchPanel("engine", { collapsed: !panelPref("engine").collapsed })}
           >
             <EnginePanelBody info={info} enabled={analysis} />
+            <MovesGraph values={graph} active={graphPly} onPly={(ply) => setCursor(ply >= sans.length ? null : ply)} />
           </CollapsiblePanel>
         )}
       </div>

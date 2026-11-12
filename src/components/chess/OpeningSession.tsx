@@ -260,6 +260,7 @@ export function OpeningSession({
             coordinates={settings.coordinates}
             theme={settings.boardTheme}
             pieceSet={settings.pieceSet ?? "standard"}
+            animate={settings.animations ?? true}
             highlights={hintSquares}
             arrows={arrows}
             onMove={onMove}

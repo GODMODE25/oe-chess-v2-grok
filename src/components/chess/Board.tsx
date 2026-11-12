@@ -1,5 +1,5 @@
 import { Chess, type Square } from "chess.js";
-import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import { premoveProjection, premoveTargets, type QueuedMove } from "@/lib/chess/premove";
 import type { BoardTheme, PieceSet, Side } from "@/lib/chess/types";
 import { PieceGlyph } from "./pieces";
@@ -17,10 +17,88 @@ type BoardProps = {
   coordinates?: boolean;
   theme?: BoardTheme;
   pieceSet?: PieceSet;
+  animate?: boolean;
   humanColors?: Side[];
   onPremove?: (move: QueuedMove) => void;
   onMove?: (from: string, to: string, promotion?: string) => void;
 };
+
+type Placed = { type: string; color: "w" | "b" };
+
+/** Square → piece, straight off the FEN's board row, without paying for a Chess instance per frame. */
+function placementOf(fen: string): Map<string, Placed> {
+  const map = new Map<string, Placed>();
+  let rank = 8;
+  let file = 0;
+  for (const ch of fen.split(" ")[0]) {
+    if (ch === "/") {
+      rank--;
+      file = 0;
+    } else if (ch >= "1" && ch <= "8") {
+      file += Number(ch);
+    } else {
+      map.set(`${"abcdefgh"[file]}${rank}`, { type: ch.toLowerCase(), color: ch === ch.toUpperCase() ? "w" : "b" });
+      file++;
+    }
+  }
+  return map;
+}
+
+function stepDistance(a: string, b: string) {
+  const dx = Math.abs(a.charCodeAt(0) - b.charCodeAt(0));
+  const dy = Math.abs(Number(a[1]) - Number(b[1]));
+  return dx * dx + dy * dy;
+}
+
+/**
+ * Where every new piece came from, and which pieces simply vanished. A square that changes
+ * occupant is both a removal and an arrival, so a capture slides the winner in and leaves the
+ * victim behind as a ghost. Matching prefers the same piece and falls back to the same colour,
+ * which keeps castling's two slides apart and lets a promoted piece ride in from its pawn.
+ */
+function diffPlacements(prev: Map<string, Placed>, next: Map<string, Placed>) {
+  const slides: { to: string; from: string }[] = [];
+  const free: { sq: string; type: string; color: "w" | "b" }[] = [];
+  const differs = (a: Placed | undefined, b: Placed | undefined) => {
+    if (!a || !b) return Boolean(a) !== Boolean(b);
+    return a.type !== b.type || a.color !== b.color;
+  };
+  for (const [sq, piece] of prev) {
+    if (differs(piece, next.get(sq))) free.push({ sq, ...piece });
+  }
+  for (const [sq, piece] of next) {
+    if (!differs(piece, prev.get(sq))) continue;
+    let best = -1;
+    let bestScore = Infinity;
+    free.forEach((candidate, index) => {
+      if (candidate.color !== piece.color) return;
+      const penalty = candidate.type === piece.type ? 0 : 100;
+      const score = stepDistance(candidate.sq, sq) + penalty;
+      if (score < bestScore) {
+        bestScore = score;
+        best = index;
+      }
+    });
+    if (best < 0) continue;
+    slides.push({ to: sq, from: free[best].sq });
+    free.splice(best, 1);
+  }
+  return { slides, captured: free };
+}
+
+function reducedMotion() {
+  return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+/** Percentage offset of a square inside the grid, so an overlay can sit exactly on it. */
+function gridPos(sq: string, orientation: "white" | "black") {
+  const file = sq.charCodeAt(0) - 97;
+  const rank = Number(sq[1]) - 1;
+  return {
+    left: (orientation === "white" ? file : 7 - file) * 12.5,
+    top: (orientation === "white" ? 7 - rank : rank) * 12.5,
+  };
+}
 
 function kingSquare(chess: Chess): string | null {
   if (!chess.inCheck()) return null;
@@ -55,6 +133,7 @@ export function Board({
   coordinates = true,
   theme = "walnut",
   pieceSet = "standard",
+  animate = true,
   humanColors,
   onPremove,
   onMove,
@@ -66,27 +145,77 @@ export function Board({
       return null;
     }
   }, [fen]);
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selected, setSelected] = useState<{ sq: string; color: "w" | "b" } | null>(null);
   const [drag, setDrag] = useState<{ from: string; x: number; y: number; type: string; color: "w" | "b" } | null>(null);
   const [pending, setPending] = useState<{ from: string; to: string; premove: boolean; color: "w" | "b" } | null>(null);
   const dragIntent = useRef<{ from: string; to: string } | null>(null);
+  const selectedSq = selected?.sq ?? null;
 
-  // Once the position changes the board has moved under any grabbed piece, so nothing stays selected.
-  useEffect(() => setSelected(null), [fen]);
+  // A fresh position keeps the grabbed piece selected while it still stands on its square, so an
+  // opponent reply never cancels the user's selection; only a piece that moved or was captured drops it.
+  useEffect(() => {
+    if (!selected) return;
+    const piece = chess?.get(selected.sq as Square);
+    if (!piece || piece.color !== selected.color) setSelected(null);
+  }, [fen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const files = orientation === "white" ? "abcdefgh".split("") : "hgfedcba".split("");
   const ranks = orientation === "white" ? [8, 7, 6, 5, 4, 3, 2, 1] : [1, 2, 3, 4, 5, 6, 7, 8];
   const legal = chess?.moves({ verbose: true }) ?? [];
-  const targets = selected ? legal.filter((move) => move.from === selected).map((move) => move.to) : [];
+  const targets = selectedSq ? legal.filter((move) => move.from === selectedSq).map((move) => move.to) : [];
   // A piece of the side that is not moving keeps its selection, so one grab can queue several
   // destinations. Each further click is read from where the piece will already be standing after
   // the intents queued for it, so one grab walks it: a2→a3 then a3→a4, not a2→a3 and a2→a4.
   const premoveChain = useMemo(() => {
-    if (!selected || !onPremove) return null;
-    const projected = premoveProjection(fen, premoves, selected);
+    if (!selectedSq || !onPremove) return null;
+    const projected = premoveProjection(fen, premoves, selectedSq);
     return { ...projected, targets: premoveTargets(projected.fen, projected.from) };
-  }, [fen, premoves, selected, onPremove]);
+  }, [fen, premoves, selectedSq, onPremove]);
   const checked = chess ? kingSquare(chess) : null;
+  const boardRef = useRef<HTMLDivElement | null>(null);
+  const previousFen = useRef(fen);
+  const ghostSeq = useRef(0);
+  const [ghosts, setGhosts] = useState<{ id: number; sq: string; type: string; color: "w" | "b" }[]>([]);
+
+  // FLIP: the piece is already standing in its new square, so it is thrown back to where it came
+  // from and released. Running after the DOM but before paint keeps the slide off a second frame.
+  useLayoutEffect(() => {
+    const before = previousFen.current;
+    previousFen.current = fen;
+    const root = boardRef.current;
+    if (!root || before === fen || !animate || reducedMotion()) return;
+    const { slides, captured } = diffPlacements(placementOf(before), placementOf(fen));
+    // More than one move's worth of squares changed: a new game or a loaded position, not a slide.
+    if (slides.length + captured.length > 4) return;
+    for (const slide of slides) {
+      const img = root.querySelector<HTMLElement>(`[data-sq="${slide.to}"] img`);
+      const origin = root.querySelector<HTMLElement>(`[data-sq="${slide.from}"]`);
+      if (!img || !origin) continue;
+      const from = origin.getBoundingClientRect();
+      const to = img.getBoundingClientRect();
+      img.style.setProperty("--piece-dx", `${from.left - to.left}px`);
+      img.style.setProperty("--piece-dy", `${from.top - to.top}px`);
+      img.classList.add("piece-slide");
+      img.addEventListener("animationend", () => img.classList.remove("piece-slide"), { once: true });
+    }
+    if (captured.length) {
+      const rows = captured.map((piece) => ({ ...piece, id: ++ghostSeq.current }));
+      setGhosts((current) => [...current, ...rows]);
+      window.setTimeout(() => setGhosts((current) => current.filter((row) => !rows.some((added) => added.id === row.id))), 340);
+    }
+  }, [fen, animate]);
+
+  const previouslyChecked = useRef<string | null>(null);
+  useEffect(() => {
+    const was = previouslyChecked.current;
+    previouslyChecked.current = checked;
+    const root = boardRef.current;
+    if (!animate || !root || !checked || checked === was || reducedMotion()) return;
+    const flash = root.querySelector<HTMLElement>(`[data-sq="${checked}"] [data-check]`);
+    if (!flash) return;
+    flash.classList.add("check-pulse");
+    flash.addEventListener("animationend", () => flash.classList.remove("check-pulse"), { once: true });
+  }, [checked, animate]);
   // One square can be where move 2 lands and where move 3 starts from, so each keeps its own list.
   const premoveMarks = useMemo(() => {
     const map = new Map<string, { from: number[]; to: number[] }>();
@@ -122,7 +251,7 @@ export function Board({
         return;
       }
       const occupant = chess?.get(to as Square);
-      if (occupant && owned(to)) setSelected(to);
+      if (occupant && owned(to)) setSelected({ sq: to, color: occupant.color });
       else setSelected(null);
       return;
     }
@@ -141,10 +270,10 @@ export function Board({
     dragIntent.current = null;
     // A legal target square keeps the selection, or a two-human game re-selects the victim
     // and click-click captures never fire; only a fresh grab of your own piece re-selects.
-    if (selected && selected !== sq && targets.includes(sq as Square)) return;
+    if (selected && selected.sq !== sq && targets.includes(sq as Square)) return;
     const piece = owned(sq);
     if (piece) {
-      setSelected(sq);
+      setSelected({ sq, color: piece.color });
       setDrag({ from: sq, x: event.clientX, y: event.clientY, type: piece.type, color: piece.color });
       (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
     }
@@ -168,11 +297,14 @@ export function Board({
     // the piece selected, so that echo would queue the same intent twice; the move already happened.
     const echoed = dragIntent.current;
     dragIntent.current = null;
-    if (echoed && selected === echoed.from && sq === echoed.to) return;
+    if (echoed && selectedSq === echoed.from && sq === echoed.to) return;
     // A click on the grabbed piece usually just re-arms it, but once a chain is queued the piece's own
     // square is a real destination — the step back is the move the queue would leave it facing.
-    if (selected && (selected !== sq || premoveChain?.targets.includes(sq))) tryMove(selected, sq);
-    else setSelected(owned(sq) ? sq : null);
+    if (selected && (selected.sq !== sq || premoveChain?.targets.includes(sq))) tryMove(selected.sq, sq);
+    else {
+      const piece = owned(sq);
+      setSelected(piece ? { sq, color: piece.color } : null);
+    }
   }
 
   return (
@@ -180,6 +312,7 @@ export function Board({
     // nearer element, which would outrank the app theme's own board palette.
     <div className="relative w-full max-w-xl" data-board={theme === "theme" ? undefined : theme}>
       <div
+        ref={boardRef}
         className="board-frame relative grid aspect-square w-full grid-cols-8 overflow-hidden rounded-xl border border-line shadow-lg touch-none select-none"
         onPointerMove={(event) => drag && setDrag({ ...drag, x: event.clientX, y: event.clientY })}
         onPointerUp={onPointerUp}
@@ -206,8 +339,8 @@ export function Board({
                 className={`relative aspect-square ${light ? "bg-board-light" : "bg-board-dark"}`}
               >
                 {isLast && <span className="absolute inset-0 bg-brass/35" />}
-                {checked === sq && <span className="absolute inset-0 bg-danger/55" />}
-                {selected === sq && <span className="absolute inset-1 rounded-sm ring-2 ring-brass" />}
+                {checked === sq && <span data-check className="absolute inset-0 bg-danger/55" />}
+                {selectedSq === sq && <span className="absolute inset-1 rounded-sm ring-2 ring-brass" />}
                 {highlights.includes(sq) && <span className="absolute inset-0 bg-ok/35" />}
                 {isPremove && <span className="absolute inset-0 bg-danger/35" />}
                 {premoveOrder.map((order) => (
@@ -241,6 +374,16 @@ export function Board({
             );
           }),
         )}
+        {ghosts.map((ghost) => (
+          <span
+            key={ghost.id}
+            aria-hidden
+            className="piece-ghost pointer-events-none absolute z-10 h-[12.5%] w-[12.5%] p-1"
+            style={{ left: `${gridPos(ghost.sq, orientation).left}%`, top: `${gridPos(ghost.sq, orientation).top}%` }}
+          >
+            <PieceGlyph type={ghost.type} color={ghost.color} set={pieceSet} className="h-full w-full" />
+          </span>
+        ))}
         <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 8 8">
           {premoves.map((move, index) => {
             const a = squareCenter(move.from, orientation);

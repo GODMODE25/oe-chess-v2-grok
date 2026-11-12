@@ -48,6 +48,28 @@ export function materialBalance(chess: Chess): number {
   return balance;
 }
 
+/** White's advantage after each ply, beginning with the starting position itself. */
+export function advantageSeries(startFen: string, sans: string[]): number[] {
+  const chess = new Chess();
+  if (startFen && startFen !== START_FEN) {
+    try {
+      chess.load(startFen);
+    } catch {
+      return [];
+    }
+  }
+  const series = [materialBalance(chess)];
+  for (const san of sans) {
+    try {
+      if (!chess.move(san)) break;
+    } catch {
+      break;
+    }
+    series.push(materialBalance(chess));
+  }
+  return series;
+}
+
 /** What each colour has lost, heaviest piece first. */
 export function capturedPieces(chess: Chess): Record<Side, string[]> {
   const lost: Record<Side, string[]> = { w: [], b: [] };

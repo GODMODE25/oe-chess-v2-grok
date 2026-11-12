@@ -134,6 +134,7 @@ export function OpeningsView() {
               coordinates={settings.coordinates}
               theme={settings.boardTheme}
               pieceSet={settings.pieceSet ?? "standard"}
+              animate={settings.animations ?? true}
               interactive={false}
             />
             <p className="text-sm text-mist">

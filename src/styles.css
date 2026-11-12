@@ -382,3 +382,53 @@
     animation: none;
   }
 }
+
+/* A moved piece is thrown back to its origin square and released (see Board.tsx). */
+.piece-slide {
+  animation: piece-slide 190ms cubic-bezier(0.22, 0.75, 0.3, 1);
+}
+@keyframes piece-slide {
+  from {
+    transform: translate(var(--piece-dx, 0), var(--piece-dy, 0));
+  }
+  to {
+    transform: none;
+  }
+}
+
+/* The captured piece keeps its square for a beat while the winner lands on it. */
+.piece-ghost {
+  animation: piece-capture 320ms ease-out forwards;
+}
+@keyframes piece-capture {
+  from {
+    opacity: 0.85;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.55);
+  }
+}
+
+.check-pulse {
+  animation: check-pulse 420ms ease-out;
+}
+@keyframes check-pulse {
+  0% {
+    opacity: 0;
+  }
+  45% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.55;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .piece-slide,
+  .piece-ghost,
+  .check-pulse {
+    animation: none;
+  }
+}

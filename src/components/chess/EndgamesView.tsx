@@ -516,6 +516,7 @@ function Trainer({ pos, onExit, onNext, onSave }: { pos: EndgamePos; onExit: () 
               coordinates={settings.coordinates}
               theme={settings.boardTheme}
               pieceSet={settings.pieceSet ?? "standard"}
+              animate={settings.animations ?? true}
               lastMove={last ? { from: last.from, to: last.to } : null}
               premoves={premoves}
               arrows={analysis ? [...arrow, ...evalAnalysis.arrows] : arrow}

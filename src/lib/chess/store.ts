@@ -73,6 +73,7 @@ export function defaultSettings(now = Date.now()): Settings {
     endgameThinkMs: 1600,
     analysisDepth: 14,
     pieceSet: "standard",
+    animations: true,
   };
 }
 
@@ -122,14 +123,16 @@ export type OeState = {
   extraTags: TagSet;
   sync: SyncState;
   queue: SyncQueueItem[];
-  /** Firebase keeps its own session; only the uid is mirrored here for the UI. */
+  /** Firebase keeps its own session; the uid and the account's email are mirrored here for the UI. */
   cloudUid: string;
+  cloudEmail: string;
   launch: { startFen: string; sans: string[]; player: Side } | null;
   setNav: (nav: NavId) => void;
   setLaunch: (launch: { startFen: string; sans: string[]; player: Side } | null) => void;
   patchSettings: (patch: Partial<Settings>) => void;
   patchPrefs: (patch: Partial<Prefs>) => void;
   setProfileName: (name: string) => void;
+  setProfileAvatar: (avatar: string | null) => void;
   saveGame: (game: SavedGame) => void;
   deleteGame: (id: string) => void;
   saveOpening: (line: OpeningLine) => void;
@@ -239,10 +242,11 @@ function applySnapshot(base: OeState, env: SyncEnvelope): Partial<OeState> {
   };
 }
 
-/** A signed-in account mirrors its uid here; Firebase holds the session itself. */
-function authSettled(state: OeState, user: { uid: string } | null): Pick<OeState, "cloudUid" | "sync"> {
+/** A signed-in account mirrors its uid and email here; Firebase holds the session itself. */
+function authSettled(state: OeState, user: { uid: string; email?: string | null } | null): Pick<OeState, "cloudUid" | "cloudEmail" | "sync"> {
   return {
     cloudUid: user?.uid ?? "",
+    cloudEmail: user?.email ?? "",
     sync: { ...state.sync, status: user ? "signed-in" : "signed-out", lastError: "", updatedAt: Date.now() },
   };
 }
@@ -271,6 +275,7 @@ export const useOe = create<OeState>((set, get) => ({
   sync: defaultSync(now),
   queue: [],
   cloudUid: "",
+  cloudEmail: "",
   launch: null,
   setNav: (nav) => set({ nav }),
   setLaunch: (launch) => set({ launch, nav: launch ? "play" : get().nav }),
@@ -287,6 +292,14 @@ export const useOe = create<OeState>((set, get) => ({
     const state = get();
     const profile = { ...state.profile, name: name.trim() || "Player", updatedAt: Date.now() };
     set({ profile, ...touchSync(state, "profile", "Profile renamed") });
+    schedulePersist();
+  },
+  setProfileAvatar: (avatar) => {
+    const state = get();
+    const profile = { ...state.profile, updatedAt: Date.now() };
+    if (avatar) profile.avatar = avatar;
+    else delete profile.avatar;
+    set({ profile, ...touchSync(state, "profile", "Avatar updated") });
     schedulePersist();
   },
   saveGame: (game) => {
@@ -646,6 +659,7 @@ export function bootStore(): Promise<void> {
           const state = useOe.getState();
           useOe.setState({
             cloudUid: user?.uid ?? "",
+            cloudEmail: user?.email ?? "",
             sync: { ...state.sync, status: user && state.sync.status === "signed-out" ? "signed-in" : state.sync.status },
           });
         });
