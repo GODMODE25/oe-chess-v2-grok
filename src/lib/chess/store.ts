@@ -20,6 +20,7 @@ import type {
   EndgameAttempt,
   EndgamePos,
   FavoriteSet,
+  GameReview,
   Grade,
   NavId,
   OpeningLine,
@@ -74,6 +75,7 @@ export function defaultSettings(now = Date.now()): Settings {
     analysisDepth: 14,
     pieceSet: "standard",
     animations: true,
+    shellArtStrength: 38,
   };
 }
 
@@ -129,6 +131,10 @@ export type OeState = {
   launch: { startFen: string; sans: string[]; player: Side } | null;
   setNav: (nav: NavId) => void;
   setLaunch: (launch: { startFen: string; sans: string[]; player: Side } | null) => void;
+  reviewGameId: string | null;
+  openReview: (id: string) => void;
+  closeReview: () => void;
+  attachReview: (id: string, review: GameReview) => void;
   patchSettings: (patch: Partial<Settings>) => void;
   patchPrefs: (patch: Partial<Prefs>) => void;
   setProfileName: (name: string) => void;
@@ -279,6 +285,24 @@ export const useOe = create<OeState>((set, get) => ({
   launch: null,
   setNav: (nav) => set({ nav }),
   setLaunch: (launch) => set({ launch, nav: launch ? "play" : get().nav }),
+  reviewGameId: null,
+  openReview: (id) => set({ reviewGameId: id, nav: "play" }),
+  closeReview: () => set({ reviewGameId: null }),
+  attachReview: (id, review) => {
+    const state = get();
+    const games = state.games.map((row) => {
+      if (row.id !== id) return row;
+      // The move rows are replaced, but the numbers from earlier passes survive: a re-run
+      // should be comparable with what it replaced, not silently erase it.
+      const runs = [...(row.reviewRuns ?? [])];
+      if (row.review) {
+        runs.push({ analyzedAt: row.review.analyzedAt, depth: row.review.depth, engine: row.review.engine, w: row.review.w, b: row.review.b });
+      }
+      return { ...row, review, reviewRuns: runs.slice(-3), updatedAt: Date.now() };
+    });
+    set({ games, ...touchSync(state, "review", "Reviewed a game") });
+    schedulePersist();
+  },
   patchSettings: (patch) => {
     const state = get();
     const settings = { ...state.settings, ...patch, updatedAt: Date.now() };
@@ -637,6 +661,8 @@ export function bootStore(): Promise<void> {
             // Old snapshots can still name sets that no longer ship.
             pieceSet: loaded.pieceSet && loaded.pieceSet in PIECE_SET_LABELS ? loaded.pieceSet : "standard",
             appTheme: loaded.appTheme && loaded.appTheme in APP_THEME_LABELS ? loaded.appTheme : "brass",
+            shellArt: typeof loaded.shellArt === "string" && loaded.shellArt.startsWith("data:image/") ? loaded.shellArt : undefined,
+            shellArtStrength: typeof loaded.shellArtStrength === "number" ? Math.max(0, Math.min(100, Math.round(loaded.shellArtStrength))) : 38,
           },
           games: snap.games.length ? snap.games : base.games,
           openings: snap.openings,

@@ -29,6 +29,12 @@
   --color-board-dark: #8a6748;
   --color-danger: #c4543a;
   --color-ok: #8ea56a;
+  /* Move grades keep their own hues in every theme: a blunder must read as a blunder. */
+  --color-best: #58b368;
+  --color-good: #9db07f;
+  --color-inaccuracy: #d9a514;
+  --color-mistake: #e0862f;
+  --color-blunder: #e05252;
   --radius-lg: 0.85rem;
 }
 
@@ -98,6 +104,11 @@
   --color-board-dark: #ded2ba;
   --color-danger: #a8431f;
   --color-ok: #4f6b31;
+  --color-best: #2f7d3b;
+  --color-good: #55663d;
+  --color-inaccuracy: #8a6a00;
+  --color-mistake: #a05a10;
+  --color-blunder: #b3261e;
   --radius-lg: 3px;
   --radius-xl: 4px;
   --radius-md: 2px;
@@ -312,6 +323,22 @@
   background-position: 62% 40%;
   background-color: transparent;
 }
+
+/* An uploaded backdrop belongs to all six themes. It is veiled in the theme's own
+   canvas colour, so each keeps its cast, and it comes after the glass rule so one
+   strength setting governs every theme. Panels stay opaque outside glass. */
+.app-shell[data-shell-art="custom"] {
+  background-image: linear-gradient(var(--shell-scrim), var(--shell-scrim)), var(--shell-art);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* The nav rail has no panel of its own, so it takes a heavier veil than the
+   content area: its labels stay readable over any photograph. */
+.app-shell[data-shell-art="custom"] > aside {
+  background-color: color-mix(in oklab, var(--color-canvas) 80%, transparent);
+}
 [data-app-theme="glass"] .bg-surface {
   background-color: color-mix(in oklab, var(--color-surface) var(--glass-panel), transparent);
 }
@@ -344,6 +371,29 @@
     --glass-list: 96%;
     --glass-chrome: 96%;
     --glass-blur: 0px;
+  }
+}
+
+/* Every scrolling surface wears the theme's own line and accent, not the browser's grey. */
+@layer base {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: var(--color-line);
+    border: 3px solid var(--color-canvas);
+    border-radius: 999px;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background: var(--color-brass);
   }
 }
 

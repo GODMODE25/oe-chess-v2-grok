@@ -142,6 +142,29 @@ function authPopupPlugin(): Plugin {
   };
 }
 
+/**
+ * `vite preview`'s static server answers .wasm as application/octet-stream, and
+ * WebAssembly streaming compilation rejects that MIME. Vercel serves it correctly;
+ * this keeps the local production check honest without touching the deploy.
+ */
+function wasmMimePlugin(): Plugin {
+  return {
+    name: "app-builder:wasm-mime",
+    configurePreviewServer(server) {
+      server.middlewares.use((req, res, next) => {
+        if (!(req.url ?? "").split("?")[0].endsWith(".wasm")) {
+          next();
+          return;
+        }
+        const setHeader = res.setHeader.bind(res);
+        res.setHeader = (name: string, value: number | string | string[]) =>
+          setHeader(name, name.toLowerCase() === "content-type" ? "application/wasm" : value);
+        next();
+      });
+    },
+  };
+}
+
 // `0.0.0.0:8080` is the live-preview contract — don't change host/port.
 // The dev server starts once `src/router.tsx` and `src/routes/` exist — see
 // AGENTS.md § "First scaffold".
@@ -159,6 +182,7 @@ export default defineConfig(({ command, isPreview }) => ({
   resolve: { tsconfigPaths: true },
   plugins: [
     pgliteBootstrapPlugin(),
+    wasmMimePlugin(),
     // Before tanstackStart so /auth/popup never falls through to the SPA.
     authPopupPlugin(),
     // Dev-only /__app-env, read by scripts/check-auth-invariant.mjs.

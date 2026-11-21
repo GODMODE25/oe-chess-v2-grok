@@ -1,5 +1,5 @@
 import { Chess, validateFen } from "chess.js";
-import type { Side } from "./types";
+import type { OpeningLine, Side } from "./types";
 
 export const START_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
@@ -93,8 +93,49 @@ export function fenOk(fen: string): boolean {
   return validateFen(fen).ok;
 }
 
-export function statusOf(chess: Chess): { over: boolean; result: string; label: string } {
-  if (chess.isCheckmate()) {
+/**
+ * The FIDE position key: the board, who moves next, the castling rights and the en-passant
+ * square. Move counters are not part of a position, so the same arrangement reached later
+ * still counts as a repeat.
+ */
+function positionKey(fen: string): string {
+  return fen.split(" ").slice(0, 4).join(" ");
+}
+
+/** Plies since the last pawn move or capture. The fifty-move draw lands on 100 of them. */
+export function halfmoveClock(chess: Chess): number {
+  return Number.parseInt(chess.fen().split(" ")[4] ?? "0", 10) || 0;
+}
+
+/** How many times the position on the board has occurred this game, the one on screen included. */
+export function repetitionCount(startFen: string, sans: string[]): number {
+  const chess = new Chess();
+  if (startFen && startFen !== START_FEN) {
+    try {
+      chess.load(startFen);
+    } catch {
+      return 1;
+    }
+  }
+  const seen = new Map<string, number>();
+  const bump = () => {
+    const key = positionKey(chess.fen());
+    seen.set(key, (seen.get(key) ?? 0) + 1);
+    return key;
+  };
+  let key = bump();
+  for (const san of sans) {
+    try {
+      chess.move(san);
+    } catch {
+      break;
+    }
+    key = bump();
+  }
+  return seen.get(key) ?? 1;
+}
+
+export function statusOf(chess: Chess): { over: boolean; result: string; label: string } {  if (chess.isCheckmate()) {
     const winner = chess.turn() === "w" ? "b" : "w";
     return {
       over: true,
@@ -169,6 +210,32 @@ export function gameToPgn(input: {
   }
   chess.header("Result", input.result || "*");
   return chess.pgn({ maxWidth: 80 });
+}
+
+/** Check marks are an annotation, not a move: catalog lines are authored with and without them. */
+function sanKey(san: string): string {
+  return san.trim().replace(/[+#]/g, "");
+}
+
+/**
+ * The deepest catalogued line the game actually followed, and the ply where it left book.
+ * Ties go to the longer line, then to the more popular one, because several ECO codes can
+ * describe the same first moves reached by different orders.
+ */
+export function matchOpening(sans: string[], lines: OpeningLine[]): { eco: string; name: string; family: string; ply: number } | null {
+  const played = sans.map(sanKey);
+  let best: { eco: string; name: string; family: string; ply: number; popularity: number } | null = null;
+  for (const line of lines) {
+    if (line.deleted) continue;
+    const moves = line.moves;
+    if (moves.length === 0 || moves.length > played.length || moves.length < (best?.ply ?? 0)) continue;
+    if (!moves.every((move, index) => sanKey(move) === played[index])) continue;
+    const popularity = line.popularity ?? 0;
+    if (best && moves.length === best.ply && popularity <= best.popularity) continue;
+    best = { eco: line.eco, name: line.name, family: line.family, ply: moves.length, popularity };
+  }
+  if (!best) return null;
+  return { eco: best.eco, name: best.name, family: best.family, ply: best.ply };
 }
 
 export type ParsedPgn = {

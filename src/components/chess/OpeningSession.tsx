@@ -11,6 +11,7 @@ import { Board } from "./Board";
 import { Button, Meter, Panel, Pill } from "./ui";
 import { EnginePanelBody } from "./EnginePanel";
 import { EvalBar } from "./EvalBar";
+import { seatRating, SeatColumn, type SeatChipProps } from "./SeatRail";
 
 const SPEEDS = [400, 800, 1600] as const;
 const NO_PREFS: Prefs = {};
@@ -40,6 +41,7 @@ export function OpeningSession({
   onExit: () => void;
 }) {
   const settings = useOe((s) => s.settings);
+  const profile = useOe((s) => s.profile);
   const patchPrefs = useOe((s) => s.patchPrefs);
   const review = useOe((s) => s.reviews.find((row) => row.id === reviewId(line.id, course.side)));
   const recordReplayAttempt = useOe((s) => s.recordReplayAttempt);
@@ -244,27 +246,40 @@ export function OpeningSession({
 
   const hintArrows = hints > 1 && hintSquares.length === 2 ? [{ from: hintSquares[0]!, to: hintSquares[1]! }] : [];
   const arrows = [...(analysisOn ? analysis.arrows : []), ...hintArrows];
+  const topColor: Side = course.side === "w" ? "b" : "w";
+  // The book plays the named line; once you leave it, Stockfish answers uncut.
+  const seatFor = (color: Side): SeatChipProps => ({
+    seat: color === course.side ? "you" : "stockfish",
+    name: color === course.side ? profile.name : "Stockfish",
+    avatar: color === course.side ? profile.avatar : undefined,
+    rating: color === course.side ? "" : seatRating("stockfish", "max"),
+  });
 
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
       <div className="flex flex-col items-center gap-3">
-        <div className="flex w-full max-w-xl items-stretch gap-2">
-          {analysis.info && (phase === "watch" || analyze || offBook || browsePly !== null) ? (
-            <EvalBar info={analysis.info} stm={shown.chess.turn()} flipped={course.side === "b"} />
-          ) : null}
-          <Board
-            fen={shown.chess.fen()}
-            orientation={course.side === "w" ? "white" : "black"}
-            interactive={studentTurn}
-            lastMove={lastMoveOf(shown.chess)}
-            coordinates={settings.coordinates}
-            theme={settings.boardTheme}
-            pieceSet={settings.pieceSet ?? "standard"}
-            animate={settings.animations ?? true}
-            highlights={hintSquares}
-            arrows={arrows}
-            onMove={onMove}
-          />
+        <div className="flex w-full max-w-[40rem] flex-col gap-2 lg:flex-row lg:items-stretch">
+          <SeatColumn top={seatFor(topColor)} bottom={seatFor(course.side)} />
+          <div className="flex min-w-0 flex-1 items-stretch gap-2">
+            {analysis.info && (phase === "watch" || analyze || offBook || browsePly !== null) ? (
+              <EvalBar info={analysis.info} stm={shown.chess.turn()} flipped={course.side === "b"} />
+            ) : null}
+            <div className="min-w-0 flex-1">
+              <Board
+                fen={shown.chess.fen()}
+                orientation={course.side === "w" ? "white" : "black"}
+                interactive={studentTurn}
+                lastMove={lastMoveOf(shown.chess)}
+                coordinates={settings.coordinates}
+                theme={settings.boardTheme}
+                pieceSet={settings.pieceSet ?? "standard"}
+                animate={settings.animations ?? true}
+                highlights={hintSquares}
+                arrows={arrows}
+                onMove={onMove}
+              />
+            </div>
+          </div>
         </div>
         <div className="flex flex-wrap justify-center gap-2">
           <Button variant="quiet" onClick={onExit}>

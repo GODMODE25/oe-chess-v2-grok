@@ -1,15 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { assetUrl } from "@/lib/chess/asset-url";
 import { getEngine } from "@/lib/chess/engine";
 import { dequeuePremove, dropAnsweredPremove, enqueuePremove, premoveLabel, type QueuedMove } from "@/lib/chess/premove";
-import { applyUciMove, advantageSeries, capturedPieces, fenOk, materialLead, replay, START_FEN, statusOf } from "@/lib/chess/rules";
+import { applyUciMove, advantageSeries, capturedPieces, fenOk, halfmoveClock, materialLead, replay, repetitionCount, START_FEN, statusOf } from "@/lib/chess/rules";
 import { playTone, setSoundEnabled } from "@/lib/chess/sound";
 import { useOe } from "@/lib/chess/store";
-import type { EngineInfo, PanelPref, PieceSet, PlayPanelId, Prefs, Side } from "@/lib/chess/types";
+import type { EngineInfo, PanelPref, PieceSet, PlayPanelId, Prefs, SavedGame, Side } from "@/lib/chess/types";
 import { Board } from "./Board";
 import { EnginePanelBody, MovesGraph } from "./EnginePanel";
 import { EvalBar } from "./EvalBar";
 import { PieceGlyph } from "./pieces";
+import { ReviewView } from "./ReviewView";
+import { seatRating, SeatRail } from "./SeatRail";
 import { Button, cn, CollapsiblePanel, Field, TextInput } from "./ui";
 
 const TIMES = [
@@ -21,11 +22,6 @@ const TIMES = [
   { id: "10+0", label: "10+0", ms: 10 * 60_000, inc: 0 },
   { id: "15+10", label: "15+10", ms: 15 * 60_000, inc: 10_000 },
 ];
-
-function clockText(ms: number) {
-  const total = Math.max(0, Math.ceil(ms / 1000));
-  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
-}
 
 const PIECE_NAMES: Record<string, string> = { p: "pawn", n: "knight", b: "bishop", r: "rook", q: "queen" };
 
@@ -66,38 +62,6 @@ function MaterialRow({ side, taken, takenColor, lead, pieceSet }: {
 const DEFAULT_SEATS: Record<Side, "you" | "stockfish"> = { w: "you", b: "stockfish" };
 const NO_PREFS: Prefs = {};
 
-/** The face of the player sitting in one seat: the Stockfish logo for the engine, the uploaded avatar for a person. */
-function SeatAvatar({ seat, name, avatar }: { seat: "you" | "stockfish"; name: string; avatar?: string }) {
-  const size = "h-13.5 w-13.5 shrink-0 rounded-full border border-line";
-  if (seat === "stockfish") {
-    return <img src={assetUrl("/stockfish-avatar.png")} alt="Stockfish" className={`${size} bg-surface object-cover`} />;
-  }
-  if (avatar) {
-    return <img src={avatar} alt="" className={`${size} object-cover`} />;
-  }
-  return (
-    <span className={`grid ${size} place-items-center bg-surface text-base text-mist`} aria-hidden>
-      {(name.trim()[0] ?? "P").toUpperCase()}
-    </span>
-  );
-}
-
-/** One seat in the rail beside the board: face over clock, so the column stays narrow enough to sit next to the eval bar. */
-function SeatChip({ seat, name, avatar, clockMs }: {
-  seat: "you" | "stockfish";
-  name: string;
-  avatar?: string;
-  clockMs: number | null;
-}) {
-  return (
-    <div className="flex w-14 flex-col items-center gap-0.5">
-      <SeatAvatar seat={seat} name={name} avatar={avatar} />
-      <span className="w-full truncate text-center text-[10px] text-mist" title={name}>{name}</span>
-      <span className="tabular-nums text-xs text-ivory">{clockMs == null ? "—" : clockText(clockMs)}</span>
-    </div>
-  );
-}
-
 const PANELS: { id: PlayPanelId; label: string }[] = [
   { id: "presets", label: "Presets" },
   { id: "new", label: "New game" },
@@ -115,6 +79,8 @@ export function PlayView() {
   const launch = useOe((s) => s.launch);
   const setLaunch = useOe((s) => s.setLaunch);
   const saveGame = useOe((s) => s.saveGame);
+  const openReview = useOe((s) => s.openReview);
+  const reviewGame = useOe((s) => (s.reviewGameId ? s.games.find((row) => row.id === s.reviewGameId) : undefined));
   const [startFen, setStartFen] = useState(START_FEN);
   const [sans, setSans] = useState<string[]>([]);
   const [cursor, setCursor] = useState<number | null>(null);
@@ -161,9 +127,10 @@ export function PlayView() {
   const full = useMemo(() => replay(startFen, sans), [startFen, sans]);
   const browsing = cursor != null && cursor < sans.length;
   const status = statusOf(viewed.chess);
+  const repeat = useMemo(() => repetitionCount(startFen, viewedSans), [startFen, viewedSans]);
   const over = finished || status.over;
   const turn = full.chess.turn();
-  const engineTurn = phase === "playing" && !browsing && !over && seats[turn] === "stockfish";
+  const engineTurn = phase === "playing" && !browsing && !over && !reviewGame && seats[turn] === "stockfish";
   const humans = (["w", "b"] as Side[]).filter((side) => seats[side] === "you");
   const last = viewed.chess.history({ verbose: true }).at(-1);
   const lost = useMemo(() => capturedPieces(viewed.chess), [viewed.chess]);
@@ -209,7 +176,7 @@ export function PlayView() {
   }, [launch, setLaunch]);
 
   useEffect(() => {
-    if (phase !== "playing" || !clock || over || browsing) return;
+    if (phase !== "playing" || !clock || over || browsing || reviewGame) return;
     const id = window.setInterval(() => {
       setClock((current) => {
         if (!current) return current;
@@ -224,7 +191,7 @@ export function PlayView() {
       });
     }, 200);
     return () => window.clearInterval(id);
-  }, [phase, clock, over, browsing, full]);
+  }, [phase, clock, over, browsing, reviewGame, full]);
 
   useEffect(() => {
     if (phase !== "idle") return;
@@ -247,7 +214,7 @@ export function PlayView() {
   // (useEngineAnalysis serves the trainers, where there is no move search to interleave.)
   useEffect(() => {
     const wantMove = engineTurn;
-    const wantAnalysis = analysis && !engineTurn;
+    const wantAnalysis = analysis && !engineTurn && !reviewGame;
     if (!wantMove && !wantAnalysis) return;
     let cancel = false;
     const engine = getEngine();
@@ -289,7 +256,7 @@ export function PlayView() {
       cancel = true;
       engine.stop();
     };
-  }, [engineTurn, analysis, startFen, uciKey, sans, settings.playThinkMs, settings.playStrength, settings.analysisDepth, viewed.chess, full.uci]);
+  }, [engineTurn, analysis, reviewGame, startFen, uciKey, sans, settings.playThinkMs, settings.playStrength, settings.analysisDepth, viewed.chess, full.uci]);
 
   useEffect(() => {
     if (status.over && result === "*") {
@@ -299,26 +266,31 @@ export function PlayView() {
     }
   }, [status.over, status.result, result]);
 
+  function gameSnapshot(): SavedGame {
+    const done = finished || status.over;
+    return {
+      id: gameId,
+      white: seats.w === "you" ? profile.name : "Stockfish",
+      black: seats.b === "you" ? profile.name : "Stockfish",
+      result: done ? (result === "*" ? status.result : result) : "*",
+      startFen,
+      sans,
+      event: "Casual game",
+      playerColor: seats.w === "you" && seats.b === "you" ? "either" : seats.b === "you" ? "b" : "w",
+      timeControl: timeControlLabel,
+      engineElo: seats.w === "stockfish" || seats.b === "stockfish" ? settings.playStrength : undefined,
+      finished: done,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+  }
+
   useEffect(() => {
     if (sans.length === 0 && !finished) return;
-    const handle = window.setTimeout(() => {
-      saveGame({
-        id: gameId,
-        white: seats.w === "you" ? profile.name : "Stockfish",
-        black: seats.b === "you" ? profile.name : "Stockfish",
-        result: finished ? result : "*",
-        startFen,
-        sans,
-        event: "Casual game",
-        playerColor: seats.w === "you" && seats.b === "you" ? "either" : seats.b === "you" ? "b" : "w",
-        timeControl: timeControlLabel,
-        finished,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      });
-    }, 400);
+    const handle = window.setTimeout(() => saveGame(gameSnapshot()), 400);
     return () => window.clearTimeout(handle);
-  }, [sans, finished, result, gameId, startFen, seats, profile.name, timeControlLabel, saveGame]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sans, finished, result, gameId, startFen, seats, profile.name, timeControlLabel, saveGame, settings.playStrength, status.over, status.result]);
 
   // Increment comes from the control frozen at Start, so switching chips mid-game cannot change what a move adds.
   function awardIncrement(side: Side) {
@@ -439,6 +411,7 @@ export function PlayView() {
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
+      if (reviewGame) return;
       const tag = (event.target as HTMLElement | null)?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
       if (event.key === "f") setOrientation(orientation === "white" ? "black" : "white");
@@ -454,10 +427,23 @@ export function PlayView() {
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [sans, turn, seats, orientation]);
+  }, [sans, turn, seats, orientation, reviewGame]);
+
+  // Every hook has to run before the review early-return: when the review closes,
+  // a shorter hook list than the previous render is exactly what React reports as
+  // "Rendered more hooks than during the previous render".
+  const quietPlies = useMemo(() => halfmoveClock(viewed.chess), [viewed]);
+
+  if (reviewGame) return <ReviewView game={reviewGame} />;
 
   const arrow = info?.pvUci[0] ? [{ from: info.pvUci[0].slice(0, 2), to: info.pvUci[0].slice(2, 4) }] : [];
   const label = phase === "idle" ? "Press Start" : phase === "paused" ? "Paused" : thinking ? "Stockfish is thinking" : status.label;
+  // The draw itself is automatic on the third occurrence, so the warning has to come before it:
+  // at two repeats the player can still steer out of it, and it is worth knowing that.
+  const repeatWarn = !status.over && phase === "playing" && repeat >= 2 && humans.length > 0;
+  // The draw is automatic at 100 quiet plies, so the last ten are worth counting down. The
+  // repetition notice wins the line when both are live, because it can arrive first.
+  const clockWarn = !status.over && !repeatWarn && phase === "playing" && humans.length > 0 && quietPlies >= 80;
 
   function panelPref(id: PlayPanelId): PanelPref {
     return settings.playPanels?.[id] ?? DEFAULT_PREF;
@@ -481,7 +467,7 @@ export function PlayView() {
             ref={marqueeRef}
             role="region"
             aria-label="Moves"
-            className="scrollbar-hidden flex w-full max-w-xl gap-1.5 overflow-x-auto rounded-lg border border-line bg-surface px-2 py-1.5 text-xs"
+            className="scrollbar-hidden flex w-full max-w-[40rem] gap-1.5 overflow-x-auto rounded-lg border border-line bg-surface px-2 py-1.5 text-xs"
           >
             {Array.from({ length: Math.ceil(sans.length / 2) }, (_, index) => (
               <span key={index} className="flex shrink-0 items-center gap-1">
@@ -507,22 +493,53 @@ export function PlayView() {
             ))}
           </div>
         )}
-        <p className="w-full max-w-xl text-xs text-ivory">{label}</p>
-        <div className="grid w-full max-w-xl grid-cols-[auto_auto_minmax(0,1fr)] gap-y-1">
-          <div className="col-start-1 row-start-2 mr-2 flex w-14 shrink-0 flex-col items-center justify-between">
-            <SeatChip
-              seat={seats[topColor]}
-              name={seats[topColor] === "you" ? profile.name : "Stockfish"}
-              avatar={seats[topColor] === "you" ? profile.avatar : undefined}
-              clockMs={clock ? clock[topColor] : null}
-            />
-            <SeatChip
-              seat={seats[bottomColor]}
-              name={seats[bottomColor] === "you" ? profile.name : "Stockfish"}
-              avatar={seats[bottomColor] === "you" ? profile.avatar : undefined}
-              clockMs={clock ? clock[bottomColor] : null}
-            />
+        <p className="w-full max-w-[40rem] text-xs text-ivory">
+          {label}
+          {repeatWarn && (
+            <span className="text-brass" title="The same position has occurred this many times. A third occurrence is an automatic draw.">
+              {" "}
+              Position {repeat}× — one more repeat draws by repetition.
+            </span>
+          )}
+          {clockWarn && (
+            <span className="text-brass" title="No pawn has moved and nothing has been captured for this many plies. At 100 the game is a draw.">
+              {" "}
+              Fifty-move clock {quietPlies}/100 — {100 - quietPlies} {100 - quietPlies === 1 ? "ply" : "plies"} to a draw.
+            </span>
+          )}
+        </p>
+        {over && sans.length > 0 && (
+          <div className="flex w-full max-w-[40rem] flex-wrap items-center justify-between gap-2 rounded-lg border border-brass bg-surface px-3 py-2">
+            <p className="text-sm text-ivory">{status.label} Review it with Stockfish to see where the game turned.</p>
+            <Button
+              className="h-9 px-3"
+              onClick={() => {
+                saveGame(gameSnapshot());
+                openReview(gameId);
+              }}
+            >
+              Review game
+            </Button>
           </div>
+        )}
+        <div className="grid w-full max-w-[40rem] grid-cols-[auto_auto_minmax(0,1fr)] gap-y-1">
+          <SeatRail
+            className="col-start-1 row-start-2 mr-2"
+            top={{
+              seat: seats[topColor],
+              name: seats[topColor] === "you" ? profile.name : "Stockfish",
+              avatar: seats[topColor] === "you" ? profile.avatar : undefined,
+              clockMs: clock ? clock[topColor] : null,
+              rating: seatRating(seats[topColor], settings.playStrength),
+            }}
+            bottom={{
+              seat: seats[bottomColor],
+              name: seats[bottomColor] === "you" ? profile.name : "Stockfish",
+              avatar: seats[bottomColor] === "you" ? profile.avatar : undefined,
+              clockMs: clock ? clock[bottomColor] : null,
+              rating: seatRating(seats[bottomColor], settings.playStrength),
+            }}
+          />
           {analysis && (
             <div className="col-start-2 row-start-2 mr-2 flex">
               <EvalBar info={info} stm={viewed.chess.turn()} flipped={orientation === "black"} />
@@ -563,7 +580,7 @@ export function PlayView() {
           <Button variant="quiet" onClick={stopGame}>New game</Button>
         </div>
         {premoves.length > 0 ? (
-          <div className="flex w-full max-w-xl flex-wrap items-center gap-1.5 text-xs">
+          <div className="flex w-full max-w-[40rem] flex-wrap items-center gap-1.5 text-xs">
             <span className="text-mist">Queued:</span>
             {premoves.map((move, index) => (
               <span key={`${move.from}${move.to}${index}`} className="flex items-center gap-1 rounded-full border border-line bg-surface-2 py-1 pl-2 pr-1">

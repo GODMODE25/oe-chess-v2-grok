@@ -70,6 +70,9 @@ export function Shell() {
   const setNav = useOe((s) => s.setNav);
   const sync = useOe((s) => s.sync);
   const bootError = useOe((s) => s.bootError);
+  const shellArt = useOe((s) => s.settings.shellArt);
+  const shellArtStrength = useOe((s) => s.settings.shellArtStrength ?? 38);
+  const customArt = shellArt?.startsWith("data:image/") ? shellArt : "";
 
   useEffect(() => {
     function onLine() {
@@ -85,11 +88,18 @@ export function Shell() {
   }, []);
 
   return (
-    // --shell-art is only painted by the glass theme; the url is resolved there,
-    // so the banner costs nothing to load on the other five.
+    // The shipped banner is only painted by the glass theme, so it costs nothing to
+    // load on the other five. An uploaded backdrop is painted by all six, veiled in
+    // the theme's own canvas colour so panels and text keep their contrast.
     <div
       className="app-shell flex h-dvh overflow-hidden bg-canvas text-ivory"
-      style={{ "--shell-art": `url(${assetUrl("/banner.jpg")})` } as CSSProperties}
+      data-shell-art={customArt ? "custom" : "shipped"}
+      style={
+        {
+          "--shell-art": `url("${customArt || assetUrl("/banner.jpg")}")`,
+          "--shell-scrim": `color-mix(in oklab, var(--color-canvas) ${100 - shellArtStrength}%, transparent)`,
+        } as CSSProperties
+      }
     >
       <aside className="hidden w-56 shrink-0 flex-col border-r border-line px-4 py-6 md:flex">
         <div className="mb-8 flex items-center gap-3">
@@ -127,10 +137,24 @@ export function Shell() {
             <p className="text-xs text-mist">{STATUS[sync.status]}</p>
           </div>
         </header>
+        {/* In the flow, not fixed: the bar sits above the scroll area, so the page content
+            never has to carry padding to clear it, and the board keeps its full width. */}
+        <nav className="scrollbar-hidden z-20 flex shrink-0 gap-1 overflow-x-auto border-b border-line bg-canvas px-2 md:hidden">
+          {NAV.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setNav(item.id)}
+              className={cn("h-12 shrink-0 px-3 text-xs", nav === item.id ? "text-brass" : "text-mist")}
+            >
+              {item.label}
+            </button>
+          ))}
+        </nav>
         {/* `relative` matters: an `sr-only` file input is absolutely positioned, and
             without a positioned ancestor it anchors to the document, where the shell's
             overflow cannot clip it — the window then grows a second scrollbar. */}
-        <main className={cn("relative min-h-0 flex-1 overflow-y-auto px-4 py-5 pb-20 md:px-6 md:pb-6", nav === "openings" && "scrollbar-hidden")}>
+        <main className={cn("relative min-h-0 flex-1 overflow-y-auto px-4 py-5 md:px-6", nav === "openings" && "scrollbar-hidden")}>
           {bootError && <p className="mb-4 text-sm text-danger">{bootError}</p>}
           {nav === "play" && <PlayView />}
           {nav === "openings" && <OpeningsView />}
@@ -145,18 +169,6 @@ export function Shell() {
           <span>{STATUS[sync.status]}</span>
         </footer>
       </div>
-      <nav className="fixed inset-x-0 bottom-0 z-30 flex gap-1 overflow-x-auto border-t border-line bg-canvas px-2 md:hidden">
-        {NAV.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => setNav(item.id)}
-            className={cn("h-14 shrink-0 px-3 text-xs", nav === item.id ? "text-brass" : "text-mist")}
-          >
-            {item.label}
-          </button>
-        ))}
-      </nav>
     </div>
   );
 }

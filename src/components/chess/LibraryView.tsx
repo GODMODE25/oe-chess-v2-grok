@@ -11,6 +11,7 @@ export function LibraryView() {
   const saveGame = useOe((s) => s.saveGame);
   const deleteGame = useOe((s) => s.deleteGame);
   const setLaunch = useOe((s) => s.setLaunch);
+  const openReview = useOe((s) => s.openReview);
   const [message, setMessage] = useState("");
 
   async function onFile(file: File, asOpening: boolean) {
@@ -80,10 +81,18 @@ export function LibraryView() {
             <Panel key={game.id} className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h3 className="text-lg">{game.white} – {game.black}</h3>
-                <p className="text-sm text-mist">{game.result} · {game.sans.length} plies · {game.timeControl} · {game.finished ? "finished" : "unfinished"}</p>
+                <p className="text-sm text-mist">
+                  {game.result} · {game.sans.length} plies · {game.timeControl} · {game.finished ? "finished" : "unfinished"}
+                  {game.review && (
+                    <span className="text-brass"> · reviewed {Math.round(game.review.w.accuracy)}% / {Math.round(game.review.b.accuracy)}%</span>
+                  )}
+                </p>
               </div>
               <div className="flex gap-2">
                 <Button variant="quiet" onClick={() => setLaunch({ startFen: game.startFen, sans: game.sans, player: game.playerColor === "b" ? "b" : "w" })}>Resume</Button>
+                {game.finished && game.sans.length > 0 && (
+                  <Button variant="quiet" onClick={() => openReview(game.id)}>Review</Button>
+                )}
                 <Button variant="ghost" onClick={() => deleteGame(game.id)}>Delete</Button>
               </div>
             </Panel>

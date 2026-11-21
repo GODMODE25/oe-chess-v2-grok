@@ -10,6 +10,7 @@ import type { Difficulty, EndgameAttempt, EndgamePos, Prefs, PieceGroup, Side } 
 import { Board } from "./Board";
 import { EnginePanelBody } from "./EnginePanel";
 import { EvalBar } from "./EvalBar";
+import { seatRating, SeatColumn, type SeatChipProps } from "./SeatRail";
 import { Button, CollapsiblePanel, Field, Meter, Panel, Pill, TextInput } from "./ui";
 import { useEngineAnalysis } from "@/lib/chess/use-engine-analysis";
 
@@ -308,6 +309,7 @@ export function EndgamesView() {
 
 function Trainer({ pos, onExit, onNext, onSave }: { pos: EndgamePos; onExit: () => void; onNext: () => void; onSave: (attempt: EndgameAttempt) => void }) {
   const settings = useOe((s) => s.settings);
+  const profile = useOe((s) => s.profile);
   const [sans, setSans] = useState<string[]>([]);
   const [hints, setHints] = useState(0);
   const [arrow, setArrow] = useState<{ from: string; to: string }[]>([]);
@@ -333,6 +335,15 @@ function Trainer({ pos, onExit, onNext, onSave }: { pos: EndgamePos; onExit: () 
   const turn = played.chess.turn();
   const engineTurn = !settled && judgement.state === "playing" && seats[turn] === "stockfish";
   const humans = (["w", "b"] as Side[]).filter((side) => seats[side] === "you");
+  const flipped = seats.b === "you" && seats.w !== "you";
+  const topColor: Side = flipped ? "w" : "b";
+  const engineStrength = settings.endgameMaximum ? "max" : settings.playStrength;
+  const seatProps = (color: Side): SeatChipProps => ({
+    seat: seats[color],
+    name: seats[color] === "you" ? profile.name : "Stockfish",
+    avatar: seats[color] === "you" ? profile.avatar : undefined,
+    rating: seatRating(seats[color], engineStrength),
+  });
   const last = played.chess.history({ verbose: true }).at(-1);
   // The takeover search owns the engine during engine turns, so analysis yields to it.
   const evalAnalysis = useEngineAnalysis({
@@ -504,24 +515,30 @@ function Trainer({ pos, onExit, onNext, onSave }: { pos: EndgamePos; onExit: () 
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]" data-fen={played.chess.fen()}>
       <div className="flex flex-col items-center gap-3">
-        <div className="flex w-full max-w-xl items-stretch gap-2">
-          {analysis && <EvalBar info={evalAnalysis.info} stm={turn} flipped={seats.b === "you" && seats.w !== "you"} />}
-          <div className="min-w-0 flex-1">
-            <Board
-              fen={played.chess.fen()}
-              orientation={seats.b === "you" && seats.w !== "you" ? "black" : "white"}
-              interactive={!settled && humans.length > 0}
-              humanColors={humans}
-              onPremove={queuePremove}
-              coordinates={settings.coordinates}
-              theme={settings.boardTheme}
-              pieceSet={settings.pieceSet ?? "standard"}
-              animate={settings.animations ?? true}
-              lastMove={last ? { from: last.from, to: last.to } : null}
-              premoves={premoves}
-              arrows={analysis ? [...arrow, ...evalAnalysis.arrows] : arrow}
-              onMove={onMove}
-            />
+        <div className="flex w-full max-w-[40rem] flex-col gap-2 lg:flex-row lg:items-stretch">
+          <SeatColumn
+            top={seatProps(topColor)}
+            bottom={seatProps(flipped ? "b" : "w")}
+          />
+          <div className="flex min-w-0 flex-1 items-stretch gap-2">
+            {analysis && <EvalBar info={evalAnalysis.info} stm={turn} flipped={flipped} />}
+            <div className="min-w-0 flex-1">
+              <Board
+                fen={played.chess.fen()}
+                orientation={flipped ? "black" : "white"}
+                interactive={!settled && humans.length > 0}
+                humanColors={humans}
+                onPremove={queuePremove}
+                coordinates={settings.coordinates}
+                theme={settings.boardTheme}
+                pieceSet={settings.pieceSet ?? "standard"}
+                animate={settings.animations ?? true}
+                lastMove={last ? { from: last.from, to: last.to } : null}
+                premoves={premoves}
+                arrows={analysis ? [...arrow, ...evalAnalysis.arrows] : arrow}
+                onMove={onMove}
+              />
+            </div>
           </div>
         </div>
         <div className="flex flex-wrap justify-center gap-2">

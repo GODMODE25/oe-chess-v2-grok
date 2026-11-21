@@ -3,10 +3,11 @@ import { describe, it } from "node:test";
 import { Chess } from "chess.js";
 import { judgeEndgame } from "./endgame-result.ts";
 import { dequeuePremove, dropAnsweredPremove, enqueuePremove, premoveLabel, premoveProjection, premoveSan, premoveTargets, type QueuedMove } from "./premove.ts";
-import { advantageSeries, capturedPieces, materialBalance, materialLead, parsePgn, replay, START_FEN, statusOf } from "./rules.ts";
+import { advantageSeries, capturedPieces, halfmoveClock, matchOpening, materialBalance, materialLead, parsePgn, replay, repetitionCount, START_FEN, statusOf } from "./rules.ts";
+import { OPENINGS } from "../data/openings.ts";
 import { REPLAY_TARGET, applyGrade, blankReview, gradeFromDrill, nextStreak } from "./srs.ts";
 import { mergeEnvelopes } from "./sync-merge.ts";
-import type { SyncEnvelope } from "./types.ts";
+import type { OpeningLine, SyncEnvelope } from "./types.ts";
 import { parseBestmove, parseInfo } from "./uci.ts";
 
 describe("chess rules", () => {
@@ -143,6 +144,76 @@ describe("sync merge", () => {
     assert.equal(merged.openings.some((row) => row.id === "c"), true);
     assert.equal(merged.openings.some((row) => row.id === "b"), true);
     assert.equal(merged.settings.updatedAt, 50);
+  });
+});
+
+describe("repetition counting", () => {
+  const shuffle = ["Nf3", "Nf6", "Ng1", "Ng8"];
+
+  it("counts the position on screen, the starting one included", () => {
+    assert.equal(repetitionCount(START_FEN, []), 1);
+    assert.equal(repetitionCount(START_FEN, shuffle), 2, "the knights went out and back once");
+    assert.equal(repetitionCount(START_FEN, [...shuffle, ...shuffle]), 3);
+  });
+
+  it("warns one repeat before the automatic draw", () => {
+    const twice = replay(START_FEN, shuffle);
+    assert.equal(statusOf(twice.chess).over, false, "two occurrences is still playable");
+    const third = replay(START_FEN, [...shuffle, ...shuffle]);
+    assert.equal(statusOf(third.chess).result, "1/2-1/2");
+    assert.equal(statusOf(third.chess).label, "Draw by threefold repetition.");
+  });
+
+  it("counts repeats that are not consecutive", () => {
+    const line = ["Nf3", "Nf6", "Ng1", "Ng8", "Nc3", "Nc6", "Nb1", "Nb8"];
+    assert.equal(repetitionCount(START_FEN, line), 3, "two different knight excursions both came home");
+    assert.equal(statusOf(replay(START_FEN, line).chess).label, "Draw by threefold repetition.");
+  });
+
+  it("reads a position by its castling rights, not only its pieces", () => {
+    const home = ["Nf3", "Nf6", "Rg1", "Ng8", "Ng5", "Nc6", "Rh1", "Nb8", "Nf3", "Nf6", "Ng1", "Ng8"];
+    const { chess } = replay(START_FEN, home);
+    assert.equal(chess.fen().split(" ")[0], START_FEN.split(" ")[0], "every piece is back on its starting square");
+    assert.equal(chess.fen().split(" ")[2], "Qkq", "the h1 rook moved, so White has lost its kingside right for good");
+    assert.equal(repetitionCount(START_FEN, home), 1, "an identical board with different castling rights is a different position");
+  });
+
+  it("starts counting from a custom position", () => {
+    const fen = "4k3/8/8/8/8/8/8/R3K2R w - - 0 1";
+    assert.equal(repetitionCount(fen, ["Ra2", "Ke7", "Ra1", "Ke8"]), 2, "the rook shuffle came back to the set-up position");
+    assert.equal(repetitionCount(fen, ["Ra2", "Ke7", "Ra1"]), 1, "Black still has to come home first");
+  });
+
+  it("stops counting at a move that is not in the game", () => {
+    assert.equal(repetitionCount(START_FEN, [...shuffle, "Ke3"]), 2, "an illegal tail cannot invent a third occurrence");
+  });
+});
+
+describe("fifty-move clock", () => {
+  // One rook walking about with the king shuffling behind it: every ply is a new position and
+  // nothing is captured, so the fifty-move rule is the only one in play.
+  const quiet = "4k3/8/8/8/8/8/8/R2K3R w - - 80 40";
+  const march = ["Ra2", "Kd8", "Ra3", "Ke8", "Ra4", "Kd8", "Ra5", "Ke8", "Ra6", "Kd8", "Ra7", "Ke8", "Rb7", "Kd8", "Rb6", "Ke8", "Rb5", "Kd8", "Rb4", "Ke8"];
+
+  it("counts the plies since the last pawn move or capture", () => {
+    assert.equal(halfmoveClock(replay(START_FEN, []).chess), 0);
+    assert.equal(halfmoveClock(replay(quiet, []).chess), 80, "a set-up position keeps the clock it arrived with");
+    assert.equal(halfmoveClock(replay(quiet, march.slice(0, 6)).chess), 86);
+  });
+
+  it("resets on a capture and on a pawn move", () => {
+    assert.equal(halfmoveClock(replay("4k3/p7/8/8/8/8/8/R2K3R w - - 80 40", ["Rxa7"]).chess), 0);
+    assert.equal(halfmoveClock(replay("4k3/p7/8/8/8/8/8/R2K3R b - - 80 40", ["a5"]).chess), 0);
+  });
+
+  it("warns before the automatic draw, then closes the game", () => {
+    const almost = replay(quiet, march.slice(0, 12));
+    assert.equal(halfmoveClock(almost.chess), 92);
+    assert.equal(statusOf(almost.chess).over, false, "92 quiet plies is still playable");
+    const drawn = replay(quiet, march);
+    assert.equal(halfmoveClock(drawn.chess), 100);
+    assert.equal(statusOf(drawn.chess).result, "1/2-1/2");
+    assert.equal(statusOf(drawn.chess).label, "Draw by the fifty-move rule.");
   });
 });
 
@@ -326,5 +397,53 @@ describe("premove projection", () => {
 
   it("leaves a piece that is moving right now where it is", () => {
     assert.deepEqual(premoveProjection(WAIT, [queued("a2", "a3")], "e7"), { fen: WAIT, from: "e7" });
+  });
+});
+
+describe("opening lookup", () => {
+  const line = (over: Partial<OpeningLine>): OpeningLine => ({
+    id: over.id ?? "x",
+    eco: over.eco ?? "C00",
+    name: over.name ?? "Line",
+    family: over.family ?? "Family",
+    popularity: over.popularity ?? 50,
+    tags: [],
+    note: "",
+    moves: over.moves ?? [],
+    source: "builtin",
+    updatedAt: 0,
+    deleted: over.deleted,
+  });
+
+  it("prefers the deepest catalogued line the game actually followed", () => {
+    const book = [line({ moves: ["e4", "e5"], name: "Short" }), line({ moves: ["e4", "e5", "Nf3"], name: "Deeper" })];
+    assert.equal(matchOpening(["e4", "e5", "Nf3", "Nc6"], book)?.name, "Deeper");
+    assert.equal(matchOpening(["e4", "e5", "Nf3", "Nc6"], book)?.ply, 3);
+  });
+
+  it("needs the whole line played, and gives up when the book runs out", () => {
+    const book = [line({ moves: ["e4", "e5", "Nf3"] })];
+    assert.equal(matchOpening(["e4", "e5", "d6"], book), null);
+    assert.equal(matchOpening(["e4", "e5"], book), null, "the game stopped before the line did");
+    assert.equal(matchOpening(["e4", "e5", "Nf3", "Nf6", "d4"], book)?.ply, 3, "extra plies do not undo a match");
+  });
+
+  it("ignores check marks, an empty book and lines that were deleted", () => {
+    assert.equal(matchOpening(["e4", "e5", "Bb5+"], [line({ moves: ["e4", "e5", "Bb5"] })])?.ply, 3);
+    assert.equal(matchOpening(["e4", "e5"], []), null);
+    assert.equal(matchOpening(["e4", "e5"], [line({ moves: ["e4", "e5"], deleted: true })]), null);
+    assert.equal(matchOpening(["e4", "e5"], [line({ moves: [] })]), null);
+  });
+
+  it("breaks an equal-depth tie by popularity", () => {
+    const book = [line({ moves: ["d4", "d5"], name: "Rare", popularity: 10 }), line({ moves: ["d4", "d5"], name: "Common", popularity: 90 })];
+    assert.equal(matchOpening(["d4", "d5", "Nf3"], book)?.name, "Common");
+  });
+
+  it("names a real game from the shipped book", () => {
+    const found = matchOpening(["e4", "e5", "Nf3", "Nc6", "Bc4", "Bc5"], OPENINGS);
+    assert.equal(found?.eco, "C50");
+    assert.equal(found?.name, "Italian Game");
+    assert.equal(found?.ply, 6);
   });
 });

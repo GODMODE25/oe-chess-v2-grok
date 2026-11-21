@@ -120,6 +120,73 @@ export type SavedGame = {
   createdAt: number;
   updatedAt: number;
   deleted?: boolean;
+  /** Strength the engine seat was capped at, so a review can anchor its rating estimate. */
+  engineElo?: number | "max";
+  /** The completed engine pass over this game; absent until someone reviews it. */
+  review?: GameReview;
+  /** Earlier passes, newest last, so Re-analyze adds a run instead of erasing one. */
+  reviewRuns?: ReviewPass[];
+};
+
+/** How a move compares with the engine's choice, in win-chance points lost. */
+export type MoveGrade = "best" | "good" | "inaccuracy" | "mistake" | "blunder";
+
+export type ReviewedMove = {
+  /** Eval after the move, centipawns from White's view; a mate is encoded near ±10000. */
+  cp: number;
+  mate: number | null;
+  /** Centipawns the mover gave up, capped at 1000 so one mate does not skew the average. */
+  loss: number;
+  /** Win-chance points the mover gave up, before the cap; the grade and accuracy come from this. */
+  lossWin: number;
+  grade: MoveGrade;
+  /** The engine's choice in the position before this move, UCI and SAN. */
+  bestUci: string;
+  bestSan: string;
+  /** The engine's preferred continuation from that position, up to six plies of SAN. */
+  bestLine: string;
+  depth: number;
+  /** The mover had exactly one legal reply: no choice to grade, so accuracy skips it. */
+  forced?: boolean;
+  /** Nodes and selective depth the search reached for the position before this move. */
+  nodes?: number;
+  seldepth?: number;
+};
+
+export type SideReview = {
+  accuracy: number;
+  acpl: number;
+  /** The engine's set strength, or a heuristic estimate for a human. */
+  rating: number;
+  estimated: boolean;
+  counts: Record<MoveGrade, number>;
+  /** Moves left out of accuracy and ACPL because only one reply was legal. */
+  forced?: number;
+};
+
+export type GameReview = {
+  depth: number;
+  analyzedAt: number;
+  /** Eval of the starting position, centipawns from White's view. */
+  startCp: number;
+  /** One entry per ply, aligned with the game's sans. */
+  moves: ReviewedMove[];
+  w: SideReview;
+  b: SideReview;
+  /** UCI identity plus the build that searched, so a report says who graded it. */
+  engine?: string;
+  /** Which arithmetic produced the grades; absent in reports stored before provenance. */
+  formulas?: string;
+  config?: { depth: number; movetimeMs: number };
+};
+
+/** A finished pass, kept without its per-move rows so re-analysis never loses the old numbers. */
+export type ReviewPass = {
+  analyzedAt: number;
+  depth: number;
+  engine?: string;
+  w: SideReview;
+  b: SideReview;
 };
 
 export type Profile = {
@@ -176,6 +243,10 @@ export type Settings = {
   /** Slides, capture fades and the check flash on the board. Absent means on. */
   animations?: boolean;
   appTheme?: AppTheme;
+  /** An uploaded backdrop, as a JPEG data URL. Painted behind every theme when present. */
+  shellArt?: string;
+  /** How much of that backdrop shows through the theme's veil, 0–100. */
+  shellArtStrength?: number;
   playPanels?: Partial<Record<PlayPanelId, PanelPref>>;
   prefs?: Prefs;
 };

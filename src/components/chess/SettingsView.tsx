@@ -19,6 +19,9 @@ const STATUS: Record<SyncStatus, string> = {
 
 const ELO_FLOOR = 1320;
 const ELO_CEILING = 3190;
+/** The backdrop rides inside the settings row, which the 1 MB cloud document also carries. */
+const ART_MAX_EDGE = 1600;
+const ART_CHAR_BUDGET = 200_000;
 
 /** The board either follows the app theme or keeps one of the three fixed woods. */
 const BOARD_LABELS: Record<BoardTheme, string> = {
@@ -34,7 +37,7 @@ const APP_THEME_HINTS: Record<AppTheme, string> = {
   graphite: "Cool graphite studio with a lime accent.",
   atelier: "Aubergine and champagne, generous corners.",
   cyber: "Near-black blue, cyan signal, amber second accent.",
-  glass: "Translucent panels — the splash is where it shows best.",
+  glass: "Translucent panels — a background shows through them.",
 };
 
 function strengthWord(elo: number) {
@@ -60,6 +63,39 @@ async function toSquareDataUrl(file: File): Promise<string> {
   return canvas.toDataURL("image/png");
 }
 
+/**
+ * Downscales and re-encodes until the data URL fits the byte budget, so a phone
+ * photo cannot push the cloud snapshot past Firestore's document limit.
+ */
+async function toBackdropDataUrl(file: File): Promise<string> {
+  const bitmap = await createImageBitmap(file);
+  const longest = Math.max(bitmap.width, bitmap.height);
+  let edge = Math.min(ART_MAX_EDGE, longest);
+  let quality = 0.82;
+  let url = "";
+  for (let pass = 0; pass < 8; pass++) {
+    const ratio = edge / longest;
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(bitmap.width * ratio));
+    canvas.height = Math.max(1, Math.round(bitmap.height * ratio));
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      bitmap.close();
+      throw new Error("This browser could not read that image.");
+    }
+    // JPEG has no alpha: a transparent PNG would otherwise come out black.
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    url = canvas.toDataURL("image/jpeg", quality);
+    if (url.length <= ART_CHAR_BUDGET) break;
+    if (quality > 0.52) quality -= 0.14;
+    else edge = Math.round(edge * 0.78);
+  }
+  bitmap.close();
+  return url;
+}
+
 export function SettingsView() {
   const settings = useOe((s) => s.settings);
   const profile = useOe((s) => s.profile);
@@ -78,6 +114,8 @@ export function SettingsView() {
   const cloudEmail = useOe((s) => s.cloudEmail);
   const [importNote, setImportNote] = useState("");
   const [avatarNote, setAvatarNote] = useState("");
+  const [artBusy, setArtBusy] = useState(false);
+  const [artNote, setArtNote] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const sliderValue = settings.playStrength === "max" ? ELO_CEILING : settings.playStrength;
@@ -102,6 +140,22 @@ export function SettingsView() {
       setAvatarNote("");
     } catch {
       setAvatarNote("Could not read that image.");
+    }
+  }
+
+  async function onBackdrop(file: File) {
+    if (!file.type.startsWith("image/")) {
+      setArtNote("That file is not an image.");
+      return;
+    }
+    setArtBusy(true);
+    setArtNote("");
+    try {
+      patchSettings({ shellArt: await toBackdropDataUrl(file) });
+    } catch {
+      setArtNote("Could not read that image. Try a JPEG or PNG.");
+    } finally {
+      setArtBusy(false);
     }
   }
 
@@ -278,6 +332,65 @@ export function SettingsView() {
         <p className="mt-3 text-xs text-mist">
           Each theme repaints the app and the splash. Choose Match theme for the board and the squares follow too.
         </p>
+        <div className="mt-4 border-t border-line pt-4">
+          <div className="flex items-baseline justify-between gap-2">
+            <h3 className="text-sm">Background image</h3>
+            <span className="text-xs text-mist">{settings.shellArt ? "Your image" : "None"}</span>
+          </div>
+          <p className="mt-1 text-xs text-mist">
+            One upload sits behind all six themes, veiled in each theme&apos;s own colour so panels and text stay readable. It travels with your settings when you sync.
+          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <span className="h-16 w-28 shrink-0 overflow-hidden rounded-lg border border-line bg-surface-2" aria-hidden="true">
+              {settings.shellArt ? (
+                <img src={settings.shellArt} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <span className="flex h-full w-full items-center justify-center text-[10px] text-mist">No image</span>
+              )}
+            </span>
+            <label className={`inline-flex h-11 items-center rounded-lg border border-line bg-surface-2 px-4 text-sm ${artBusy ? "opacity-60" : "cursor-pointer"}`}>
+              {artBusy ? "Reading…" : settings.shellArt ? "Replace image" : "Upload image"}
+              <input
+                className="sr-only"
+                type="file"
+                accept="image/*"
+                disabled={artBusy}
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  event.target.value = "";
+                  if (file) void onBackdrop(file);
+                }}
+              />
+            </label>
+            {settings.shellArt && (
+              <Button variant="quiet" onClick={() => { patchSettings({ shellArt: undefined }); setArtNote(""); }}>
+                Remove
+              </Button>
+            )}
+          </div>
+          {artNote && <p className="mt-2 text-xs text-danger">{artNote}</p>}
+          <div className="mt-3">
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="text-sm text-mist">Background strength</span>
+              <span className="text-sm tabular-nums">{settings.shellArtStrength ?? 38}%</span>
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={1}
+              value={settings.shellArtStrength ?? 38}
+              disabled={!settings.shellArt}
+              aria-label="Background image strength"
+              className="mt-2 w-full accent-brass disabled:opacity-40"
+              onChange={(event) => patchSettings({ shellArtStrength: Number(event.target.value) })}
+            />
+            <div className="mt-1 flex justify-between text-xs text-mist">
+              <span>Theme colour</span>
+              <span>Full image</span>
+            </div>
+          </div>
+        </div>
       </Panel>
       <Panel>
         <div className="flex items-center justify-between gap-2">

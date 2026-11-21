@@ -12,7 +12,9 @@ type Waiter = {
   onInfo?: (info: EngineInfo) => void;
 };
 
-const ENGINE_JS = "/engines/stockfish-19-lite-single.js";
+/** The vendored build, so a review can name the binary that searched, not just the engine. */
+export const ENGINE_BUILD = "stockfish-19-lite-single";
+const ENGINE_JS = `/engines/${ENGINE_BUILD}.js`;
 
 let singleton: EngineClient | null = null;
 
@@ -42,6 +44,13 @@ export class EngineClient {
   private readyok: (() => void) | null = null;
   private failed: Error | null = null;
   readonly ready: Promise<void>;
+  /** The engine's own `id name` line, captured during the uci handshake. */
+  private idName = "";
+
+  /** What searched this game, in the engine's own words plus the vendored build. */
+  identity(): string {
+    return `${this.idName || "Stockfish"} (${ENGINE_BUILD}, wasm)`;
+  }
   private strengthKey = "";
   private seq = 0;
   private tail: Promise<void> = Promise.resolve();
@@ -131,6 +140,7 @@ export class EngineClient {
         this.uciok?.();
       }
       if (line === "readyok") this.readyok?.();
+      if (line.startsWith("id name ")) this.idName = line.slice("id name ".length).trim();
       if (line.includes("CRITICAL ERROR")) {
         this.fail(new Error("Stockfish rejected that position."));
         this.worker?.terminate();
