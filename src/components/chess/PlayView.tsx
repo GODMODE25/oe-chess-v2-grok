@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getEngine } from "@/lib/chess/engine";
 import { dequeuePremove, dropAnsweredPremove, enqueuePremove, premoveLabel, type QueuedMove } from "@/lib/chess/premove";
+import { infoCp } from "@/lib/chess/review-math";
 import { applyUciMove, advantageSeries, capturedPieces, fenOk, halfmoveClock, materialLead, replay, repetitionCount, START_FEN, statusOf } from "@/lib/chess/rules";
 import { playTone, setSoundEnabled } from "@/lib/chess/sound";
 import { useOe } from "@/lib/chess/store";
@@ -100,7 +101,14 @@ export function PlayView() {
   const [engineError, setEngineError] = useState("");
   const [fenDraft, setFenDraft] = useState("");
   const [phase, setPhase] = useState<"idle" | "playing" | "paused">("idle");
+  // How a game ended when it was not the board's own doing (resign, agreed draw, flag fall).
+  const [endNote, setEndNote] = useState("");
+  const [endDialog, setEndDialog] = useState<"resign" | "draw" | null>(null);
+  const [drawPending, setDrawPending] = useState(false);
+  const [offerNote, setOfferNote] = useState("");
   const marqueeRef = useRef<HTMLDivElement | null>(null);
+  // Bumped whenever the game resets or ends, so a slow draw offer cannot land on a different game.
+  const drawSeq = useRef(0);
 
   // Every setup choice lives in settings.prefs, so a reload or another device opens on the same position.
   const prefs = settings.prefs ?? NO_PREFS;
@@ -132,6 +140,8 @@ export function PlayView() {
   const turn = full.chess.turn();
   const engineTurn = phase === "playing" && !browsing && !over && !reviewGame && seats[turn] === "stockfish";
   const humans = (["w", "b"] as Side[]).filter((side) => seats[side] === "you");
+  // The one engine seat, when the game is human v engine; null for two humans or two engines.
+  const engineSide: Side | null = humans.length === 1 ? (seats.w === "stockfish" ? "w" : "b") : null;
   const last = viewed.chess.history({ verbose: true }).at(-1);
   const lost = useMemo(() => capturedPieces(viewed.chess), [viewed.chess]);
   const topColor: Side = orientation === "white" ? "b" : "w";
@@ -165,6 +175,10 @@ export function PlayView() {
     setCursor(null);
     setResult("*");
     setFinished(false);
+    setEndNote("");
+    setEndDialog(null);
+    setOfferNote("");
+    drawSeq.current += 1;
     setClock(null);
     setTimeId("unlimited");
     setActiveInc(0);
@@ -186,6 +200,7 @@ export function PlayView() {
           next[side] = 0;
           setFinished(true);
           setResult(side === "w" ? "0-1" : "1-0");
+          setEndNote(`${side === "w" ? "White" : "Black"} ran out of time — ${side === "w" ? "Black" : "White"} wins.`);
         }
         return next;
       });
@@ -318,7 +333,7 @@ export function PlayView() {
   }
 
   function pushMove(from: string, to: string, promotion?: string) {
-    if (phase !== "playing" || browsing || over) return;
+    if (phase !== "playing" || browsing || over || drawPending) return;
     const piece = full.chess.get(from as "a1");
     if (!piece || seats[piece.color] !== "you") return;
     if (thinking || piece.color !== turn) {
@@ -341,7 +356,7 @@ export function PlayView() {
   }
 
   useEffect(() => {
-    if (browsing || over || thinking || seats[turn] !== "you" || premoves.length === 0) return;
+    if (browsing || over || thinking || drawPending || seats[turn] !== "you" || premoves.length === 0) return;
     // The head waits for its own side's turn, so a two-human queue is not judged against the other clock.
     if (premoves[0].color !== turn) return;
     if (!claimPremoveTurn()) return;
@@ -366,6 +381,10 @@ export function PlayView() {
     setCursor(null);
     setFinished(false);
     setResult("*");
+    setEndNote("");
+    setEndDialog(null);
+    setOfferNote("");
+    drawSeq.current += 1;
     setPremoves([]);
     setPremoveNote("");
     premoveSlot.current = "";
@@ -381,6 +400,10 @@ export function PlayView() {
     setCursor(null);
     setResult("*");
     setFinished(false);
+    setEndNote("");
+    setEndDialog(null);
+    setOfferNote("");
+    drawSeq.current += 1;
     setInfo(null);
     setEvalLog({});
     setEngineError("");
@@ -399,6 +422,10 @@ export function PlayView() {
     setCursor(null);
     setResult("*");
     setFinished(false);
+    setEndNote("");
+    setEndDialog(null);
+    setOfferNote("");
+    drawSeq.current += 1;
     setInfo(null);
     setEvalLog({});
     setEngineError("");
@@ -409,11 +436,66 @@ export function PlayView() {
     setClock(time && time.ms ? { w: time.ms, b: time.ms } : null);
   }
 
+  /** Ends a game by agreement or forfeit; the board itself has no say in these. */
+  function finishGame(nextResult: string, note: string) {
+    drawSeq.current += 1;
+    setResult(nextResult);
+    setFinished(true);
+    setEndNote(note);
+    setEndDialog(null);
+    setDrawPending(false);
+    setOfferNote("");
+    playTone(nextResult === "1/2-1/2" ? "done" : "check");
+  }
+
+  function resignSide(side: Side) {
+    const winner = side === "w" ? "b" : "w";
+    finishGame(winner === "w" ? "1-0" : "0-1", `${side === "w" ? "White" : "Black"} resigned — ${winner === "w" ? "White" : "Black"} wins.`);
+  }
+
+  /** Two humans simply agree. Stockfish looks at the position and only accepts a lost or level one. */
+  async function offerDraw() {
+    if (!engineSide) {
+      finishGame("1/2-1/2", "Draw agreed.");
+      return;
+    }
+    setEndDialog(null);
+    const id = ++drawSeq.current;
+    setDrawPending(true);
+    setOfferNote("Stockfish is considering the draw offer…");
+    try {
+      const infos: EngineInfo[] = [];
+      await getEngine().go({
+        fen: full.chess.fen(),
+        depth: 12,
+        movetime: 700,
+        strength: "max",
+        onInfo: (info) => infos.push(info),
+      });
+      if (id !== drawSeq.current) return;
+      const info = infos.at(-1);
+      const white = info ? infoCp(info, full.chess.turn()) : 0;
+      // The engine's own view of the position: it accepts once it has no real winning chances.
+      const advantage = engineSide === "w" ? white : -white;
+      setDrawPending(false);
+      if (advantage <= 60) finishGame("1/2-1/2", "Draw agreed — Stockfish accepted the offer.");
+      else setOfferNote("Stockfish declined the draw offer.");
+    } catch {
+      if (id !== drawSeq.current) return;
+      setDrawPending(false);
+      setOfferNote("The draw offer went unanswered. Try again.");
+    }
+  }
+
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
       if (reviewGame) return;
       const tag = (event.target as HTMLElement | null)?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (endDialog) {
+        if (event.key === "Escape") setEndDialog(null);
+        return;
+      }
       if (event.key === "f") setOrientation(orientation === "white" ? "black" : "white");
       if (event.key === "u") undo();
       if (event.key === "ArrowLeft") setCursor((value) => Math.max(0, (value ?? sans.length) - 1));
@@ -427,7 +509,7 @@ export function PlayView() {
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [sans, turn, seats, orientation, reviewGame]);
+  }, [sans, turn, seats, orientation, reviewGame, endDialog]);
 
   // Every hook has to run before the review early-return: when the review closes,
   // a shorter hook list than the previous render is exactly what React reports as
@@ -437,7 +519,7 @@ export function PlayView() {
   if (reviewGame) return <ReviewView game={reviewGame} />;
 
   const arrow = info?.pvUci[0] ? [{ from: info.pvUci[0].slice(0, 2), to: info.pvUci[0].slice(2, 4) }] : [];
-  const label = phase === "idle" ? "Press Start" : phase === "paused" ? "Paused" : thinking ? "Stockfish is thinking" : status.label;
+  const label = endNote || (phase === "idle" ? "Press Start" : phase === "paused" ? "Paused" : thinking ? "Stockfish is thinking" : status.label);
   // The draw itself is automatic on the third occurrence, so the warning has to come before it:
   // at two repeats the player can still steer out of it, and it is worth knowing that.
   const repeatWarn = !status.over && phase === "playing" && repeat >= 2 && humans.length > 0;
@@ -508,18 +590,23 @@ export function PlayView() {
             </span>
           )}
         </p>
-        {over && sans.length > 0 && (
+        {over && (endNote || sans.length > 0) && (
           <div className="flex w-full max-w-[40rem] flex-wrap items-center justify-between gap-2 rounded-lg border border-brass bg-surface px-3 py-2">
-            <p className="text-sm text-ivory">{status.label} Review it with Stockfish to see where the game turned.</p>
-            <Button
-              className="h-9 px-3"
-              onClick={() => {
-                saveGame(gameSnapshot());
-                openReview(gameId);
-              }}
-            >
-              Review game
-            </Button>
+            <p className="text-sm text-ivory">
+              {endNote || status.label}
+              {sans.length > 0 && " Review it with Stockfish to see where the game turned."}
+            </p>
+            {sans.length > 0 && (
+              <Button
+                className="h-9 px-3"
+                onClick={() => {
+                  saveGame(gameSnapshot());
+                  openReview(gameId);
+                }}
+              >
+                Review game
+              </Button>
+            )}
           </div>
         )}
         <div className="grid w-full max-w-[40rem] grid-cols-[auto_auto_minmax(0,1fr)] gap-y-1">
@@ -552,7 +639,7 @@ export function PlayView() {
             <Board
               fen={viewed.chess.fen()}
               orientation={orientation}
-              interactive={phase === "playing" && !browsing && !over && humans.length > 0}
+              interactive={phase === "playing" && !browsing && !over && !drawPending && humans.length > 0}
               humanColors={humans}
               onPremove={queuePremove}
               coordinates={settings.coordinates}
@@ -576,6 +663,21 @@ export function PlayView() {
             {phase === "paused" ? "Resume" : "Pause"}
           </Button>
           <Button variant="quiet" onClick={stopGame}>Stop</Button>
+          <Button
+            variant="quiet"
+            disabled={phase === "idle" || over || humans.length === 0 || drawPending}
+            onClick={() => setEndDialog("resign")}
+          >
+            Resign
+          </Button>
+          <Button
+            variant="quiet"
+            disabled={phase === "idle" || over || humans.length === 0 || drawPending || (engineSide != null && seats[turn] === "stockfish")}
+            title={engineSide ? "Stockfish accepts only if it has no real winning chances." : "Agree a draw with your opponent."}
+            onClick={() => setEndDialog("draw")}
+          >
+            {engineSide ? "Offer draw" : "Draw"}
+          </Button>
           <Button variant="quiet" onClick={() => setAnalysis((on) => !on)}>{analysis ? "Hide analysis" : "Analyze"}</Button>
           <Button variant="quiet" onClick={stopGame}>New game</Button>
         </div>
@@ -604,6 +706,7 @@ export function PlayView() {
           <p className="text-xs text-mist">Flip, undo, and the arrow keys also work from the keyboard.</p>
         )}
         {premoveNote && <p className="text-xs text-danger">{premoveNote}</p>}
+        {offerNote && <p className="text-xs text-mist">{offerNote}</p>}
         {engineError && <p className="text-sm text-danger">{engineError}</p>}
       </div>
       <div className="flex w-full min-w-0 flex-col gap-3">
@@ -746,6 +849,51 @@ export function PlayView() {
           </CollapsiblePanel>
         )}
       </div>
+      {endDialog && (
+        <div
+          className="fixed inset-0 z-40 flex items-center justify-center bg-scrim/70 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label={endDialog === "resign" ? "Resign the game" : "Draw offer"}
+        >
+          <div className="w-full max-w-md rounded-xl border border-line bg-surface p-5 text-center">
+            {endDialog === "resign" ? (
+              <>
+                <h2 className="text-xl">Resign this game?</h2>
+                <p className="mt-2 text-sm text-mist">
+                  {humans.length === 2
+                    ? "The side that resigns loses. The result is saved to your library."
+                    : "You lose to Stockfish. The result is saved to your library."}
+                </p>
+                <div className="mt-4 flex flex-wrap justify-center gap-2">
+                  {humans.length === 2 ? (
+                    <>
+                      <Button variant="danger" onClick={() => resignSide("w")}>White resigns</Button>
+                      <Button variant="danger" onClick={() => resignSide("b")}>Black resigns</Button>
+                    </>
+                  ) : (
+                    <Button variant="danger" onClick={() => resignSide(seats.w === "you" ? "w" : "b")}>Resign</Button>
+                  )}
+                  <Button variant="quiet" onClick={() => setEndDialog(null)}>Keep playing</Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h2 className="text-xl">{engineSide ? "Offer a draw?" : "Agree a draw?"}</h2>
+                <p className="mt-2 text-sm text-mist">
+                  {engineSide
+                    ? "Stockfish accepts only when it has no real winning chances; otherwise it plays on."
+                    : "Both sides agree to split the point. The result is saved to your library."}
+                </p>
+                <div className="mt-4 flex flex-wrap justify-center gap-2">
+                  <Button onClick={() => void offerDraw()}>{engineSide ? "Offer draw" : "Agree draw"}</Button>
+                  <Button variant="quiet" onClick={() => setEndDialog(null)}>Keep playing</Button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

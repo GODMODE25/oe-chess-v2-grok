@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400" role="img" aria-label="OE Chess banner">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#14100a"/>
+      <stop offset="0.55" stop-color="#1c150c"/>
+      <stop offset="1" stop-color="#0b0805"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#d4a54a" stop-opacity="0.30"/>
+      <stop offset="0.55" stop-color="#d4a54a" stop-opacity="0.10"/>
+      <stop offset="1" stop-color="#d4a54a" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="vignette" cx="0.5" cy="0.45" r="0.75">
+      <stop offset="0" stop-color="#000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0.55"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f6e0a2"/>
+      <stop offset="0.45" stop-color="#d8ab55"/>
+      <stop offset="1" stop-color="#8f6a2a"/>
+    </linearGradient>
+    <linearGradient id="goldText" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f7e3a6"/>
+      <stop offset="0.6" stop-color="#dcae58"/>
+      <stop offset="1" stop-color="#a37c33"/>
+    </linearGradient>
+    <pattern id="checker" width="88" height="56" patternUnits="userSpaceOnUse">
+      <rect width="44" height="28" fill="#ffffff"/>
+      <rect x="44" width="44" height="28" fill="#000000"/>
+      <rect y="28" x="44" width="44" height="28" fill="#ffffff"/>
+      <rect y="28" width="44" height="28" fill="#000000"/>
+    </pattern>
+  </defs>
+
+  <!-- background -->
+  <rect width="1200" height="400" fill="url(#bg)"/>
+  <ellipse cx="880" cy="200" rx="420" ry="270" fill="url(#glow)"/>
+  <!-- giant faint knight watermark behind the title -->
+  <g transform="translate(58,392) scale(2.7)" fill="url(#gold)" opacity="0.055">
+    <path d="M-20,0 L20,0 L18,-30 C26,-55 24,-75 8,-88 C2,-93 -6,-96 -12,-93 C-18,-90 -17,-84 -13,-80 C-9,-76 -13,-71 -19,-69 C-30,-66 -34,-52 -30,-38 C-27,-26 -22,-14 -20,0 Z"/>
+    <path d="M2,-88 L10,-102 L15,-85 Z"/>
+  </g>
+
+  <!-- board surface under the pieces -->
+  <path d="M614,332 L1186,332 L1230,390 L570,390 Z" fill="url(#checker)" opacity="0.10"/>
+  <line x1="614" y1="332" x2="1186" y2="332" stroke="#d4a54a" stroke-width="1.5" opacity="0.35"/>
+
+  <!-- piece shadows -->
+  <g fill="#000" opacity="0.45">
+    <ellipse cx="662" cy="334" rx="26" ry="5"/>
+    <ellipse cx="746" cy="334" rx="30" ry="5"/>
+    <ellipse cx="838" cy="334" rx="32" ry="5"/>
+    <ellipse cx="928" cy="334" rx="32" ry="5"/>
+    <ellipse cx="1034" cy="334" rx="36" ry="6"/>
+    <ellipse cx="1128" cy="334" rx="34" ry="5"/>
+  </g>
+
+  <!-- piece lineup: pawn, rook, knight, bishop, KING, queen -->
+  <g fill="url(#gold)">
+    <!-- pawn -->
+    <g transform="translate(662,330)">
+      <circle cx="0" cy="-52" r="11"/>
+      <rect x="-16" y="-43" width="32" height="5" rx="2.5"/>
+      <path d="M-12,-38 C-12,-20 -18,-13 -20,-7 L20,-7 C18,-13 12,-20 12,-38 Z"/>
+      <rect x="-24" y="-7" width="48" height="7" rx="2"/>
+    </g>
+    <!-- rook -->
+    <g transform="translate(746,330)">
+      <path d="M-22,-95 L-14,-95 L-14,-87 L-5,-87 L-5,-95 L5,-95 L5,-87 L14,-87 L14,-95 L22,-95 L22,-81 L-22,-81 Z"/>
+      <rect x="-17" y="-81" width="34" height="43"/>
+      <rect x="-21" y="-38" width="42" height="6"/>
+      <rect x="-26" y="-32" width="52" height="8"/>
+      <rect x="-30" y="-24" width="60" height="24" rx="2"/>
+    </g>
+    <!-- knight -->
+    <g transform="translate(838,330)">
+      <path d="M-20,0 L20,0 L18,-30 C26,-55 24,-75 8,-88 C2,-93 -6,-96 -12,-93 C-18,-90 -17,-84 -13,-80 C-9,-76 -13,-71 -19,-69 C-30,-66 -34,-52 -30,-38 C-27,-26 -22,-14 -20,0 Z"/>
+      <path d="M2,-88 L10,-102 L15,-85 Z"/>
+      <circle cx="-1" cy="-77" r="2.6" fill="#14100a"/>
+    </g>
+    <!-- bishop -->
+    <g transform="translate(928,330)">
+      <circle cx="0" cy="-115" r="5"/>
+      <path d="M0,-112 C10,-101 18,-86 18,-68 C18,-54 10,-46 0,-46 C-10,-46 -18,-54 -18,-68 C-18,-86 -10,-101 0,-112 Z"/>
+      <path d="M1,-104 L11,-86 L7,-84 L-3,-102 Z" fill="#14100a"/>
+      <rect x="-15" y="-46" width="30" height="5" rx="2"/>
+      <path d="M-10,-41 C-10,-24 -14,-18 -16,-12 L16,-12 C14,-18 10,-24 10,-41 Z"/>
+      <rect x="-22" y="-12" width="44" height="6"/>
+      <rect x="-27" y="-6" width="54" height="6" rx="2"/>
+    </g>
+    <!-- king -->
+    <g transform="translate(1034,330)">
+      <rect x="-3" y="-152" width="6" height="24" rx="1.5"/>
+      <rect x="-11" y="-143" width="22" height="6" rx="1.5"/>
+      <circle cx="0" cy="-122" r="5.5"/>
+      <path d="M-17,-114 C-17,-120 17,-120 17,-114 L13,-98 L-13,-98 Z"/>
+      <rect x="-15" y="-98" width="30" height="6" rx="2"/>
+      <path d="M-12,-92 C-12,-62 -17,-42 -21,-26 L21,-26 C17,-42 12,-62 12,-92 Z"/>
+      <rect x="-25" y="-26" width="50" height="8"/>
+      <rect x="-31" y="-18" width="62" height="18" rx="2"/>
+    </g>
+    <!-- queen -->
+    <g transform="translate(1128,330)">
+      <circle cx="-19" cy="-116" r="3.5"/>
+      <circle cx="0" cy="-121" r="3.5"/>
+      <circle cx="19" cy="-116" r="3.5"/>
+      <path d="M-21,-112 L-10,-94 L0,-112 L10,-94 L21,-112 L14,-88 L-14,-88 Z"/>
+      <rect x="-17" y="-92" width="34" height="5" rx="2"/>
+      <path d="M-14,-87 C-10,-60 -14,-40 -18,-24 L18,-24 C14,-40 10,-60 14,-87 Z"/>
+      <rect x="-24" y="-24" width="48" height="8"/>
+      <rect x="-30" y="-16" width="60" height="16" rx="2"/>
+    </g>
+  </g>
+
+  <!-- title block -->
+  <g>
+    <text x="78" y="192" font-family="Georgia, 'Times New Roman', serif" font-size="94" font-weight="700" fill="url(#goldText)" letter-spacing="1">OE Chess</text>
+    <line x1="82" y1="224" x2="438" y2="224" stroke="#d4a54a" stroke-width="2" opacity="0.45"/>
+    <text x="82" y="264" font-family="Georgia, 'Times New Roman', serif" font-size="21" fill="#c9a76a" letter-spacing="7" opacity="0.9">PLAY · STUDY · MASTER</text>
+  </g>
+
+  <rect width="1200" height="400" fill="url(#vignette)"/>
+</svg>
