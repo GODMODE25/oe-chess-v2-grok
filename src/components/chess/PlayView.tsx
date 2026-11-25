@@ -684,22 +684,29 @@ export function PlayView() {
           <div className="lg:col-start-3 lg:row-start-1">
             <MaterialRow side={topColor} taken={lost[bottomColor]} takenColor={bottomColor} lead={materialLead(viewed.chess, topColor)} pieceSet={settings.pieceSet ?? "standard"} />
           </div>
-          <div className="min-w-0 lg:col-start-3 lg:row-start-2">
-            <Board
-              fen={viewed.chess.fen()}
-              orientation={orientation}
-              interactive={phase === "playing" && !browsing && !over && !drawPending && humans.length > 0}
-              humanColors={humans}
-              onPremove={queuePremove}
-              coordinates={settings.coordinates}
-              theme={settings.boardTheme}
-              pieceSet={settings.pieceSet ?? "standard"}
-              animate={settings.animations ?? true}
-              lastMove={last ? { from: last.from, to: last.to } : null}
-              premoves={premoves}
-              arrows={analysis || thinking ? arrow : []}
-              onMove={pushMove}
-            />
+          <div className="flex min-w-0 items-stretch gap-1.5 lg:col-start-3 lg:row-start-2">
+            {analysis && (
+              <div className="flex lg:hidden">
+                <EvalBar info={info} stm={viewed.chess.turn()} flipped={orientation === "black"} />
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
+              <Board
+                fen={viewed.chess.fen()}
+                orientation={orientation}
+                interactive={phase === "playing" && !browsing && !over && !drawPending && humans.length > 0}
+                humanColors={humans}
+                onPremove={queuePremove}
+                coordinates={settings.coordinates}
+                theme={settings.boardTheme}
+                pieceSet={settings.pieceSet ?? "standard"}
+                animate={settings.animations ?? true}
+                lastMove={last ? { from: last.from, to: last.to } : null}
+                premoves={premoves}
+                arrows={analysis || thinking ? arrow : []}
+                onMove={pushMove}
+              />
+            </div>
           </div>
           <div className="lg:col-start-3 lg:row-start-3">
             <MaterialRow side={bottomColor} taken={lost[topColor]} takenColor={topColor} lead={materialLead(viewed.chess, bottomColor)} pieceSet={settings.pieceSet ?? "standard"} />

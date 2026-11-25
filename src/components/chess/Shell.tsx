@@ -1,4 +1,5 @@
-import { useEffect, type CSSProperties } from "react";
+import { Menu, X } from "lucide-react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { assetUrl } from "@/lib/chess/asset-url";
 import { getEngine } from "@/lib/chess/engine";
 import { useEngineBoot } from "@/lib/chess/use-engine-boot";
@@ -73,6 +74,15 @@ export function Shell() {
   const shellArt = useOe((s) => s.settings.shellArt);
   const shellArtStrength = useOe((s) => s.settings.shellArtStrength ?? 38);
   const customArt = shellArt?.startsWith("data:image/") ? shellArt : "";
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") setMenuOpen(false);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   useEffect(() => {
     function onLine() {
@@ -127,30 +137,55 @@ export function Shell() {
         </div>
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="z-20 flex items-center justify-between gap-3 border-b border-line bg-canvas px-4 py-3 md:hidden">
-          <div className="flex items-center gap-2">
+        <header className="relative z-30 flex shrink-0 items-center justify-between gap-3 border-b border-line bg-canvas px-4 py-2 md:hidden">
+          <div className="relative z-20 flex items-center gap-2">
             <img src={assetUrl("/logo-piece.svg")} alt="" className="h-9 w-9" />
-            <p className="font-display text-xl">OE Chess</p>
+            <p className="font-display text-xl leading-none">OE Chess</p>
           </div>
-          <div className="flex flex-col items-end gap-1" role="status">
-            <EngineStatus />
-            <p className="text-xs text-mist">{STATUS[sync.status]}</p>
-          </div>
+          <button
+            type="button"
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={menuOpen}
+            aria-controls="mobile-menu"
+            onClick={() => setMenuOpen((open) => !open)}
+            className="relative z-20 grid h-10 w-10 place-items-center rounded-lg border border-line bg-surface-2 text-ivory hover:border-brass"
+          >
+            {menuOpen ? <X className="h-5 w-5" aria-hidden /> : <Menu className="h-5 w-5" aria-hidden />}
+          </button>
+          {menuOpen && (
+            <>
+              <button
+                type="button"
+                aria-label="Close menu"
+                tabIndex={-1}
+                className="fixed inset-0 z-0 cursor-default bg-canvas/60"
+                onClick={() => setMenuOpen(false)}
+              />
+              <nav
+                id="mobile-menu"
+                className="absolute inset-x-3 top-full z-10 mt-1 grid gap-1 rounded-xl border border-line bg-surface p-2 shadow-2xl"
+              >
+                {NAV.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    aria-current={nav === item.id ? "page" : undefined}
+                    onClick={() => {
+                      setNav(item.id);
+                      setMenuOpen(false);
+                    }}
+                    className={cn(
+                      "h-11 rounded-lg px-3 text-left text-sm",
+                      nav === item.id ? "bg-brass text-on-accent" : "text-ivory hover:bg-surface-2",
+                    )}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </nav>
+            </>
+          )}
         </header>
-        {/* In the flow, not fixed: the bar sits above the scroll area, so the page content
-            never has to carry padding to clear it, and the board keeps its full width. */}
-        <nav className="scrollbar-hidden z-20 flex shrink-0 gap-1 overflow-x-auto border-b border-line bg-canvas px-2 md:hidden">
-          {NAV.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => setNav(item.id)}
-              className={cn("h-12 shrink-0 px-3 text-xs", nav === item.id ? "text-brass" : "text-mist")}
-            >
-              {item.label}
-            </button>
-          ))}
-        </nav>
         {/* `relative` matters: an `sr-only` file input is absolutely positioned, and
             without a positioned ancestor it anchors to the document, where the shell's
             overflow cannot clip it — the window then grows a second scrollbar. */}
