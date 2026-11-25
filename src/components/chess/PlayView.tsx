@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { BarChart3, Flag, FlipVertical2, Handshake, PanelRight, Pause, Play, Plus, Square, Undo2, type LucideIcon } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type ButtonHTMLAttributes } from "react";
 import { getEngine } from "@/lib/chess/engine";
 import { dequeuePremove, dropAnsweredPremove, enqueuePremove, premoveLabel, type QueuedMove } from "@/lib/chess/premove";
 import { infoCp } from "@/lib/chess/review-math";
@@ -11,7 +12,7 @@ import { EnginePanelBody, MovesGraph } from "./EnginePanel";
 import { EvalBar } from "./EvalBar";
 import { PieceGlyph } from "./pieces";
 import { ReviewView } from "./ReviewView";
-import { seatRating, SeatRail } from "./SeatRail";
+import { seatRating, SeatBar, SeatRail, type SeatChipProps } from "./SeatRail";
 import { Button, cn, CollapsiblePanel, Field, TextInput } from "./ui";
 
 const TIMES = [
@@ -57,6 +58,27 @@ function MaterialRow({ side, taken, takenColor, lead, pieceSet }: {
       ))}
       {lead > 0 && <span className="ml-1 font-medium tabular-nums text-brass">+{lead}</span>}
     </div>
+  );
+}
+
+/** A control that keeps its label on wide screens and shrinks to its icon on a phone. */
+function ActionButton({
+  icon: Icon,
+  label,
+  className,
+  ...props
+}: ButtonHTMLAttributes<HTMLButtonElement> & { icon: LucideIcon; label: string }) {
+  return (
+    <Button
+      variant="quiet"
+      aria-label={label}
+      title={label}
+      className={cn("h-10 w-10 shrink-0 px-0 sm:h-11 sm:w-auto sm:px-4", className)}
+      {...props}
+    >
+      <Icon className="h-4 w-4 shrink-0 sm:hidden" aria-hidden />
+      <span className="hidden sm:inline">{label}</span>
+    </Button>
   );
 }
 
@@ -106,7 +128,10 @@ export function PlayView() {
   const [endDialog, setEndDialog] = useState<"resign" | "draw" | null>(null);
   const [drawPending, setDrawPending] = useState(false);
   const [offerNote, setOfferNote] = useState("");
+  // On a phone the side panels are a distraction mid-game, so Start folds them away.
+  const [panelsOpen, setPanelsOpen] = useState(true);
   const marqueeRef = useRef<HTMLDivElement | null>(null);
+  const boardRef = useRef<HTMLDivElement | null>(null);
   // Bumped whenever the game resets or ends, so a slow draw offer cannot land on a different game.
   const drawSeq = useRef(0);
 
@@ -187,6 +212,9 @@ export function PlayView() {
     setInfo(null);
     setEvalLog({});
     setLaunch(null);
+    focusBoardOnPhone();
+    // Only a new launch should re-run this; the focus helper is a render-local function.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [launch, setLaunch]);
 
   useEffect(() => {
@@ -415,9 +443,11 @@ export function PlayView() {
     setClock(time && time.ms ? { w: time.ms, b: time.ms } : null);
     setActiveInc(time.inc);
     setPhase("playing");
+    focusBoardOnPhone();
   }
 
   function stopGame() {
+    if (window.matchMedia("(max-width: 1279px)").matches) setPanelsOpen(true);
     setPhase("idle");
     setSans([]);
     setCursor(null);
@@ -542,8 +572,38 @@ export function PlayView() {
     patchSettings({ playPanels: all });
   }
 
+  function collapsePanels() {
+    const next: Record<PlayPanelId, PanelPref> = {
+      presets: { ...panelPref("presets"), collapsed: true },
+      new: { ...panelPref("new"), collapsed: true },
+      moves: { ...panelPref("moves"), collapsed: true },
+      engine: { ...panelPref("engine"), collapsed: true },
+    };
+    patchSettings({ playPanels: next });
+  }
+
+  /** On a phone a running game gets the whole page: panels fold away and the board sits centred. */
+  function focusBoardOnPhone() {
+    if (!window.matchMedia("(max-width: 1279px)").matches) return;
+    setPanelsOpen(false);
+    collapsePanels();
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => boardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }));
+    });
+  }
+
+  const seatProps = (side: Side): SeatChipProps => ({
+    seat: seats[side],
+    name: seats[side] === "you" ? profile.name : "Stockfish",
+    avatar: seats[side] === "you" ? profile.avatar : undefined,
+    clockMs: clock ? clock[side] : null,
+    rating: seatRating(seats[side], settings.playStrength),
+  });
+  const topSeat = seatProps(topColor);
+  const bottomSeat = seatProps(bottomColor);
+
   return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
+    <div className={cn("grid gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]", !panelsOpen && "max-xl:min-h-full max-xl:content-center")}>
       <div className="flex min-w-0 flex-col items-center gap-3">
         {sans.length > 0 && (
           <div
@@ -610,33 +670,21 @@ export function PlayView() {
             )}
           </div>
         )}
-        <div className="grid w-full max-w-[40rem] grid-cols-[auto_auto_minmax(0,1fr)] gap-y-1">
-          <SeatRail
-            className="col-start-1 row-start-2 mr-2"
-            top={{
-              seat: seats[topColor],
-              name: seats[topColor] === "you" ? profile.name : "Stockfish",
-              avatar: seats[topColor] === "you" ? profile.avatar : undefined,
-              clockMs: clock ? clock[topColor] : null,
-              rating: seatRating(seats[topColor], settings.playStrength),
-            }}
-            bottom={{
-              seat: seats[bottomColor],
-              name: seats[bottomColor] === "you" ? profile.name : "Stockfish",
-              avatar: seats[bottomColor] === "you" ? profile.avatar : undefined,
-              clockMs: clock ? clock[bottomColor] : null,
-              rating: seatRating(seats[bottomColor], settings.playStrength),
-            }}
-          />
+        <div
+          ref={boardRef}
+          className="flex w-full max-w-[40rem] scroll-mt-4 flex-col gap-1 lg:grid lg:grid-cols-[auto_auto_minmax(0,1fr)] lg:gap-y-1"
+        >
+          <SeatBar className="lg:hidden" {...topSeat} />
+          <SeatRail className="col-start-1 row-start-2 mr-2 hidden lg:flex" top={topSeat} bottom={bottomSeat} />
           {analysis && (
-            <div className="col-start-2 row-start-2 mr-2 flex">
+            <div className="col-start-2 row-start-2 mr-2 hidden lg:flex">
               <EvalBar info={info} stm={viewed.chess.turn()} flipped={orientation === "black"} />
             </div>
           )}
-          <div className="col-start-3 row-start-1">
+          <div className="lg:col-start-3 lg:row-start-1">
             <MaterialRow side={topColor} taken={lost[bottomColor]} takenColor={bottomColor} lead={materialLead(viewed.chess, topColor)} pieceSet={settings.pieceSet ?? "standard"} />
           </div>
-          <div className="col-start-3 row-start-2 min-w-0">
+          <div className="min-w-0 lg:col-start-3 lg:row-start-2">
             <Board
               fen={viewed.chess.fen()}
               orientation={orientation}
@@ -653,34 +701,43 @@ export function PlayView() {
               onMove={pushMove}
             />
           </div>
-          <div className="col-start-3 row-start-3">
+          <div className="lg:col-start-3 lg:row-start-3">
             <MaterialRow side={bottomColor} taken={lost[topColor]} takenColor={topColor} lead={materialLead(viewed.chess, bottomColor)} pieceSet={settings.pieceSet ?? "standard"} />
           </div>
+          <SeatBar className="lg:hidden" {...bottomSeat} />
         </div>
-        <div className="flex flex-wrap justify-center gap-2">
-          <Button variant="quiet" onClick={() => setOrientation(orientation === "white" ? "black" : "white")}>Flip</Button>
-          <Button variant="quiet" onClick={undo}>Undo</Button>
-          <Button variant="quiet" disabled={phase === "idle"} onClick={() => setPhase((current) => (current === "playing" ? "paused" : "playing"))}>
-            {phase === "paused" ? "Resume" : "Pause"}
-          </Button>
-          <Button variant="quiet" onClick={stopGame}>Stop</Button>
-          <Button
-            variant="quiet"
+        <div className="flex flex-wrap justify-center gap-1 sm:gap-2">
+          <ActionButton icon={FlipVertical2} label="Flip" onClick={() => setOrientation(orientation === "white" ? "black" : "white")} />
+          <ActionButton icon={Undo2} label="Undo" onClick={undo} />
+          <ActionButton
+            icon={phase === "paused" ? Play : Pause}
+            label={phase === "paused" ? "Resume" : "Pause"}
+            disabled={phase === "idle"}
+            onClick={() => setPhase((current) => (current === "playing" ? "paused" : "playing"))}
+          />
+          <ActionButton icon={Square} label="Stop" className="hidden sm:inline-flex" onClick={stopGame} />
+          <ActionButton
+            icon={Flag}
+            label="Resign"
             disabled={phase === "idle" || over || humans.length === 0 || drawPending}
             onClick={() => setEndDialog("resign")}
-          >
-            Resign
-          </Button>
-          <Button
-            variant="quiet"
-            disabled={phase === "idle" || over || humans.length === 0 || drawPending || (engineSide != null && seats[turn] === "stockfish")}
+          />
+          <ActionButton
+            icon={Handshake}
+            label={engineSide ? "Offer draw" : "Draw"}
             title={engineSide ? "Stockfish accepts only if it has no real winning chances." : "Agree a draw with your opponent."}
+            disabled={phase === "idle" || over || humans.length === 0 || drawPending || (engineSide != null && seats[turn] === "stockfish")}
             onClick={() => setEndDialog("draw")}
-          >
-            {engineSide ? "Offer draw" : "Draw"}
-          </Button>
-          <Button variant="quiet" onClick={() => setAnalysis((on) => !on)}>{analysis ? "Hide analysis" : "Analyze"}</Button>
-          <Button variant="quiet" onClick={stopGame}>New game</Button>
+          />
+          <ActionButton icon={BarChart3} label={analysis ? "Hide analysis" : "Analyze"} aria-pressed={analysis} onClick={() => setAnalysis((on) => !on)} />
+          <ActionButton icon={Plus} label="New game" onClick={stopGame} />
+          <ActionButton
+            icon={PanelRight}
+            label={panelsOpen ? "Hide panels" : "Panels"}
+            className="xl:hidden"
+            aria-pressed={panelsOpen}
+            onClick={() => setPanelsOpen((open) => !open)}
+          />
         </div>
         {premoves.length > 0 ? (
           <div className="flex w-full max-w-[40rem] flex-wrap items-center gap-1.5 text-xs">
@@ -710,7 +767,7 @@ export function PlayView() {
         {offerNote && <p className="text-xs text-mist">{offerNote}</p>}
         {engineError && <p className="text-sm text-danger">{engineError}</p>}
       </div>
-      <div className="flex w-full min-w-0 flex-col gap-3">
+      <div className={cn("flex w-full min-w-0 flex-col gap-3", !panelsOpen && "hidden xl:flex")}>
         <div className="flex flex-wrap items-center gap-1.5 text-xs">
           {PANELS.map((p) => {
             const pref = panelPref(p.id);
