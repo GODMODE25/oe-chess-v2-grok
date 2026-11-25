@@ -761,7 +761,7 @@ export function PlayView() {
             </button>
           </div>
         ) : (
-          <p className="text-xs text-mist">Flip, undo, and the arrow keys also work from the keyboard.</p>
+          <p className="hidden text-xs text-mist sm:block">Flip, undo, and the arrow keys also work from the keyboard.</p>
         )}
         {premoveNote && <p className="text-xs text-danger">{premoveNote}</p>}
         {offerNote && <p className="text-xs text-mist">{offerNote}</p>}
