@@ -301,7 +301,8 @@ export function PlayView() {
   }
 
   useEffect(() => {
-    if (sans.length === 0 && !finished) return;
+    // A resignation or draw before the first move leaves nothing worth keeping; the banner still says so.
+    if (sans.length === 0) return;
     const handle = window.setTimeout(() => saveGame(gameSnapshot()), 400);
     return () => window.clearTimeout(handle);
     // eslint-disable-next-line react-hooks/exhaustive-deps
