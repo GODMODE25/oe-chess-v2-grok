@@ -220,6 +220,8 @@ export type Prefs = {
     status?: string;
     side?: "all" | Side;
   };
+  /** Which Profile tab to open, so Home can link straight to the dashboard. */
+  profileSection?: "profile" | "stats" | "games" | "sync";
 };
 
 export type Settings = {

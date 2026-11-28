@@ -2,7 +2,7 @@ import { ArrowRight, BookOpen, Flag, Swords, type LucideIcon } from "lucide-reac
 import { assetUrl } from "@/lib/chess/asset-url";
 import { useOe } from "@/lib/chess/store";
 import { PieceGlyph } from "./pieces";
-import { Pill } from "./ui";
+import { Button, Pill } from "./ui";
 
 const MODES: Array<{
   id: "play" | "openings" | "endgames";
@@ -45,6 +45,16 @@ const MODES: Array<{
 export function LandingView() {
   const setNav = useOe((s) => s.setNav);
   const name = useOe((s) => s.profile.name);
+  const streak = useOe((s) => s.profile.streak);
+  const reviews = useOe((s) => s.reviews);
+  const attempts = useOe((s) => s.attempts);
+  const patchPrefs = useOe((s) => s.patchPrefs);
+  const now = Date.now();
+  const weekAgo = now - 7 * 86_400_000;
+  const due = reviews.filter((review) => review.reps > 0 && review.dueAt <= now).length;
+  const week =
+    reviews.filter((review) => review.reps > 0 && review.updatedAt >= weekAgo).length +
+    attempts.filter((attempt) => attempt.startedAt >= weekAgo).length;
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 py-2 sm:py-6">
@@ -89,6 +99,29 @@ export function LandingView() {
             </button>
           );
         })}
+      </section>
+      <section className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-line bg-surface px-5 py-4">
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+          <div>
+            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-mist">Your progress</p>
+            <p className="mt-1 text-sm text-ivory">
+              {due > 0 ? `${due} ${due === 1 ? "line" : "lines"} due for review` : "No reviews due"}
+              <span className="text-mist"> · {week} {week === 1 ? "session" : "sessions"} this week</span>
+            </p>
+          </div>
+          <p className="text-sm text-mist">
+            <span className="font-display text-2xl text-ivory tabular-nums">{streak}</span><span className="text-mist">-day streak</span>
+          </p>
+        </div>
+        <Button
+          variant="quiet"
+          onClick={() => {
+            patchPrefs({ profileSection: "stats" });
+            setNav("profile");
+          }}
+        >
+          Open dashboard
+        </Button>
       </section>
       <p className="text-center text-xs text-mist">Your progress stays on this device unless you choose to sync it.</p>
     </div>

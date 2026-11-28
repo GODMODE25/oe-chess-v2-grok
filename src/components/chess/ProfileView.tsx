@@ -50,7 +50,9 @@ async function toSquareDataUrl(file: File): Promise<string> {
 }
 
 export function ProfileView() {
-  const [section, setSection] = useState<ProfileSection>("profile");
+  const prefs = useOe((s) => s.settings.prefs ?? {});
+  const patchPrefs = useOe((s) => s.patchPrefs);
+  const [section, setSection] = useState<ProfileSection>(prefs.profileSection ?? "profile");
   const profile = useOe((s) => s.profile);
   const sync = useOe((s) => s.sync);
   const setProfileName = useOe((s) => s.setProfileName);
@@ -98,7 +100,10 @@ export function ProfileView() {
               key={item.id}
               type="button"
               aria-pressed={section === item.id}
-              onClick={() => setSection(item.id)}
+              onClick={() => {
+                setSection(item.id);
+                patchPrefs({ profileSection: item.id });
+              }}
               className={`h-10 rounded-lg px-3 text-sm transition ${section === item.id ? "bg-brass text-on-accent" : "text-mist hover:bg-surface-2 hover:text-ivory"}`}
             >
               {item.label}

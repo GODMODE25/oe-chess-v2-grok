@@ -18,3 +18,5 @@ probe.json
 .dev-server.log
 # vendored Stockfish copy the Node UCI harness runs against (regenerable)
 scripts/.engine/
+# scratch output from `npm run make:banner`
+scripts/.banner/
