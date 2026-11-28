@@ -50,9 +50,9 @@ async function toSquareDataUrl(file: File): Promise<string> {
 }
 
 export function ProfileView() {
-  const prefs = useOe((s) => s.settings.prefs ?? {});
+  const prefs = useOe((s) => s.settings.prefs);
   const patchPrefs = useOe((s) => s.patchPrefs);
-  const [section, setSection] = useState<ProfileSection>(prefs.profileSection ?? "profile");
+  const [section, setSection] = useState<ProfileSection>(prefs?.profileSection ?? "profile");
   const profile = useOe((s) => s.profile);
   const sync = useOe((s) => s.sync);
   const setProfileName = useOe((s) => s.setProfileName);
