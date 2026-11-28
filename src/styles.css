@@ -354,6 +354,15 @@
   backdrop-filter: blur(var(--glass-blur)) saturate(1.15);
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.15);
 }
+/* A popup sits over the live board, so its card stays near-opaque and blurs what is behind it. */
+.modal-card {
+  background-color: var(--color-surface);
+}
+[data-app-theme="glass"] .modal-card {
+  background-color: color-mix(in oklab, var(--color-surface) 92%, transparent);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.15);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.15);
+}
 /* Where blur cannot be had, or is not wanted, the fills go nearly opaque instead. */
 @supports not ((backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px))) {
   [data-app-theme="glass"] {

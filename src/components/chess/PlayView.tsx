@@ -1,19 +1,49 @@
-import { BarChart3, Flag, FlipVertical2, Handshake, PanelRight, Pause, Play, Plus, Square, Undo2, type LucideIcon } from "lucide-react";
+import {
+  BarChart3,
+  Flag,
+  FlipVertical2,
+  Handshake,
+  PanelRight,
+  Pause,
+  Play,
+  Square,
+  Undo2,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ButtonHTMLAttributes } from "react";
 import { getEngine } from "@/lib/chess/engine";
-import { dequeuePremove, dropAnsweredPremove, enqueuePremove, premoveLabel, type QueuedMove } from "@/lib/chess/premove";
+import {
+  dequeuePremove,
+  dropAnsweredPremove,
+  enqueuePremove,
+  premoveLabel,
+  type QueuedMove,
+} from "@/lib/chess/premove";
 import { infoCp } from "@/lib/chess/review-math";
-import { applyUciMove, advantageSeries, capturedPieces, fenOk, halfmoveClock, materialLead, replay, repetitionCount, START_FEN, statusOf } from "@/lib/chess/rules";
+import {
+  applyUciMove,
+  advantageSeries,
+  capturedPieces,
+  fenOk,
+  halfmoveClock,
+  materialLead,
+  replay,
+  repetitionCount,
+  START_FEN,
+  statusOf,
+  timeoutResult,
+} from "@/lib/chess/rules";
 import { playTone, setSoundEnabled } from "@/lib/chess/sound";
 import { useOe } from "@/lib/chess/store";
-import type { EngineInfo, PanelPref, PieceSet, PlayPanelId, Prefs, SavedGame, Side } from "@/lib/chess/types";
+import type { EngineInfo, PieceSet, Prefs, SavedGame, Side } from "@/lib/chess/types";
 import { Board } from "./Board";
 import { EnginePanelBody, MovesGraph } from "./EnginePanel";
 import { EvalBar } from "./EvalBar";
 import { PieceGlyph } from "./pieces";
 import { ReviewView } from "./ReviewView";
-import { seatRating, SeatBar, SeatRail, type SeatChipProps } from "./SeatRail";
-import { Button, cn, CollapsiblePanel, Field, TextInput } from "./ui";
+import { seatRating, SeatBar, type SeatChipProps } from "./SeatRail";
+import { Button, cn, Field, TextInput } from "./ui";
 
 const TIMES = [
   { id: "unlimited", label: "Unlimited", ms: 0, inc: 0 },
@@ -25,7 +55,13 @@ const TIMES = [
   { id: "15+10", label: "15+10", ms: 15 * 60_000, inc: 10_000 },
 ];
 
-const PIECE_NAMES: Record<string, string> = { p: "pawn", n: "knight", b: "bishop", r: "rook", q: "queen" };
+const PIECE_NAMES: Record<string, string> = {
+  p: "pawn",
+  n: "knight",
+  b: "bishop",
+  r: "rook",
+  q: "queen",
+};
 
 /** The engine's number in pawns from White's view; a forced mate is drawn as a decisive edge. */
 function evalForWhite(info: EngineInfo, stm: Side): number | null {
@@ -35,7 +71,13 @@ function evalForWhite(info: EngineInfo, stm: Side): number | null {
 }
 
 /** The pieces one player has taken, plus how much they are up — the way a board tray reads. */
-function MaterialRow({ side, taken, takenColor, lead, pieceSet }: {
+function MaterialRow({
+  side,
+  taken,
+  takenColor,
+  lead,
+  pieceSet,
+}: {
   side: Side;
   taken: string[];
   takenColor: Side;
@@ -54,7 +96,13 @@ function MaterialRow({ side, taken, takenColor, lead, pieceSet }: {
       title={lead > 0 ? `${name} is up ${lead}` : undefined}
     >
       {taken.map((type, index) => (
-        <PieceGlyph key={`${type}-${index}`} type={type} color={takenColor} set={pieceSet} className="h-5 w-5 opacity-80" />
+        <PieceGlyph
+          key={`${type}-${index}`}
+          type={type}
+          color={takenColor}
+          set={pieceSet}
+          className="h-5 w-5 opacity-80"
+        />
       ))}
       {lead > 0 && <span className="ml-1 font-medium tabular-nums text-brass">+{lead}</span>}
     </div>
@@ -85,29 +133,30 @@ function ActionButton({
 const DEFAULT_SEATS: Record<Side, "you" | "stockfish"> = { w: "you", b: "stockfish" };
 const NO_PREFS: Prefs = {};
 
-const PANELS: { id: PlayPanelId; label: string }[] = [
+const PANE_TABS = [
   { id: "presets", label: "Presets" },
   { id: "new", label: "New game" },
   { id: "moves", label: "Moves" },
-  { id: "engine", label: "Engine" },
-];
+  { id: "analysis", label: "Analysis" },
+] as const;
 
-const DEFAULT_PREF: PanelPref = { visible: true, collapsed: false };
+type PaneTab = (typeof PANE_TABS)[number]["id"];
 
 export function PlayView() {
   const settings = useOe((s) => s.settings);
-  const patchSettings = useOe((s) => s.patchSettings);
   const patchPrefs = useOe((s) => s.patchPrefs);
   const profile = useOe((s) => s.profile);
   const launch = useOe((s) => s.launch);
   const setLaunch = useOe((s) => s.setLaunch);
   const saveGame = useOe((s) => s.saveGame);
   const openReview = useOe((s) => s.openReview);
-  const reviewGame = useOe((s) => (s.reviewGameId ? s.games.find((row) => row.id === s.reviewGameId) : undefined));
+  const closeReview = useOe((s) => s.closeReview);
+  const reviewGame = useOe((s) =>
+    s.reviewGameId ? s.games.find((row) => row.id === s.reviewGameId) : undefined,
+  );
   const [startFen, setStartFen] = useState(START_FEN);
   const [sans, setSans] = useState<string[]>([]);
   const [cursor, setCursor] = useState<number | null>(null);
-  const [player, setPlayer] = useState<Side>("w");
   const [premoves, setPremoves] = useState<QueuedMove[]>([]);
   const [premoveNote, setPremoveNote] = useState("");
   const [activeInc, setActiveInc] = useState(0);
@@ -128,10 +177,11 @@ export function PlayView() {
   const [endDialog, setEndDialog] = useState<"resign" | "draw" | null>(null);
   const [drawPending, setDrawPending] = useState(false);
   const [offerNote, setOfferNote] = useState("");
-  // On a phone the side panels are a distraction mid-game, so Start folds them away.
-  const [panelsOpen, setPanelsOpen] = useState(true);
+  // On a phone the option pane lives in a popup that only the Panels button opens, so the board keeps the page.
+  const [panelsOpen, setPanelsOpen] = useState(false);
+  // The game-over notice is a popup over the board, never a strip above it.
+  const [endNotice, setEndNotice] = useState(false);
   const marqueeRef = useRef<HTMLDivElement | null>(null);
-  const boardRef = useRef<HTMLDivElement | null>(null);
   // Bumped whenever the game resets or ends, so a slow draw offer cannot land on a different game.
   const drawSeq = useRef(0);
 
@@ -147,13 +197,23 @@ export function PlayView() {
   const setCustomMinutes = (next: string) => patchPrefs({ customMinutes: next });
   const customSeconds = prefs.customSeconds ?? "3";
   const setCustomSeconds = (next: string) => patchPrefs({ customSeconds: next });
+  const paneTab: PaneTab = PANE_TABS.some((t) => t.id === prefs.playPaneTab)
+    ? (prefs.playPaneTab as PaneTab)
+    : "presets";
+  const setPaneTab = (next: PaneTab) => patchPrefs({ playPaneTab: next });
 
   const customControl = useMemo(() => {
     const minutes = Math.min(180, Math.max(1, Number.parseInt(customMinutes, 10) || 0));
     const seconds = Math.min(180, Math.max(0, Number.parseInt(customSeconds, 10) || 0));
-    return { id: "custom", label: `${minutes}+${seconds}`, ms: minutes * 60_000, inc: seconds * 1000 };
+    return {
+      id: "custom",
+      label: `${minutes}+${seconds}`,
+      ms: minutes * 60_000,
+      inc: seconds * 1000,
+    };
   }, [customMinutes, customSeconds]);
-  const time = timeId === "custom" ? customControl : (TIMES.find((row) => row.id === timeId) ?? TIMES[0]);
+  const time =
+    timeId === "custom" ? customControl : (TIMES.find((row) => row.id === timeId) ?? TIMES[0]);
   const timeControlLabel = time.id === "custom" ? time.label : time.id;
   const viewedSans = cursor == null ? sans : sans.slice(0, cursor);
   const viewed = useMemo(() => replay(startFen, viewedSans), [startFen, viewedSans]);
@@ -163,17 +223,22 @@ export function PlayView() {
   const repeat = useMemo(() => repetitionCount(startFen, viewedSans), [startFen, viewedSans]);
   const over = finished || status.over;
   const turn = full.chess.turn();
-  const engineTurn = phase === "playing" && !browsing && !over && !reviewGame && seats[turn] === "stockfish";
+  const engineTurn =
+    phase === "playing" && !browsing && !over && !reviewGame && seats[turn] === "stockfish";
   const humans = (["w", "b"] as Side[]).filter((side) => seats[side] === "you");
   // The one engine seat, when the game is human v engine; null for two humans or two engines.
-  const engineSide: Side | null = humans.length === 1 ? (seats.w === "stockfish" ? "w" : "b") : null;
+  const engineSide: Side | null =
+    humans.length === 1 ? (seats.w === "stockfish" ? "w" : "b") : null;
   const last = viewed.chess.history({ verbose: true }).at(-1);
   const lost = useMemo(() => capturedPieces(viewed.chess), [viewed.chess]);
   const topColor: Side = orientation === "white" ? "b" : "w";
   const bottomColor: Side = orientation === "white" ? "w" : "b";
   const uciKey = full.uci.join(" ");
   // Stockfish's number where it actually looked at a position; the material count everywhere else.
-  const graph = useMemo(() => advantageSeries(startFen, sans).map((value, ply) => evalLog[ply] ?? value), [startFen, sans, evalLog]);
+  const graph = useMemo(
+    () => advantageSeries(startFen, sans).map((value, ply) => evalLog[ply] ?? value),
+    [startFen, sans, evalLog],
+  );
   const graphPly = cursor ?? sans.length;
 
   useEffect(() => setSoundEnabled(settings.sound), [settings.sound]);
@@ -188,7 +253,6 @@ export function PlayView() {
     if (!launch) return;
     setStartFen(launch.startFen || START_FEN);
     setSans(launch.sans);
-    setPlayer(launch.player);
     setSeats({
       w: launch.player === "b" ? "stockfish" : "you",
       b: launch.player === "b" ? "you" : "stockfish",
@@ -217,24 +281,37 @@ export function PlayView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [launch, setLaunch]);
 
+  const clockRunning = phase === "playing" && clock !== null && !over && !browsing && !reviewGame;
+  // Ticks measure real elapsed time, so engine-heavy positions (Computer v Computer)
+  // cannot silently pause the clock. The stamp survives effect restarts (a fresh engine
+  // ply re-keys this effect), so time between the last tick and the restart is still billed.
+  const clockStamp = useRef(0);
   useEffect(() => {
-    if (phase !== "playing" || !clock || over || browsing || reviewGame) return;
+    if (!clockRunning) {
+      clockStamp.current = 0;
+      return;
+    }
+    if (!clockStamp.current) clockStamp.current = Date.now();
     const id = window.setInterval(() => {
+      const now = Date.now();
+      const since = clockStamp.current ? now - clockStamp.current : 200;
+      clockStamp.current = now;
       setClock((current) => {
         if (!current) return current;
         const side = full.chess.turn();
-        const next = { ...current, [side]: current[side] - 200 };
+        const next = { ...current, [side]: current[side] - since };
         if (next[side] <= 0) {
           next[side] = 0;
+          const timedOut = timeoutResult(full.chess, side);
           setFinished(true);
-          setResult(side === "w" ? "0-1" : "1-0");
-          setEndNote(`${side === "w" ? "White" : "Black"} ran out of time — ${side === "w" ? "Black" : "White"} wins.`);
+          setResult(timedOut.result);
+          setEndNote(timedOut.label);
         }
         return next;
       });
     }, 200);
     return () => window.clearInterval(id);
-  }, [phase, clock, over, browsing, reviewGame, full]);
+  }, [clockRunning, full]);
 
   useEffect(() => {
     if (phase !== "idle") return;
@@ -299,7 +376,19 @@ export function PlayView() {
       cancel = true;
       engine.stop();
     };
-  }, [engineTurn, analysis, reviewGame, startFen, uciKey, sans, settings.playThinkMs, settings.playStrength, settings.analysisDepth, viewed.chess, full.uci]);
+  }, [
+    engineTurn,
+    analysis,
+    reviewGame,
+    startFen,
+    uciKey,
+    sans,
+    settings.playThinkMs,
+    settings.playStrength,
+    settings.analysisDepth,
+    viewed.chess,
+    full.uci,
+  ]);
 
   useEffect(() => {
     if (status.over && result === "*") {
@@ -308,6 +397,11 @@ export function PlayView() {
       playTone(status.result === "1/2-1/2" ? "done" : "check");
     }
   }, [status.over, status.result, result]);
+
+  useEffect(() => {
+    if (!over) setEndNotice(false);
+    else if (endNote || sans.length > 0) setEndNotice(true);
+  }, [over, endNote, sans.length]);
 
   function gameSnapshot(): SavedGame {
     const done = finished || status.over;
@@ -319,9 +413,11 @@ export function PlayView() {
       startFen,
       sans,
       event: "Casual game",
-      playerColor: seats.w === "you" && seats.b === "you" ? "either" : seats.b === "you" ? "b" : "w",
+      playerColor:
+        seats.w === "you" && seats.b === "you" ? "either" : seats.b === "you" ? "b" : "w",
       timeControl: timeControlLabel,
-      engineElo: seats.w === "stockfish" || seats.b === "stockfish" ? settings.playStrength : undefined,
+      engineElo:
+        seats.w === "stockfish" || seats.b === "stockfish" ? settings.playStrength : undefined,
       finished: done,
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -334,7 +430,20 @@ export function PlayView() {
     const handle = window.setTimeout(() => saveGame(gameSnapshot()), 400);
     return () => window.clearTimeout(handle);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sans, finished, result, gameId, startFen, seats, profile.name, timeControlLabel, saveGame, settings.playStrength, status.over, status.result]);
+  }, [
+    sans,
+    finished,
+    result,
+    gameId,
+    startFen,
+    seats,
+    profile.name,
+    timeControlLabel,
+    saveGame,
+    settings.playStrength,
+    status.over,
+    status.result,
+  ]);
 
   // Increment comes from the control frozen at Start, so switching chips mid-game cannot change what a move adds.
   function awardIncrement(side: Side) {
@@ -345,7 +454,11 @@ export function PlayView() {
   function playSan(from: string, to: string, promotion?: string) {
     let moved;
     try {
-      moved = full.chess.move({ from, to, promotion: promotion as "q" | "r" | "b" | "n" | undefined });
+      moved = full.chess.move({
+        from,
+        to,
+        promotion: promotion as "q" | "r" | "b" | "n" | undefined,
+      });
     } catch {
       return false;
     }
@@ -385,26 +498,37 @@ export function PlayView() {
   }
 
   useEffect(() => {
-    if (browsing || over || thinking || drawPending || seats[turn] !== "you" || premoves.length === 0) return;
+    if (
+      browsing ||
+      over ||
+      thinking ||
+      drawPending ||
+      seats[turn] !== "you" ||
+      premoves.length === 0
+    )
+      return;
     // The head waits for its own side's turn, so a two-human queue is not judged against the other clock.
     if (premoves[0].color !== turn) return;
     if (!claimPremoveTurn()) return;
     const { move, cancelled, remaining } = dequeuePremove(full.chess.fen(), premoves);
     setPremoves(remaining);
-    if (cancelled) setPremoveNote(`${premoveLabel(cancelled)} is no longer legal, so it was dropped.`);
+    if (cancelled)
+      setPremoveNote(`${premoveLabel(cancelled)} is no longer legal, so it was dropped.`);
     if (move) playSan(move.from, move.to, move.promotion);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [premoves, turn, thinking, browsing, over, sans]);
 
   function undo() {
     const opponent = turn === "w" ? "b" : "w";
-    const drop = sans.length >= 2 && seats[turn] === "you" && seats[opponent] === "stockfish" ? 2 : 1;
+    const drop =
+      sans.length >= 2 && seats[turn] === "you" && seats[opponent] === "stockfish" ? 2 : 1;
     const kept = Math.max(0, sans.length - drop);
     setSans((rows) => rows.slice(0, kept));
     // A replayed ply can be a different move, so numbers recorded past the cut are no longer about this game.
     setEvalLog((log) => {
       const trimmed: Record<number, number> = {};
-      for (const [ply, value] of Object.entries(log)) if (Number(ply) <= kept) trimmed[Number(ply)] = value;
+      for (const [ply, value] of Object.entries(log))
+        if (Number(ply) <= kept) trimmed[Number(ply)] = value;
       return trimmed;
     });
     setCursor(null);
@@ -420,9 +544,9 @@ export function PlayView() {
   }
 
   function begin(next: Record<Side, "you" | "stockfish"> = seats) {
-    const only: Side = next.w === "you" && next.b !== "you" ? "w" : next.b === "you" && next.w !== "you" ? "b" : "w";
+    const only: Side =
+      next.w === "you" && next.b !== "you" ? "w" : next.b === "you" && next.w !== "you" ? "b" : "w";
     setSeats(next);
-    setPlayer(only);
     setOrientation(only === "w" ? "white" : "black");
     setStartFen(fenDraft.trim() && fenOk(fenDraft.trim()) ? fenDraft.trim() : START_FEN);
     setSans([]);
@@ -447,7 +571,6 @@ export function PlayView() {
   }
 
   function stopGame() {
-    if (window.matchMedia("(max-width: 1279px)").matches) setPanelsOpen(true);
     setPhase("idle");
     setSans([]);
     setCursor(null);
@@ -481,7 +604,10 @@ export function PlayView() {
 
   function resignSide(side: Side) {
     const winner = side === "w" ? "b" : "w";
-    finishGame(winner === "w" ? "1-0" : "0-1", `${side === "w" ? "White" : "Black"} resigned — ${winner === "w" ? "White" : "Black"} wins.`);
+    finishGame(
+      winner === "w" ? "1-0" : "0-1",
+      `${side === "w" ? "White" : "Black"} resigned — ${winner === "w" ? "White" : "Black"} wins.`,
+    );
   }
 
   /** Two humans simply agree. Stockfish looks at the position and only accepts a lost or level one. */
@@ -542,55 +668,185 @@ export function PlayView() {
     return () => window.removeEventListener("keydown", onKey);
   }, [sans, turn, seats, orientation, reviewGame, endDialog]);
 
-  // Every hook has to run before the review early-return: when the review closes,
-  // a shorter hook list than the previous render is exactly what React reports as
-  // "Rendered more hooks than during the previous render".
+  // Every hook has to run before a conditional return; the review now renders as a popup
+  // over Play instead of replacing it, so there is nothing to return early for.
   const quietPlies = useMemo(() => halfmoveClock(viewed.chess), [viewed]);
 
-  if (reviewGame) return <ReviewView game={reviewGame} />;
-
-  const arrow = info?.pvUci[0] ? [{ from: info.pvUci[0].slice(0, 2), to: info.pvUci[0].slice(2, 4) }] : [];
-  const label = endNote || (phase === "idle" ? "Press Start" : phase === "paused" ? "Paused" : thinking ? "Stockfish is thinking" : status.label);
+  const arrow = info?.pvUci[0]
+    ? [{ from: info.pvUci[0].slice(0, 2), to: info.pvUci[0].slice(2, 4) }]
+    : [];
+  const label =
+    endNote || (phase === "paused" ? "Paused" : thinking ? "Stockfish is thinking" : status.label);
   // The draw itself is automatic on the third occurrence, so the warning has to come before it:
   // at two repeats the player can still steer out of it, and it is worth knowing that.
   const repeatWarn = !status.over && phase === "playing" && repeat >= 2 && humans.length > 0;
   // The draw is automatic at 100 quiet plies, so the last ten are worth counting down. The
   // repetition notice wins the line when both are live, because it can arrive first.
-  const clockWarn = !status.over && !repeatWarn && phase === "playing" && humans.length > 0 && quietPlies >= 80;
+  const clockWarn =
+    !status.over && !repeatWarn && phase === "playing" && humans.length > 0 && quietPlies >= 80;
 
-  function panelPref(id: PlayPanelId): PanelPref {
-    return settings.playPanels?.[id] ?? DEFAULT_PREF;
-  }
-  function patchPanel(id: PlayPanelId, patch: Partial<PanelPref>) {
-    const all: Record<PlayPanelId, PanelPref> = {
-      new: panelPref("new"),
-      presets: panelPref("presets"),
-      moves: panelPref("moves"),
-      engine: panelPref("engine"),
-    };
-    all[id] = { ...all[id], ...patch };
-    patchSettings({ playPanels: all });
-  }
-
-  function collapsePanels() {
-    const next: Record<PlayPanelId, PanelPref> = {
-      presets: { ...panelPref("presets"), collapsed: true },
-      new: { ...panelPref("new"), collapsed: true },
-      moves: { ...panelPref("moves"), collapsed: true },
-      engine: { ...panelPref("engine"), collapsed: true },
-    };
-    patchSettings({ playPanels: next });
-  }
-
-  /** On a phone a running game gets the whole page: panels fold away and the board sits centred. */
+  /** On a phone a running game gets the whole page: starting one shuts the panels popup away. */
   function focusBoardOnPhone() {
     if (!window.matchMedia("(max-width: 1279px)").matches) return;
     setPanelsOpen(false);
-    collapsePanels();
-    window.requestAnimationFrame(() => {
-      window.requestAnimationFrame(() => boardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }));
-    });
   }
+
+  const pane = (
+    <div className="flex min-h-0 w-full flex-1 flex-col gap-3">
+      <nav
+        aria-label="Play options"
+        className="flex shrink-0 gap-1 self-start rounded-lg border border-line bg-surface-2 p-1"
+      >
+        {PANE_TABS.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            aria-pressed={paneTab === tab.id}
+            onClick={() => setPaneTab(tab.id)}
+            className={cn(
+              "h-9 shrink-0 rounded-md px-3 text-sm transition",
+              paneTab === tab.id
+                ? "bg-brass text-on-accent"
+                : "text-mist hover:bg-surface hover:text-ivory",
+            )}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </nav>
+      <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto">
+        {paneTab === "presets" && (
+          <div className="grid grid-cols-2 gap-2">
+            <Button onClick={() => begin({ w: "you", b: "stockfish" })}>Play White</Button>
+            <Button variant="quiet" onClick={() => begin({ w: "stockfish", b: "you" })}>
+              Play Black
+            </Button>
+            <Button variant="quiet" onClick={() => begin({ w: "you", b: "you" })}>
+              Two humans
+            </Button>
+            <Button variant="quiet" onClick={() => begin({ w: "stockfish", b: "stockfish" })}>
+              Computer v Computer
+            </Button>
+          </div>
+        )}
+        {paneTab === "new" && (
+          <div className="grid gap-3">
+            <Field label="Time control">
+              <div className="flex flex-wrap gap-2">
+                {TIMES.map((row) => (
+                  <Button
+                    key={row.id}
+                    variant={timeId === row.id ? "primary" : "quiet"}
+                    onClick={() => setTimeId(row.id)}
+                  >
+                    {row.label}
+                  </Button>
+                ))}
+                <Button
+                  variant={timeId === "custom" ? "primary" : "quiet"}
+                  onClick={() => setTimeId("custom")}
+                >
+                  Custom
+                </Button>
+              </div>
+            </Field>
+            {timeId === "custom" && (
+              <div className="grid grid-cols-2 gap-2">
+                <Field label="Minutes">
+                  <TextInput
+                    type="number"
+                    min={1}
+                    max={180}
+                    inputMode="numeric"
+                    value={customMinutes}
+                    onChange={(event) => setCustomMinutes(event.target.value)}
+                  />
+                </Field>
+                <Field label="Increment, seconds">
+                  <TextInput
+                    type="number"
+                    min={0}
+                    max={180}
+                    inputMode="numeric"
+                    value={customSeconds}
+                    onChange={(event) => setCustomSeconds(event.target.value)}
+                  />
+                </Field>
+              </div>
+            )}
+            <Field label="Starting FEN, optional">
+              <TextInput
+                value={fenDraft}
+                placeholder="Standard position if empty"
+                onChange={(event) => setFenDraft(event.target.value)}
+              />
+            </Field>
+            <div className="grid gap-2">
+              {(["w", "b"] as Side[]).map((side) => (
+                <div key={side} className="flex items-center justify-between gap-2">
+                  <span className="text-sm">{side === "w" ? "White" : "Black"}</span>
+                  <div className="flex gap-2">
+                    <Button
+                      variant={seats[side] === "you" ? "primary" : "quiet"}
+                      onClick={() => setSeats({ ...seats, [side]: "you" })}
+                    >
+                      Human
+                    </Button>
+                    <Button
+                      variant={seats[side] === "stockfish" ? "primary" : "quiet"}
+                      onClick={() => setSeats({ ...seats, [side]: "stockfish" })}
+                    >
+                      Computer
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <Button variant="quiet" onClick={() => begin()}>
+              Start
+            </Button>
+          </div>
+        )}
+        {paneTab === "moves" && (
+          <ol className="space-y-1 text-sm">
+            {sans.length === 0 && <li className="text-mist">No moves yet.</li>}
+            {Array.from({ length: Math.ceil(sans.length / 2) }, (_, index) => (
+              <li key={index} className="grid grid-cols-[2rem_1fr_1fr] gap-2">
+                <span className="text-mist tabular-nums">{index + 1}.</span>
+                {[0, 1].map((offset) => {
+                  const san = sans[index * 2 + offset];
+                  if (!san) return <span key={offset} />;
+                  return (
+                    <button
+                      key={offset}
+                      type="button"
+                      className="rounded-md px-2 py-1 text-left hover:bg-surface-2"
+                      onClick={() => {
+                        const next = index * 2 + offset + 1;
+                        setCursor(next >= sans.length ? null : next);
+                      }}
+                    >
+                      {san}
+                    </button>
+                  );
+                })}
+              </li>
+            ))}
+          </ol>
+        )}
+        {paneTab === "analysis" && (
+          <div className="grid gap-3">
+            <EnginePanelBody info={info} enabled={analysis} />
+            <MovesGraph
+              values={graph}
+              active={graphPly}
+              onPly={(ply) => setCursor(ply >= sans.length ? null : ply)}
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
 
   const seatProps = (side: Side): SeatChipProps => ({
     seat: seats[side],
@@ -603,14 +859,14 @@ export function PlayView() {
   const bottomSeat = seatProps(bottomColor);
 
   return (
-    <div className={cn("grid gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]", !panelsOpen && "max-xl:min-h-full max-xl:content-center")}>
-      <div className="flex min-w-0 flex-col items-center gap-3">
+    <div className="flex h-full min-h-0 w-full flex-col gap-2 px-0 py-2 sm:px-4 xl:flex-row xl:gap-4 xl:px-6">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col items-center gap-2">
         {sans.length > 0 && (
           <div
             ref={marqueeRef}
             role="region"
             aria-label="Moves"
-            className="scrollbar-hidden flex w-full max-w-[40rem] gap-1.5 overflow-x-auto rounded-lg border border-line bg-surface px-2 py-1.5 text-xs"
+            className="scrollbar-hidden flex w-full max-w-[40rem] shrink-0 gap-1.5 overflow-x-auto rounded-lg border border-line bg-surface px-2 py-1.5 text-xs"
           >
             {Array.from({ length: Math.ceil(sans.length / 2) }, (_, index) => (
               <span key={index} className="flex shrink-0 items-center gap-1">
@@ -636,85 +892,88 @@ export function PlayView() {
             ))}
           </div>
         )}
-        <p className="w-full max-w-[40rem] text-xs text-ivory">
-          {label}
-          {repeatWarn && (
-            <span className="text-brass" title="The same position has occurred this many times. A third occurrence is an automatic draw.">
-              {" "}
-              Position {repeat}× — one more repeat draws by repetition.
-            </span>
-          )}
-          {clockWarn && (
-            <span className="text-brass" title="No pawn has moved and nothing has been captured for this many plies. At 100 the game is a draw.">
-              {" "}
-              Fifty-move clock {quietPlies}/100 — {100 - quietPlies} {100 - quietPlies === 1 ? "ply" : "plies"} to a draw.
-            </span>
-          )}
-        </p>
-        {over && (endNote || sans.length > 0) && (
-          <div className="flex w-full max-w-[40rem] flex-wrap items-center justify-between gap-2 rounded-lg border border-brass bg-surface px-3 py-2">
-            <p className="text-sm text-ivory">
-              {endNote || status.label}
-              {sans.length > 0 && " Review it with Stockfish to see where the game turned."}
-            </p>
-            {sans.length > 0 && (
-              <Button
-                className="h-9 px-3"
-                onClick={() => {
-                  saveGame(gameSnapshot());
-                  openReview(gameId);
-                }}
+        {(endNote || phase !== "idle") && (
+          <p className="w-full max-w-[40rem] shrink-0 px-2 text-xs text-ivory sm:px-0">
+            {label}
+            {repeatWarn && (
+              <span
+                className="text-brass"
+                title="The same position has occurred this many times. A third occurrence is an automatic draw."
               >
-                Review game
-              </Button>
+                {" "}
+                Position {repeat}× — one more repeat draws by repetition.
+              </span>
             )}
-          </div>
+            {clockWarn && (
+              <span
+                className="text-brass"
+                title="No pawn has moved and nothing has been captured for this many plies. At 100 the game is a draw."
+              >
+                {" "}
+                Fifty-move clock {quietPlies}/100 — {100 - quietPlies}{" "}
+                {100 - quietPlies === 1 ? "ply" : "plies"} to a draw.
+              </span>
+            )}
+          </p>
         )}
-        <div
-          ref={boardRef}
-          className="flex w-full max-w-[40rem] scroll-mt-4 flex-col gap-1 lg:grid lg:grid-cols-[auto_auto_minmax(0,1fr)] lg:gap-y-1"
-        >
-          <SeatBar className="lg:hidden" {...topSeat} />
-          <SeatRail className="col-start-1 row-start-2 mr-2 hidden lg:flex" top={topSeat} bottom={bottomSeat} />
-          {analysis && (
-            <div className="col-start-2 row-start-2 mr-2 hidden lg:flex">
-              <EvalBar info={info} stm={viewed.chess.turn()} flipped={orientation === "black"} />
-            </div>
-          )}
-          <div className="lg:col-start-3 lg:row-start-1">
-            <MaterialRow side={topColor} taken={lost[bottomColor]} takenColor={bottomColor} lead={materialLead(viewed.chess, topColor)} pieceSet={settings.pieceSet ?? "standard"} />
-          </div>
-          <div className="flex min-w-0 items-stretch gap-1.5 lg:col-start-3 lg:row-start-2">
+        {/* Each seat sits with its own side of the board: the top player above, the bottom player below. */}
+        <div className="flex w-full max-w-[40rem] shrink-0 flex-col gap-1 px-2 sm:px-0">
+          <SeatBar {...topSeat} />
+          <MaterialRow
+            side={topColor}
+            taken={lost[bottomColor]}
+            takenColor={bottomColor}
+            lead={materialLead(viewed.chess, topColor)}
+            pieceSet={settings.pieceSet ?? "standard"}
+          />
+        </div>
+        {/* The board is square and fitted: 100cqh when the room is taller than wide, 100cqw otherwise, so it never scrolls the page. */}
+        <div className="flex min-h-0 w-full flex-1 justify-center">
+          <div className="flex min-h-0 w-full max-w-[40rem] items-stretch justify-center gap-1.5">
             {analysis && (
-              <div className="flex lg:hidden">
+              <div className="flex">
                 <EvalBar info={info} stm={viewed.chess.turn()} flipped={orientation === "black"} />
               </div>
             )}
-            <div className="min-w-0 flex-1">
-              <Board
-                fen={viewed.chess.fen()}
-                orientation={orientation}
-                interactive={phase === "playing" && !browsing && !over && !drawPending && humans.length > 0}
-                humanColors={humans}
-                onPremove={queuePremove}
-                coordinates={settings.coordinates}
-                theme={settings.boardTheme}
-                pieceSet={settings.pieceSet ?? "standard"}
-                animate={settings.animations ?? true}
-                lastMove={last ? { from: last.from, to: last.to } : null}
-                premoves={premoves}
-                arrows={analysis || thinking ? arrow : []}
-                onMove={pushMove}
-              />
+            <div className="flex min-h-0 min-w-0 flex-1 items-center justify-center [container-type:size]">
+              <div className="aspect-square w-[min(100cqw,100cqh)]">
+                <Board
+                  fen={viewed.chess.fen()}
+                  orientation={orientation}
+                  interactive={
+                    phase === "playing" && !browsing && !over && !drawPending && humans.length > 0
+                  }
+                  humanColors={humans}
+                  onPremove={queuePremove}
+                  coordinates={settings.coordinates}
+                  theme={settings.boardTheme}
+                  pieceSet={settings.pieceSet ?? "standard"}
+                  animate={settings.animations ?? true}
+                  lastMove={last ? { from: last.from, to: last.to } : null}
+                  premoves={premoves}
+                  arrows={analysis || thinking ? arrow : []}
+                  onMove={pushMove}
+                />
+              </div>
             </div>
           </div>
-          <div className="lg:col-start-3 lg:row-start-3">
-            <MaterialRow side={bottomColor} taken={lost[topColor]} takenColor={topColor} lead={materialLead(viewed.chess, bottomColor)} pieceSet={settings.pieceSet ?? "standard"} />
-          </div>
-          <SeatBar className="lg:hidden" {...bottomSeat} />
         </div>
-        <div className="flex flex-wrap justify-center gap-1 sm:gap-2">
-          <ActionButton icon={FlipVertical2} label="Flip" onClick={() => setOrientation(orientation === "white" ? "black" : "white")} />
+        <div className="flex w-full max-w-[40rem] shrink-0 flex-col gap-1 px-2 sm:px-0">
+          <MaterialRow
+            side={bottomColor}
+            taken={lost[topColor]}
+            takenColor={topColor}
+            lead={materialLead(viewed.chess, bottomColor)}
+            pieceSet={settings.pieceSet ?? "standard"}
+          />
+          <SeatBar {...bottomSeat} />
+        </div>
+        <div className="flex w-full shrink-0 flex-wrap justify-center gap-1 sm:gap-2">
+          <ActionButton
+            icon={FlipVertical2}
+            label="Flip"
+            onClick={() => setOrientation(orientation === "white" ? "black" : "white")}
+          />
           <ActionButton icon={Undo2} label="Undo" onClick={undo} />
           <ActionButton
             icon={phase === "paused" ? Play : Pause}
@@ -722,7 +981,12 @@ export function PlayView() {
             disabled={phase === "idle"}
             onClick={() => setPhase((current) => (current === "playing" ? "paused" : "playing"))}
           />
-          <ActionButton icon={Square} label="Stop" className="hidden sm:inline-flex" onClick={stopGame} />
+          <ActionButton
+            icon={Square}
+            label="Stop"
+            className="hidden sm:inline-flex"
+            onClick={stopGame}
+          />
           <ActionButton
             icon={Flag}
             label="Resign"
@@ -732,12 +996,26 @@ export function PlayView() {
           <ActionButton
             icon={Handshake}
             label={engineSide ? "Offer draw" : "Draw"}
-            title={engineSide ? "Stockfish accepts only if it has no real winning chances." : "Agree a draw with your opponent."}
-            disabled={phase === "idle" || over || humans.length === 0 || drawPending || (engineSide != null && seats[turn] === "stockfish")}
+            title={
+              engineSide
+                ? "Stockfish accepts only if it has no real winning chances."
+                : "Agree a draw with your opponent."
+            }
+            disabled={
+              phase === "idle" ||
+              over ||
+              humans.length === 0 ||
+              drawPending ||
+              (engineSide != null && seats[turn] === "stockfish")
+            }
             onClick={() => setEndDialog("draw")}
           />
-          <ActionButton icon={BarChart3} label={analysis ? "Hide analysis" : "Analyze"} aria-pressed={analysis} onClick={() => setAnalysis((on) => !on)} />
-          <ActionButton icon={Plus} label="New game" onClick={stopGame} />
+          <ActionButton
+            icon={BarChart3}
+            label={analysis ? "Hide analysis" : "Analyze"}
+            aria-pressed={analysis}
+            onClick={() => setAnalysis((on) => !on)}
+          />
           <ActionButton
             icon={PanelRight}
             label={panelsOpen ? "Hide panels" : "Panels"}
@@ -747,10 +1025,13 @@ export function PlayView() {
           />
         </div>
         {premoves.length > 0 ? (
-          <div className="flex w-full max-w-[40rem] flex-wrap items-center gap-1.5 text-xs">
+          <div className="flex w-full max-w-[40rem] shrink-0 flex-wrap items-center gap-1.5 px-2 text-xs sm:px-0">
             <span className="text-mist">Queued:</span>
             {premoves.map((move, index) => (
-              <span key={`${move.from}${move.to}${index}`} className="flex items-center gap-1 rounded-full border border-line bg-surface-2 py-1 pl-2 pr-1">
+              <span
+                key={`${move.from}${move.to}${index}`}
+                className="flex items-center gap-1 rounded-full border border-line bg-surface-2 py-1 pl-2 pr-1"
+              >
                 <span className="tabular-nums text-mist">{index + 1}</span>
                 <span className="text-ivory">{premoveLabel(move)}</span>
                 <button
@@ -763,157 +1044,27 @@ export function PlayView() {
                 </button>
               </span>
             ))}
-            <button type="button" className="rounded-full px-2 py-1 text-mist hover:bg-surface-2 hover:text-ivory" onClick={() => { setPremoves([]); setPremoveNote(""); }}>
+            <button
+              type="button"
+              className="rounded-full px-2 py-1 text-mist hover:bg-surface-2 hover:text-ivory"
+              onClick={() => {
+                setPremoves([]);
+                setPremoveNote("");
+              }}
+            >
               Clear
             </button>
           </div>
         ) : (
-          <p className="hidden text-xs text-mist sm:block">Flip, undo, and the arrow keys also work from the keyboard.</p>
+          <p className="hidden shrink-0 text-xs text-mist sm:block">
+            Flip, undo, and the arrow keys also work from the keyboard.
+          </p>
         )}
-        {premoveNote && <p className="text-xs text-danger">{premoveNote}</p>}
-        {offerNote && <p className="text-xs text-mist">{offerNote}</p>}
-        {engineError && <p className="text-sm text-danger">{engineError}</p>}
+        {premoveNote && <p className="shrink-0 text-xs text-danger">{premoveNote}</p>}
+        {offerNote && <p className="shrink-0 text-xs text-mist">{offerNote}</p>}
+        {engineError && <p className="shrink-0 text-sm text-danger">{engineError}</p>}
       </div>
-      <div className={cn("flex w-full min-w-0 flex-col gap-3", !panelsOpen && "hidden xl:flex")}>
-        <div className="flex flex-wrap items-center gap-1.5 text-xs">
-          {PANELS.map((p) => {
-            const pref = panelPref(p.id);
-            return (
-              <button
-                key={p.id}
-                type="button"
-                aria-pressed={pref.visible}
-                onClick={() => patchPanel(p.id, { visible: !pref.visible })}
-                className={cn(
-                  "rounded-full border px-2.5 py-1 transition",
-                  pref.visible ? "border-brass text-brass" : "border-line text-mist hover:text-ivory",
-                )}
-              >
-                {p.label}
-              </button>
-            );
-          })}
-        </div>
-        {panelPref("presets").visible && (
-          <CollapsiblePanel
-            title="Presets"
-            collapsed={panelPref("presets").collapsed}
-            onToggle={() => patchPanel("presets", { collapsed: !panelPref("presets").collapsed })}
-          >
-            <div className="grid grid-cols-2 gap-2">
-              <Button onClick={() => begin({ w: "you", b: "stockfish" })}>Play White</Button>
-              <Button variant="quiet" onClick={() => begin({ w: "stockfish", b: "you" })}>Play Black</Button>
-              <Button variant="quiet" onClick={() => begin({ w: "you", b: "you" })}>Two humans</Button>
-              <Button variant="quiet" onClick={() => begin({ w: "stockfish", b: "stockfish" })}>Computer v Computer</Button>
-            </div>
-          </CollapsiblePanel>
-        )}
-        {panelPref("new").visible && (
-          <CollapsiblePanel
-            title="New game"
-            collapsed={panelPref("new").collapsed}
-            onToggle={() => patchPanel("new", { collapsed: !panelPref("new").collapsed })}
-          >
-            <div className="grid gap-3">
-              <Field label="Time control">
-                <div className="flex flex-wrap gap-2">
-                  {TIMES.map((row) => (
-                    <Button key={row.id} variant={timeId === row.id ? "primary" : "quiet"} onClick={() => setTimeId(row.id)}>
-                      {row.label}
-                    </Button>
-                  ))}
-                  <Button variant={timeId === "custom" ? "primary" : "quiet"} onClick={() => setTimeId("custom")}>
-                    Custom
-                  </Button>
-                </div>
-              </Field>
-              {timeId === "custom" && (
-                <div className="grid grid-cols-2 gap-2">
-                  <Field label="Minutes">
-                    <TextInput
-                      type="number"
-                      min={1}
-                      max={180}
-                      inputMode="numeric"
-                      value={customMinutes}
-                      onChange={(event) => setCustomMinutes(event.target.value)}
-                    />
-                  </Field>
-                  <Field label="Increment, seconds">
-                    <TextInput
-                      type="number"
-                      min={0}
-                      max={180}
-                      inputMode="numeric"
-                      value={customSeconds}
-                      onChange={(event) => setCustomSeconds(event.target.value)}
-                    />
-                  </Field>
-                </div>
-              )}
-              <Field label="Starting FEN, optional">
-                <TextInput value={fenDraft} placeholder="Standard position if empty" onChange={(event) => setFenDraft(event.target.value)} />
-              </Field>
-              <div className="grid gap-2">
-                {(["w", "b"] as Side[]).map((side) => (
-                  <div key={side} className="flex items-center justify-between gap-2">
-                    <span className="text-sm">{side === "w" ? "White" : "Black"}</span>
-                    <div className="flex gap-2">
-                      <Button variant={seats[side] === "you" ? "primary" : "quiet"} onClick={() => setSeats({ ...seats, [side]: "you" })}>Human</Button>
-                      <Button variant={seats[side] === "stockfish" ? "primary" : "quiet"} onClick={() => setSeats({ ...seats, [side]: "stockfish" })}>Computer</Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <Button variant="quiet" onClick={() => begin()}>Start</Button>
-            </div>
-          </CollapsiblePanel>
-        )}
-        {panelPref("moves").visible && (
-          <CollapsiblePanel
-            title="Moves"
-            collapsed={panelPref("moves").collapsed}
-            onToggle={() => patchPanel("moves", { collapsed: !panelPref("moves").collapsed })}
-            bodyClassName="h-52 overflow-y-auto"
-          >
-            <ol className="space-y-1 text-sm">
-            {sans.length === 0 && <li className="text-mist">No moves yet.</li>}
-            {Array.from({ length: Math.ceil(sans.length / 2) }, (_, index) => (
-              <li key={index} className="grid grid-cols-[2rem_1fr_1fr] gap-2">
-                <span className="text-mist tabular-nums">{index + 1}.</span>
-                {[0, 1].map((offset) => {
-                  const san = sans[index * 2 + offset];
-                  if (!san) return <span key={offset} />;
-                  return (
-                    <button
-                      key={offset}
-                      type="button"
-                      className="rounded-md px-2 py-1 text-left hover:bg-surface-2"
-                      onClick={() => {
-                        const next = index * 2 + offset + 1;
-                        setCursor(next >= sans.length ? null : next);
-                      }}
-                    >
-                      {san}
-                    </button>
-                  );
-                })}
-              </li>
-            ))}
-            </ol>
-          </CollapsiblePanel>
-        )}
-        {panelPref("engine").visible && (
-          <CollapsiblePanel
-            title="Engine"
-            collapsed={panelPref("engine").collapsed}
-            onToggle={() => patchPanel("engine", { collapsed: !panelPref("engine").collapsed })}
-          >
-            <EnginePanelBody info={info} enabled={analysis} />
-            <MovesGraph values={graph} active={graphPly} onPly={(ply) => setCursor(ply >= sans.length ? null : ply)} />
-          </CollapsiblePanel>
-        )}
-      </div>
+      <div className="hidden min-h-0 w-[22rem] shrink-0 rounded-xl border border-line bg-surface p-3 xl:flex">{pane}</div>
       {endDialog && (
         <div
           className="fixed inset-0 z-40 flex items-center justify-center bg-scrim/70 p-4"
@@ -933,13 +1084,24 @@ export function PlayView() {
                 <div className="mt-4 flex flex-wrap justify-center gap-2">
                   {humans.length === 2 ? (
                     <>
-                      <Button variant="danger" onClick={() => resignSide("w")}>White resigns</Button>
-                      <Button variant="danger" onClick={() => resignSide("b")}>Black resigns</Button>
+                      <Button variant="danger" onClick={() => resignSide("w")}>
+                        White resigns
+                      </Button>
+                      <Button variant="danger" onClick={() => resignSide("b")}>
+                        Black resigns
+                      </Button>
                     </>
                   ) : (
-                    <Button variant="danger" onClick={() => resignSide(seats.w === "you" ? "w" : "b")}>Resign</Button>
+                    <Button
+                      variant="danger"
+                      onClick={() => resignSide(seats.w === "you" ? "w" : "b")}
+                    >
+                      Resign
+                    </Button>
                   )}
-                  <Button variant="quiet" onClick={() => setEndDialog(null)}>Keep playing</Button>
+                  <Button variant="quiet" onClick={() => setEndDialog(null)}>
+                    Keep playing
+                  </Button>
                 </div>
               </>
             ) : (
@@ -951,11 +1113,92 @@ export function PlayView() {
                     : "Both sides agree to split the point. The result is saved to your library."}
                 </p>
                 <div className="mt-4 flex flex-wrap justify-center gap-2">
-                  <Button onClick={() => void offerDraw()}>{engineSide ? "Offer draw" : "Agree draw"}</Button>
-                  <Button variant="quiet" onClick={() => setEndDialog(null)}>Keep playing</Button>
+                  <Button onClick={() => void offerDraw()}>
+                    {engineSide ? "Offer draw" : "Agree draw"}
+                  </Button>
+                  <Button variant="quiet" onClick={() => setEndDialog(null)}>
+                    Keep playing
+                  </Button>
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+      {endNotice && !endDialog && !reviewGame && (
+        <div
+          className="fixed inset-0 z-40 flex items-center justify-center bg-scrim/70 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Game over"
+        >
+          <div className="modal-card w-full max-w-md rounded-xl border border-line p-5 text-center">
+            <h2 className="text-xl">{endNote || status.label}</h2>
+            {sans.length > 0 && (
+              <p className="mt-2 text-sm text-mist">
+                Review it with Stockfish to see where the game turned.
+              </p>
+            )}
+            <div className="mt-4 flex flex-wrap justify-center gap-2">
+              {sans.length > 0 && (
+                <Button
+                  onClick={() => {
+                    saveGame(gameSnapshot());
+                    setEndNotice(false);
+                    openReview(gameId);
+                  }}
+                >
+                  Review game
+                </Button>
+              )}
+              <Button variant="quiet" onClick={() => setEndNotice(false)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      {panelsOpen && (
+        <div
+          className="fixed inset-0 z-40 flex items-start justify-center bg-scrim/70 p-2 sm:p-4 xl:hidden"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Play panels"
+        >
+          <div className="modal-card flex h-[calc(100dvh-1rem)] w-full max-w-md flex-col gap-3 overflow-hidden rounded-xl border border-line p-3 sm:h-[calc(100dvh-2rem)] sm:p-4">
+            <div className="flex shrink-0 justify-end">
+              <button
+                type="button"
+                aria-label="Close panels"
+                onClick={() => setPanelsOpen(false)}
+                className="grid h-9 w-9 place-items-center rounded-lg border border-line bg-surface text-mist transition hover:text-ivory"
+              >
+                <X className="h-4 w-4" aria-hidden />
+              </button>
+            </div>
+            <div className="min-h-0 flex-1">{pane}</div>
+          </div>
+        </div>
+      )}
+      {reviewGame && (
+        <div
+          className="fixed inset-0 z-40 flex items-start justify-center bg-scrim/70 p-2 sm:p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Game review"
+        >
+          <div className="modal-card relative flex h-[calc(100dvh-1rem)] w-full max-w-5xl flex-col overflow-hidden rounded-xl border border-line p-3 sm:h-[calc(100dvh-2rem)] sm:p-4">
+            <button
+              type="button"
+              aria-label="Close review"
+              onClick={closeReview}
+              className="absolute right-2 top-2 z-10 grid h-9 w-9 place-items-center rounded-lg border border-line bg-surface text-mist transition hover:text-ivory"
+            >
+              <X className="h-4 w-4" aria-hidden />
+            </button>
+            <div className="min-h-0 flex-1">
+              <ReviewView game={reviewGame} />
+            </div>
           </div>
         </div>
       )}

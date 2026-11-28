@@ -6,7 +6,7 @@ import { useOe } from "./store";
  * the browser chrome follow the theme's own canvas colour instead of a hard-coded hex.
  */
 export function useAppThemeSync() {
-  const theme = useOe((s) => s.settings.appTheme ?? "brass");
+  const theme = useOe((s) => s.settings.appTheme ?? "glass");
   useEffect(() => {
     const root = document.documentElement;
     root.dataset.appTheme = theme;

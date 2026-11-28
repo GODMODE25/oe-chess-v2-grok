@@ -189,13 +189,16 @@ describe("per-side summary", () => {
     assert.ok(mixed.w.forced === 0 || mixed.w.forced === undefined);
   });
 
-  it("reports an engine seat at its set strength and estimates a human against its opponent", () => {
+  it("estimates every seat from its accuracy, the engine included", () => {
     const rows = [row(0), row(0)];
     const vsEngine = summarizeReview(rows, "w", { w: { engine: false, strength: 2000 }, b: { engine: true, strength: 2200 } });
-    assert.equal(vsEngine.b.rating, 2200);
-    assert.equal(vsEngine.b.estimated, false);
+    assert.equal(vsEngine.b.estimated, true);
     assert.equal(vsEngine.w.estimated, true);
     assert.equal(vsEngine.w.rating, 2200 + 400, "100% accuracy against a 2200 engine anchors at +400");
+    assert.equal(vsEngine.b.rating, 2600 + 400, "the engine is read against the human's own estimate");
+    const engineVsWeakHuman = summarizeReview([row(30), row(0)], "w", { w: { engine: false, strength: 2000 }, b: { engine: true, strength: 1600 } });
+    assert.ok(engineVsWeakHuman.b.rating < vsEngine.b.rating, "a weaker field drags the engine's performance down too");
+    assert.notEqual(engineVsWeakHuman.b.rating, 1600, "the set strength is no longer what gets reported");
     const twoHumans = summarizeReview([row(30), row(30)], "w", humanSeats);
     assert.ok(twoHumans.w.rating >= 400 && twoHumans.w.rating <= 3500);
     assert.ok(twoHumans.w.rating < 1500, "a blundering game should estimate below the anchor");

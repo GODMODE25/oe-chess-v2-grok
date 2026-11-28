@@ -32,22 +32,15 @@ export function seatRating(seat: Seat, strength: number | "max") {
   return String(Math.max(1320, Math.min(3190, Math.round(strength))));
 }
 
-/** The face of the player sitting in one seat: the Stockfish logo for the engine, the uploaded avatar for a person. */
-function SeatAvatar({ seat, name, avatar, compact = false }: Pick<SeatChipProps, "seat" | "name" | "avatar"> & { compact?: boolean }) {
+/** The face of the player sitting in one seat: the Stockfish logo for the engine, a custom portrait or the default for a person. */
+function SeatAvatar({ seat, avatar, compact = false }: Pick<SeatChipProps, "seat" | "name" | "avatar"> & { compact?: boolean }) {
   const size = compact
     ? "h-9 w-9 shrink-0 rounded-full border border-line"
     : "h-13.5 w-13.5 shrink-0 rounded-full border border-line";
   if (seat === "stockfish") {
     return <img src={assetUrl("/stockfish-avatar.png")} alt="Stockfish" className={`${size} bg-surface object-cover`} />;
   }
-  if (avatar) {
-    return <img src={avatar} alt="" className={`${size} object-cover`} />;
-  }
-  return (
-    <span className={`grid ${size} place-items-center bg-surface text-base text-mist`} aria-hidden>
-      {(name.trim()[0] ?? "P").toUpperCase()}
-    </span>
-  );
+  return <img src={avatar || assetUrl("/player-avatar.webp")} alt="" className={`${size} bg-surface object-cover`} />;
 }
 
 /**

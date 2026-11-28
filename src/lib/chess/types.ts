@@ -4,14 +4,9 @@ export type Objective = "checkmate" | "promote" | "draw";
 export type LineStatus = "new" | "learning" | "review" | "mastered";
 export type Grade = "fail" | "slow" | "good" | "perfect";
 export type SyncStatus =
-  | "offline"
-  | "signed-out"
-  | "signed-in"
-  | "syncing"
-  | "up-to-date"
-  | "conflict"
-  | "error";
-export type NavId = "play" | "openings" | "endgames" | "library" | "stats" | "about" | "settings";
+  "offline" | "signed-out" | "signed-in" | "syncing" | "up-to-date" | "conflict" | "error";
+export type NavId =
+  "home" | "play" | "openings" | "endgames" | "profile" | "about" | "settings";
 /** `theme` leaves the squares to whichever app theme is selected. */
 export type BoardTheme = "theme" | "walnut" | "ink" | "stone";
 export type PieceSet = "standard" | "merida" | "alpha" | "staunty" | "maestro";
@@ -156,8 +151,9 @@ export type ReviewedMove = {
 export type SideReview = {
   accuracy: number;
   acpl: number;
-  /** The engine's set strength, or a heuristic estimate for a human. */
+  /** A heuristic performance estimate, from this seat's accuracy against the opponent. */
   rating: number;
+  /** False only in older saved reports, where an engine seat echoed its set strength. */
   estimated: boolean;
   counts: Record<MoveGrade, number>;
   /** Moves left out of accuracy and ACPL because only one reply was legal. */
@@ -202,9 +198,6 @@ export type Profile = {
   updatedAt: number;
 };
 
-export type PlayPanelId = "new" | "presets" | "moves" | "engine";
-export type PanelPref = { visible: boolean; collapsed: boolean };
-
 export type Seat = "you" | "stockfish";
 
 /** The choices the app remembers: what the last setup was, which shelf was open, which filters were on. */
@@ -214,6 +207,7 @@ export type Prefs = {
   customSeconds?: string;
   playSeats?: Record<Side, Seat>;
   orientation?: "white" | "black";
+  playPaneTab?: "presets" | "new" | "moves" | "analysis";
   openingsTab?: "shelf" | "explorer";
   tierFilter?: "all" | LineTier;
   family?: string;
@@ -247,7 +241,6 @@ export type Settings = {
   shellArt?: string;
   /** How much of that backdrop shows through the theme's veil, 0–100. */
   shellArtStrength?: number;
-  playPanels?: Partial<Record<PlayPanelId, PanelPref>>;
   prefs?: Prefs;
 };
 

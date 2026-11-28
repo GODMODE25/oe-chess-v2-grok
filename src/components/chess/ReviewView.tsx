@@ -190,12 +190,22 @@ export function ReviewView({ game }: { game: SavedGame }) {
   const topColor: Side = orientation === "white" ? "b" : "w";
   const bottomColor: Side = orientation === "white" ? "w" : "b";
   const nameOf = (color: Side) => (color === "w" ? game.white : game.black);
+  const playedOf = (color: Side) => {
+    const c = summary[color].counts;
+    return c.best + c.good + c.inaccuracy + c.mistake + c.blunder > 0;
+  };
   const seatProps = (color: Side) => ({
     seat: seats[color].engine ? ("stockfish" as const) : ("you" as const),
     name: nameOf(color),
     avatar: !seats[color].engine && nameOf(color) === profile.name ? profile.avatar : undefined,
-    rating: seats[color].engine ? (game.engineElo === "max" ? "Max" : String(seats[color].strength)) : "",
-    detail: moves.length ? `${Math.round(summary[color].accuracy)}%` : undefined,
+    rating: seats[color].engine
+      ? playedOf(color)
+        ? `~${Math.round(summary[color].rating)}`
+        : game.engineElo === "max"
+          ? "Max"
+          : String(seats[color].strength)
+      : "",
+    detail: playedOf(color) ? `${Math.round(summary[color].accuracy)}%` : undefined,
   });
   const arrow = showArrow && nextBest?.bestUci ? [{ from: nextBest.bestUci.slice(0, 2), to: nextBest.bestUci.slice(2, 4) }] : [];
 
@@ -242,10 +252,9 @@ export function ReviewView({ game }: { game: SavedGame }) {
   }
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
-      <div className="flex min-w-0 flex-col items-center gap-3">
-        {/* 41.125rem = Play's 40rem block plus the eval bar, so the board keeps Play's rendered size. */}
-        <div className="flex w-full max-w-[41.125rem] flex-wrap items-end justify-between gap-2">
+    <div className="flex h-full min-h-0 w-full flex-col gap-3 xl:flex-row xl:gap-4">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col items-center gap-2">
+        <div className="flex w-full max-w-[40rem] shrink-0 flex-wrap items-end justify-between gap-2">
           <div className="min-w-0">
             <h2 className="font-display text-xl leading-none">Game review</h2>
             <p className="mt-1 truncate text-xs text-mist">
@@ -263,7 +272,7 @@ export function ReviewView({ game }: { game: SavedGame }) {
             <Button variant="quiet" className="h-9 px-3" onClick={closeReview}>Exit review</Button>
           </div>
         </div>
-        <div className="flex w-full max-w-[41.125rem] flex-wrap items-center gap-2 text-xs">
+        <div className="flex w-full max-w-[40rem] shrink-0 flex-wrap items-center gap-2 text-xs">
           <span className="tabular-nums text-ivory">Move {ply} of {total}</span>
           {current ? <GradeChip grade={current.grade} /> : <span className="text-mist">Starting position</span>}
           {current?.forced && <span className="text-mist" title="Only one legal move existed, so there was nothing to choose.">only legal move</span>}
@@ -274,26 +283,34 @@ export function ReviewView({ game }: { game: SavedGame }) {
           )}
           {ply === total && <Pill tone="brass">{finalStatus.label}</Pill>}
         </div>
-        <div className="flex w-full max-w-[41.125rem] flex-col gap-2 lg:flex-row lg:items-stretch">
-          <SeatColumn top={seatProps(topColor)} bottom={seatProps(bottomColor)} />
-          <div className="flex min-w-0 flex-1 items-stretch gap-2">
+        {/* The board is fixed: it square-fits the room left by the chrome, and only the panel column scrolls. */}
+        <div className="flex min-h-0 w-full max-w-[40rem] flex-1 flex-col gap-2 lg:flex-row lg:items-stretch">
+          {/* On phones the seat row is redundant (names are in the header) and it steals board height. */}
+          <SeatColumn
+            top={seatProps(topColor)}
+            bottom={seatProps(bottomColor)}
+            className="hidden shrink-0 lg:flex"
+          />
+          <div className="flex min-h-0 min-w-0 flex-1 items-stretch gap-2">
             <EvalBar info={evalInfo} stm={turn} flipped={orientation === "black"} />
-            <div className="min-w-0 flex-1">
-              <Board
-                fen={viewed.chess.fen()}
-                orientation={orientation}
-                interactive={false}
-                coordinates={settings.coordinates}
-                theme={settings.boardTheme}
-                pieceSet={settings.pieceSet ?? "standard"}
-                animate={settings.animations ?? true}
-                lastMove={last ? { from: last.from, to: last.to } : null}
-                arrows={arrow}
-              />
+            <div className="flex min-h-0 min-w-0 flex-1 items-center justify-center [container-type:size]">
+              <div className="aspect-square w-[min(100cqw,100cqh)]">
+                <Board
+                  fen={viewed.chess.fen()}
+                  orientation={orientation}
+                  interactive={false}
+                  coordinates={settings.coordinates}
+                  theme={settings.boardTheme}
+                  pieceSet={settings.pieceSet ?? "standard"}
+                  animate={settings.animations ?? true}
+                  lastMove={last ? { from: last.from, to: last.to } : null}
+                  arrows={arrow}
+                />
+              </div>
             </div>
           </div>
         </div>
-        <div className="flex flex-wrap justify-center gap-2">
+        <div className="flex shrink-0 flex-wrap justify-center gap-2">
           <Button variant="quiet" className="h-9 px-3" aria-label="First position" title="First (Home)" onClick={() => step(0)}>⏮</Button>
           <Button variant="quiet" className="h-9 px-3" aria-label="Previous move" title="Previous (←)" onClick={() => step(ply - 1)}>◀</Button>
           <Button variant={autoplay ? "primary" : "quiet"} className="h-9 px-3" aria-label={autoplay ? "Pause autoplay" : "Autoplay"} title="Autoplay (space)" onClick={() => setAutoplay((value) => !value)}>
@@ -309,10 +326,10 @@ export function ReviewView({ game }: { game: SavedGame }) {
             {running ? "Analyzing…" : "Re-analyze"}
           </Button>
         </div>
-        <p className="text-xs text-mist">Arrow keys step, space autoplays, F flips, Escape leaves the review.</p>
-        {error && <p className="text-sm text-danger">{error}</p>}
+        <p className="shrink-0 text-xs text-mist">Arrow keys step, space autoplays, F flips, Escape leaves the review.</p>
+        {error && <p className="shrink-0 text-sm text-danger">{error}</p>}
       </div>
-      <div className="flex w-full min-w-0 flex-col gap-3">
+      <div className="grid max-h-[38%] min-h-0 shrink-0 gap-3 overflow-y-auto xl:max-h-none xl:w-[22rem]">
         <Panel>
           <div className="flex items-center justify-between gap-2">
             <h2 className="text-2xl">Review</h2>
@@ -344,7 +361,7 @@ export function ReviewView({ game }: { game: SavedGame }) {
                   <div className="mt-2 flex items-baseline justify-between gap-2 text-xs text-mist">
                     <span className="tabular-nums" title="Average centipawn loss">ACPL {played ? side.acpl.toFixed(0) : "—"}</span>
                     <span className="tabular-nums text-ivory" title={side.estimated ? "Heuristic estimate from accuracy against the opponent's strength" : "The strength this seat was set to"}>
-                      {side.estimated ? `~${side.rating}` : side.rating}
+                      {played ? (side.estimated ? `~${side.rating}` : side.rating) : "—"}
                     </span>
                   </div>
                   <div className="mt-2 flex flex-wrap gap-x-2 gap-y-1">

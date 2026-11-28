@@ -84,6 +84,8 @@ export function EndgamesView() {
   const saveEndgame = useOe((s) => s.saveEndgame);
   const noteSuccess = useOe((s) => s.noteSuccess);
   const positions = useMemo(() => allEndgames(custom), [custom]);
+  const drill = useOe((s) => s.drill);
+  const clearDrill = useOe((s) => s.clearDrill);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [draftFen, setDraftFen] = useState("");
   const [draftTitle, setDraftTitle] = useState("");
@@ -108,6 +110,13 @@ export function EndgamesView() {
     }
     return map;
   }, [attempts]);
+
+  // The dashboard can ask for one exact drill; open it, then drop the request.
+  useEffect(() => {
+    if (!drill || drill.kind !== "endgame") return;
+    if (positions.some((pos) => pos.id === drill.id)) setActiveId(drill.id);
+    clearDrill();
+  }, [drill, positions, clearDrill]);
 
   // One pass per group: how many positions it holds and how many are already banked.
   const groups = useMemo(() => {
@@ -335,6 +344,7 @@ function Trainer({ pos, onExit, onNext, onSave }: { pos: EndgamePos; onExit: () 
   const turn = played.chess.turn();
   const engineTurn = !settled && judgement.state === "playing" && seats[turn] === "stockfish";
   const humans = (["w", "b"] as Side[]).filter((side) => seats[side] === "you");
+  const hasHuman = humans.length > 0;
   const flipped = seats.b === "you" && seats.w !== "you";
   const topColor: Side = flipped ? "w" : "b";
   const engineStrength = settings.endgameMaximum ? "max" : settings.playStrength;
@@ -356,8 +366,9 @@ function Trainer({ pos, onExit, onNext, onSave }: { pos: EndgamePos; onExit: () 
     if (judgement.state === "playing" || saved.current) return;
     saved.current = true;
     setSettled(true);
-    setNote(judgement.reason);
+    setNote(hasHuman ? judgement.reason : "Computer v computer — this result does not count toward endgame progress.");
     playTone(judgement.state === "solved" ? "done" : "fail");
+    if (!hasHuman) return;
     onSave({
       id: attemptId,
       endgameId: pos.id,
@@ -369,7 +380,7 @@ function Trainer({ pos, onExit, onNext, onSave }: { pos: EndgamePos; onExit: () 
       timeMs: Date.now() - started,
       updatedAt: Date.now(),
     });
-  }, [judgement.state, judgement.reason, judgement.userMoves, settled, attemptId, hints, onSave, pos.id, started]);
+  }, [judgement.state, judgement.reason, judgement.userMoves, hasHuman, settled, attemptId, hints, onSave, pos.id, started]);
 
   useEffect(() => {
     tries.current = 0;
@@ -512,6 +523,14 @@ function Trainer({ pos, onExit, onNext, onSave }: { pos: EndgamePos; onExit: () 
     setStarted(Date.now());
   }
 
+  const resultTitle = !hasHuman
+    ? "Computer v computer"
+    : judgement.state === "solved"
+      ? "Solved"
+      : judgement.reason.includes("Move budget")
+        ? "Move budget exhausted. Try again?"
+        : "Not this time";
+
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]" data-fen={played.chess.fen()}>
       <div className="flex flex-col items-center gap-3">
@@ -526,7 +545,7 @@ function Trainer({ pos, onExit, onNext, onSave }: { pos: EndgamePos; onExit: () 
               <Board
                 fen={played.chess.fen()}
                 orientation={flipped ? "black" : "white"}
-                interactive={!settled && humans.length > 0}
+                interactive={!settled && hasHuman}
                 humanColors={humans}
                 onPremove={queuePremove}
                 coordinates={settings.coordinates}
@@ -581,7 +600,7 @@ function Trainer({ pos, onExit, onNext, onSave }: { pos: EndgamePos; onExit: () 
         {settled && (
           <div className="fixed inset-0 z-40 grid place-items-center bg-scrim/70 p-4">
             <Panel className="w-full max-w-md text-center">
-              <h2 className="text-2xl">{judgement.state === "solved" ? "Solved" : judgement.reason.includes("Move budget") ? "Move budget exhausted. Try again?" : "Not this time"}</h2>
+              <h2 className="text-2xl">{resultTitle}</h2>
               <p className="mt-2 text-sm text-mist">{note}</p>
               <div className="mt-4 flex flex-wrap justify-center gap-2">
                 <Button onClick={onNext}>Next position</Button>
@@ -611,6 +630,7 @@ function Trainer({ pos, onExit, onNext, onSave }: { pos: EndgamePos; onExit: () 
             </div>
           ))}
         </div>
+        {!hasHuman && <p className="mt-3 text-xs text-mist">Computer v computer is for analysis and never banks a solve.</p>}
         {pos.mateIn != null && <p className="mt-2 text-sm">Mate in {pos.mateIn}.</p>}
         <p className="mt-3 text-sm">Moves {judgement.userMoves}{pos.maxMoves ? ` / ${pos.maxMoves}` : ""}{pos.holdMoves ? ` · hold ${pos.holdMoves}` : ""}</p>
         {pos.solution.length > 0 && <p className="mt-3 text-sm">Solution: {pos.solution.join(" ")}</p>}

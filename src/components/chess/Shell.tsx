@@ -7,19 +7,19 @@ import { useOe } from "@/lib/chess/store";
 import type { NavId, SyncStatus } from "@/lib/chess/types";
 import { AboutView } from "./AboutView";
 import { EndgamesView } from "./EndgamesView";
-import { LibraryView } from "./LibraryView";
+import { LandingView } from "./LandingView";
 import { OpeningsView } from "./OpeningsView";
 import { PlayView } from "./PlayView";
+import { ProfileView } from "./ProfileView";
 import { SettingsView } from "./SettingsView";
-import { StatsView } from "./StatsView";
 import { cn } from "./ui";
 
 const NAV: { id: NavId; label: string }[] = [
+  { id: "home", label: "Home" },
   { id: "play", label: "Play" },
   { id: "openings", label: "Openings" },
   { id: "endgames", label: "Endgames" },
-  { id: "library", label: "Library" },
-  { id: "stats", label: "Stats" },
+  { id: "profile", label: "Profile" },
   { id: "about", label: "About" },
   { id: "settings", label: "Settings" },
 ];
@@ -87,7 +87,13 @@ export function Shell() {
   useEffect(() => {
     function onLine() {
       const state = useOe.getState();
-      useOe.setState({ sync: { ...state.sync, status: navigator.onLine ? (state.cloudUid ? "signed-in" : "signed-out") : "offline", updatedAt: Date.now() } });
+      useOe.setState({
+        sync: {
+          ...state.sync,
+          status: navigator.onLine ? (state.cloudUid ? "signed-in" : "signed-out") : "offline",
+          updatedAt: Date.now(),
+        },
+      });
     }
     window.addEventListener("online", onLine);
     window.addEventListener("offline", onLine);
@@ -112,20 +118,28 @@ export function Shell() {
       }
     >
       <aside className="hidden w-56 shrink-0 flex-col border-r border-line px-4 py-6 md:flex">
-        <div className="mb-8 flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => setNav("home")}
+          aria-label="OE Chess home"
+          className="mb-8 flex items-center gap-3 rounded-lg text-left"
+        >
           <img src={assetUrl("/logo-piece.svg")} alt="" className="h-12 w-12" />
-          <div>
-            <p className="font-display text-xl leading-none">OE Chess</p>
-            <p className="text-xs text-mist">Openings and Endgames</p>
-          </div>
-        </div>
+          <span className="flex flex-col gap-1">
+            <span className="font-display text-xl leading-none">OE Chess</span>
+            <span className="text-xs text-mist">Openings and Endgames</span>
+          </span>
+        </button>
         <nav className="flex flex-col gap-1">
           {NAV.map((item) => (
             <button
               key={item.id}
               type="button"
               onClick={() => setNav(item.id)}
-              className={cn("h-11 rounded-lg px-3 text-left text-sm", nav === item.id ? "bg-brass text-on-accent" : "text-ivory hover:bg-surface-2")}
+              className={cn(
+                "h-11 rounded-lg px-3 text-left text-sm",
+                nav === item.id ? "bg-brass text-on-accent" : "text-ivory hover:bg-surface-2",
+              )}
             >
               {item.label}
             </button>
@@ -138,10 +152,15 @@ export function Shell() {
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="relative z-30 flex shrink-0 items-center justify-between gap-3 border-b border-line bg-canvas px-4 py-2 md:hidden">
-          <div className="relative z-20 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setNav("home")}
+            aria-label="OE Chess home"
+            className="relative z-20 flex items-center gap-2 rounded-lg text-left"
+          >
             <img src={assetUrl("/logo-piece.svg")} alt="" className="h-9 w-9" />
-            <p className="font-display text-xl leading-none">OE Chess</p>
-          </div>
+            <span className="font-display text-xl leading-none">OE Chess</span>
+          </button>
           <button
             type="button"
             aria-label={menuOpen ? "Close menu" : "Open menu"}
@@ -150,7 +169,11 @@ export function Shell() {
             onClick={() => setMenuOpen((open) => !open)}
             className="relative z-20 grid h-10 w-10 place-items-center rounded-lg border border-line bg-surface-2 text-ivory hover:border-brass"
           >
-            {menuOpen ? <X className="h-5 w-5" aria-hidden /> : <Menu className="h-5 w-5" aria-hidden />}
+            {menuOpen ? (
+              <X className="h-5 w-5" aria-hidden />
+            ) : (
+              <Menu className="h-5 w-5" aria-hidden />
+            )}
           </button>
           {menuOpen && (
             <>
@@ -189,13 +212,20 @@ export function Shell() {
         {/* `relative` matters: an `sr-only` file input is absolutely positioned, and
             without a positioned ancestor it anchors to the document, where the shell's
             overflow cannot clip it — the window then grows a second scrollbar. */}
-        <main className={cn("relative min-h-0 flex-1 overflow-y-auto px-4 py-5 md:px-6", nav === "openings" && "scrollbar-hidden")}>
+        <main
+          className={cn(
+            "relative min-h-0 flex-1 overflow-y-auto px-4 py-5 md:px-6",
+            nav === "openings" && "scrollbar-hidden",
+            // Play owns its full-height layout: the board is fixed and the page never scrolls.
+            nav === "play" && "overflow-hidden p-0 md:p-0",
+          )}
+        >
           {bootError && <p className="mb-4 text-sm text-danger">{bootError}</p>}
+          {nav === "home" && <LandingView />}
           {nav === "play" && <PlayView />}
           {nav === "openings" && <OpeningsView />}
           {nav === "endgames" && <EndgamesView />}
-          {nav === "library" && <LibraryView />}
-          {nav === "stats" && <StatsView />}
+          {nav === "profile" && <ProfileView />}
           {nav === "about" && <AboutView />}
           {nav === "settings" && <SettingsView />}
         </main>

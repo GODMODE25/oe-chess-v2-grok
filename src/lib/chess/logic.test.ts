@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 import { Chess } from "chess.js";
 import { judgeEndgame } from "./endgame-result.ts";
 import { dequeuePremove, dropAnsweredPremove, enqueuePremove, premoveLabel, premoveProjection, premoveSan, premoveTargets, type QueuedMove } from "./premove.ts";
-import { advantageSeries, capturedPieces, halfmoveClock, matchOpening, materialBalance, materialLead, parsePgn, replay, repetitionCount, START_FEN, statusOf } from "./rules.ts";
+import { advantageSeries, canDeliverMate, capturedPieces, halfmoveClock, isDeadPosition, matchOpening, materialBalance, materialLead, parsePgn, replay, repetitionCount, START_FEN, statusOf, timeoutResult } from "./rules.ts";
 import { OPENINGS } from "../data/openings.ts";
 import { REPLAY_TARGET, applyGrade, blankReview, gradeFromDrill, nextStreak } from "./srs.ts";
 import { mergeEnvelopes } from "./sync-merge.ts";
@@ -40,6 +40,39 @@ describe("chess rules", () => {
     assert.equal(parsed.ok, true);
     assert.deepEqual(parsed.sans, ["e4", "e5"]);
     assert.equal(parsed.comments[0]?.comment, "King pawn");
+  });
+});
+
+describe("dead positions", () => {
+  it("grades each side's mating chances by material", () => {
+    assert.equal(canDeliverMate(new Chess("8/8/8/8/8/6n1/8/K1k5 w - - 0 1"), "b"), false, "a lone knight cannot mate");
+    assert.equal(canDeliverMate(new Chess("8/8/8/8/8/6n1/6n1/K5k1 w - - 0 1"), "b"), false, "two knights cannot force mate either");
+    assert.equal(canDeliverMate(new Chess("8/8/8/8/8/7b/8/K5k1 w - - 0 1"), "b"), false, "one bishop cannot mate");
+    assert.equal(canDeliverMate(new Chess("8/8/8/8/8/8/5b1b/K5k1 w - - 0 1"), "b"), false, "two same-colour bishops cannot mate");
+    assert.equal(canDeliverMate(new Chess("8/8/8/8/8/7b/5b2/K5k1 w - - 0 1"), "b"), true, "bishops on both complexes can");
+    assert.equal(canDeliverMate(new Chess("8/8/8/8/8/7b/6n1/K5k1 w - - 0 1"), "b"), true, "a bishop with a knight can");
+    assert.equal(canDeliverMate(new Chess("8/8/8/8/8/6p1/8/K5k1 w - - 0 1"), "b"), true, "a pawn can always promote its way to mate");
+    assert.equal(canDeliverMate(new Chess("8/8/8/8/8/8/1k6/3KR3 w - - 0 1"), "w"), true, "a rook can mate");
+  });
+
+  it("closes the game the moment neither side can checkmate", () => {
+    const knights = new Chess("8/8/8/8/6n1/6N1/8/K6k w - - 0 1");
+    assert.equal(isDeadPosition(knights), true, "knight versus knight is dead");
+    assert.equal(statusOf(knights).result, "1/2-1/2");
+    assert.equal(statusOf(knights).label, "Draw — neither side can checkmate.");
+    const twoKnights = new Chess("8/8/8/8/8/8/6n1/4K2k w - - 0 1");
+    assert.equal(statusOf(twoKnights).result, "1/2-1/2", "two knights against a bare king still cannot mate");
+    const oppositeBishops = new Chess("8/8/8/8/8/7b/5b2/K5k1 w - - 0 1");
+    assert.equal(isDeadPosition(oppositeBishops), false, "the bishop pair keeps playing for the mate");
+    const pawn = new Chess("8/8/8/8/8/6p1/8/K5k1 w - - 0 1");
+    assert.equal(statusOf(pawn).over, false, "a pawn on the board means the game is alive");
+  });
+
+  it("draws a flag fall when the survivor has no mate", () => {
+    const dead = new Chess("8/8/8/8/6n1/6N1/8/K6k b - - 0 1");
+    assert.equal(timeoutResult(dead, "b").result, "1/2-1/2", "a knight cannot win on the clock");
+    const alive = new Chess("8/8/8/8/8/8/1k6/3KR3 b - - 0 1");
+    assert.equal(timeoutResult(alive, "b").result, "1-0", "the rook still collects the point");
   });
 });
 

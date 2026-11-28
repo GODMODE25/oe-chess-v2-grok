@@ -27,6 +27,8 @@ export function OpeningsView() {
   const setCarousel = useOe((s) => s.setCarousel);
   const custom = useOe((s) => s.openings);
   const book = useMemo(() => allOpenings(custom), [custom]);
+  const drill = useOe((s) => s.drill);
+  const clearDrill = useOe((s) => s.clearDrill);
   // The catalog holds a few same-named twins at different depths; keep the first, which is what each course drills.
   const bookOnly = useMemo(() => {
     const named = new Set<string>();
@@ -101,6 +103,32 @@ export function OpeningsView() {
     setCourseId(null);
     setLineId(row.id);
   }
+
+  // The dashboard can ask for one exact line; open it, then drop the request.
+  useEffect(() => {
+    if (!drill || drill.kind !== "opening") return;
+    const row = book.find((line) => line.id === drill.lineId);
+    if (row) {
+      const owner = COURSES.find((course) => variationsFor(course).some((line) => line.id === row.id));
+      if (owner) {
+        setCourseId(owner.id);
+        setGhost(null);
+      } else {
+        setGhost({
+          id: `solo-${row.id}`,
+          name: row.name,
+          side: drill.side,
+          tier: "s",
+          blurb: row.note,
+          variationNames: [row.name],
+        });
+        setCourseId(null);
+      }
+      setLineId(row.id);
+      setTab("shelf");
+    }
+    clearDrill();
+  }, [drill, book, clearDrill]);
 
   if (line && activeCourse) {
     const rows = variationsFor(activeCourse);

@@ -67,7 +67,7 @@ export function defaultSettings(now = Date.now()): Settings {
     coordinates: true,
     sound: true,
     boardTheme: "theme",
-    appTheme: "brass",
+    appTheme: "glass",
     playStrength: 2000,
     endgameMaximum: true,
     playThinkMs: 900,
@@ -129,8 +129,12 @@ export type OeState = {
   cloudUid: string;
   cloudEmail: string;
   launch: { startFen: string; sans: string[]; player: Side } | null;
+  /** A request from the dashboard to open one exact line or drill. */
+  drill: { kind: "opening"; lineId: string; side: Side } | { kind: "endgame"; id: string } | null;
   setNav: (nav: NavId) => void;
   setLaunch: (launch: { startFen: string; sans: string[]; player: Side } | null) => void;
+  startDrill: (drill: OeState["drill"]) => void;
+  clearDrill: () => void;
   reviewGameId: string | null;
   openReview: (id: string) => void;
   closeReview: () => void;
@@ -267,7 +271,7 @@ const now = Date.now();
 export const useOe = create<OeState>((set, get) => ({
   booted: false,
   bootError: "",
-  nav: "play",
+  nav: "home",
   profile: defaultProfile(now),
   settings: defaultSettings(now),
   games: [],
@@ -283,8 +287,12 @@ export const useOe = create<OeState>((set, get) => ({
   cloudUid: "",
   cloudEmail: "",
   launch: null,
+  drill: null,
   setNav: (nav) => set({ nav }),
   setLaunch: (launch) => set({ launch, nav: launch ? "play" : get().nav }),
+  startDrill: (drill) =>
+    set({ drill, nav: drill ? (drill.kind === "opening" ? "openings" : "endgames") : get().nav }),
+  clearDrill: () => set({ drill: null }),
   reviewGameId: null,
   openReview: (id) => set({ reviewGameId: id, nav: "play" }),
   closeReview: () => set({ reviewGameId: null }),
@@ -660,7 +668,7 @@ export function bootStore(): Promise<void> {
             ...loaded,
             // Old snapshots can still name sets that no longer ship.
             pieceSet: loaded.pieceSet && loaded.pieceSet in PIECE_SET_LABELS ? loaded.pieceSet : "standard",
-            appTheme: loaded.appTheme && loaded.appTheme in APP_THEME_LABELS ? loaded.appTheme : "brass",
+            appTheme: loaded.appTheme && loaded.appTheme in APP_THEME_LABELS ? loaded.appTheme : "glass",
             shellArt: typeof loaded.shellArt === "string" && loaded.shellArt.startsWith("data:image/") ? loaded.shellArt : undefined,
             shellArtStrength: typeof loaded.shellArtStrength === "number" ? Math.max(0, Math.min(100, Math.round(loaded.shellArtStrength))) : 38,
           },

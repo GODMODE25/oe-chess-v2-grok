@@ -4,15 +4,25 @@ import { useOe } from "@/lib/chess/store";
 import { importOpeningsFromPgn } from "./OpeningsView";
 import { Button, Panel } from "./ui";
 
+const PAGE_SIZE = 10;
+
 export function LibraryView() {
   const allGames = useOe((s) => s.games);
-  const games = useMemo(() => allGames.filter((game) => !game.deleted), [allGames]);
+  const games = useMemo(
+    () => allGames.filter((game) => !game.deleted).sort((a, b) => b.updatedAt - a.updatedAt),
+    [allGames],
+  );
   const finished = games.filter((game) => game.finished).length;
   const saveGame = useOe((s) => s.saveGame);
   const deleteGame = useOe((s) => s.deleteGame);
   const setLaunch = useOe((s) => s.setLaunch);
   const openReview = useOe((s) => s.openReview);
   const [message, setMessage] = useState("");
+  const [page, setPage] = useState(0);
+  const pageCount = Math.ceil(games.length / PAGE_SIZE);
+  const currentPage = Math.min(page, Math.max(0, pageCount - 1));
+  const start = currentPage * PAGE_SIZE;
+  const visibleGames = games.slice(start, start + PAGE_SIZE);
 
   async function onFile(file: File, asOpening: boolean) {
     const text = await file.text();
@@ -41,63 +51,127 @@ export function LibraryView() {
       });
       count += 1;
     }
-    setMessage(count ? `Imported ${count} game${count === 1 ? "" : "s"}.` : "No games found in that file.");
+    setMessage(
+      count ? `Imported ${count} game${count === 1 ? "" : "s"}.` : "No games found in that file.",
+    );
+    setPage(0);
   }
 
   return (
     <div className="grid gap-4">
       <Panel>
-        <h2 className="text-2xl">Library</h2>
+        <h2 className="text-2xl">Game history</h2>
         {games.length > 0 && (
           <p className="mt-1 text-sm tabular-nums">
             {games.length} game{games.length === 1 ? "" : "s"} played · {finished} finished
           </p>
         )}
-        <p className="mt-1 text-sm text-mist">Saved games stay on this device. Import a PGN as games or as repertoire lines.</p>
+        <p className="mt-1 text-sm text-mist">
+          Saved games stay on this device. Import a PGN as games or as repertoire lines.
+        </p>
         <div className="mt-3 flex flex-wrap gap-2">
           <label className="inline-flex h-11 cursor-pointer items-center rounded-lg border border-line bg-surface-2 px-4 text-sm">
             Import games
-            <input className="sr-only" type="file" accept=".pgn,text/plain" onChange={(event) => {
-              const file = event.target.files?.[0];
-              if (file) void onFile(file, false);
-            }} />
+            <input
+              className="sr-only"
+              type="file"
+              accept=".pgn,text/plain"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) void onFile(file, false);
+              }}
+            />
           </label>
           <label className="inline-flex h-11 cursor-pointer items-center rounded-lg border border-line bg-surface-2 px-4 text-sm">
             Import as openings
-            <input className="sr-only" type="file" accept=".pgn,text/plain" onChange={(event) => {
-              const file = event.target.files?.[0];
-              if (file) void onFile(file, true);
-            }} />
+            <input
+              className="sr-only"
+              type="file"
+              accept=".pgn,text/plain"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) void onFile(file, true);
+              }}
+            />
           </label>
         </div>
         {message && <p className="mt-3 text-sm text-brass-2">{message}</p>}
       </Panel>
       <div className="grid gap-2">
-        {games.length === 0 && <Panel><p className="text-mist">No saved games yet. A casual game is stored as you play.</p></Panel>}
-        {games
-          .slice()
-          .sort((a, b) => b.updatedAt - a.updatedAt)
-          .map((game) => (
-            <Panel key={game.id} className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h3 className="text-lg">{game.white} – {game.black}</h3>
-                <p className="text-sm text-mist">
-                  {game.result} · {game.sans.length} plies · {game.timeControl} · {game.finished ? "finished" : "unfinished"}
-                  {game.review && (
-                    <span className="text-brass"> · reviewed {Math.round(game.review.w.accuracy)}% / {Math.round(game.review.b.accuracy)}%</span>
-                  )}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="quiet" onClick={() => setLaunch({ startFen: game.startFen, sans: game.sans, player: game.playerColor === "b" ? "b" : "w" })}>Resume</Button>
-                {game.finished && game.sans.length > 0 && (
-                  <Button variant="quiet" onClick={() => openReview(game.id)}>Review</Button>
+        {games.length === 0 && (
+          <Panel>
+            <p className="text-mist">No saved games yet. A casual game is stored as you play.</p>
+          </Panel>
+        )}
+        {visibleGames.map((game) => (
+          <Panel key={game.id} className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-lg">
+                {game.white} – {game.black}
+              </h3>
+              <p className="text-sm text-mist">
+                {game.result} · {game.sans.length} plies · {game.timeControl} ·{" "}
+                {game.finished ? "finished" : "unfinished"}
+                {game.review && (
+                  <span className="text-brass">
+                    {" "}
+                    · reviewed {Math.round(game.review.w.accuracy)}% /{" "}
+                    {Math.round(game.review.b.accuracy)}%
+                  </span>
                 )}
-                <Button variant="ghost" onClick={() => deleteGame(game.id)}>Delete</Button>
-              </div>
-            </Panel>
-          ))}
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="quiet"
+                onClick={() =>
+                  setLaunch({
+                    startFen: game.startFen,
+                    sans: game.sans,
+                    player: game.playerColor === "b" ? "b" : "w",
+                  })
+                }
+              >
+                Resume
+              </Button>
+              {game.finished && game.sans.length > 0 && (
+                <Button variant="quiet" onClick={() => openReview(game.id)}>
+                  Review
+                </Button>
+              )}
+              <Button variant="ghost" onClick={() => deleteGame(game.id)}>
+                Delete
+              </Button>
+            </div>
+          </Panel>
+        ))}
       </div>
+      {pageCount > 1 && (
+        <nav aria-label="Game pages" className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm tabular-nums text-mist" aria-live="polite">
+            Showing {start + 1}–{Math.min(start + PAGE_SIZE, games.length)} of {games.length}
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="quiet"
+              disabled={currentPage === 0}
+              onClick={() => setPage(currentPage - 1)}
+            >
+              Previous
+            </Button>
+            <span className="text-sm tabular-nums text-mist">
+              Page {currentPage + 1} of {pageCount}
+            </span>
+            <Button
+              variant="quiet"
+              disabled={currentPage === pageCount - 1}
+              onClick={() => setPage(currentPage + 1)}
+            >
+              Next
+            </Button>
+          </div>
+        </nav>
+      )}
     </div>
   );
 }

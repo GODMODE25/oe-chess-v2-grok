@@ -135,6 +135,55 @@ export function repetitionCount(startFen: string, sans: string[]): number {
   return seen.get(key) ?? 1;
 }
 
+/**
+ * Whether one side could ever deliver checkmate, the way the big play sites grade
+ * material: a pawn, rook or queen always can; knights alone never can; bishops that
+ * only ever cover one colour complex never can; a bishop with a knight, or bishops
+ * on both colour complexes, can.
+ */
+export function canDeliverMate(chess: Chess, side: Side): boolean {
+  let knights = 0;
+  let darkBishops = 0;
+  let lightBishops = 0;
+  for (const row of chess.board()) {
+    for (const piece of row) {
+      if (!piece || piece.color !== side) continue;
+      if (piece.type === "p" || piece.type === "r" || piece.type === "q") return true;
+      if (piece.type === "n") knights += 1;
+      if (piece.type === "b") {
+        const file = piece.square.charCodeAt(0) - 97;
+        const rank = Number(piece.square[1]) - 1;
+        if ((file + rank) % 2 === 0) darkBishops += 1;
+        else lightBishops += 1;
+      }
+    }
+  }
+  if (knights > 0 && darkBishops + lightBishops > 0) return true;
+  return darkBishops > 0 && lightBishops > 0;
+}
+
+/** Neither side has any way to checkmate: the position is dead and the game ends on its own. */
+export function isDeadPosition(chess: Chess): boolean {
+  return !canDeliverMate(chess, "w") && !canDeliverMate(chess, "b");
+}
+
+/** Flagging only wins when the opponent could still be mated by… wait, by the other side. */
+export function timeoutResult(chess: Chess, flagged: Side): { result: string; label: string } {
+  const winner: Side = flagged === "w" ? "b" : "w";
+  const loser = flagged === "w" ? "White" : "Black";
+  const victor = winner === "w" ? "White" : "Black";
+  if (canDeliverMate(chess, winner)) {
+    return {
+      result: winner === "w" ? "1-0" : "0-1",
+      label: `${loser} ran out of time — ${victor} wins.`,
+    };
+  }
+  return {
+    result: "1/2-1/2",
+    label: `${loser} ran out of time, but ${victor} has no mate — draw.`,
+  };
+}
+
 export function statusOf(chess: Chess): { over: boolean; result: string; label: string } {  if (chess.isCheckmate()) {
     const winner = chess.turn() === "w" ? "b" : "w";
     return {
@@ -146,6 +195,9 @@ export function statusOf(chess: Chess): { over: boolean; result: string; label: 
   if (chess.isStalemate()) return { over: true, result: "1/2-1/2", label: "Stalemate. Draw." };
   if (chess.isInsufficientMaterial()) {
     return { over: true, result: "1/2-1/2", label: "Draw by insufficient material." };
+  }
+  if (isDeadPosition(chess)) {
+    return { over: true, result: "1/2-1/2", label: "Draw — neither side can checkmate." };
   }
   if (chess.isThreefoldRepetition()) {
     return { over: true, result: "1/2-1/2", label: "Draw by threefold repetition." };

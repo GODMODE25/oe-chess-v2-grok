@@ -85,11 +85,15 @@ export function seatsOf(game: Pick<SavedGame, "playerColor" | "engineElo">): Rec
 /**
  * The estimate is a heuristic, not an official Elo: accuracy is read against the
  * opponent's strength the way a performance rating reads a score against a field.
+ * Every seat is estimated this way — the engine included, so a capped engine is
+ * graded on the game it actually played, not on the level it was set to. A human
+ * anchors at the engine's set strength; the engine anchors at the human's estimate,
+ * which keeps the two ratings inside one coherent range.
  * Forced moves are skipped the way Lichess skips them — with one legal reply there is
  * no choice to be wrong about, and counting it would only inflate the average.
  */
 export function summarizeReview(moves: ReviewedMove[], startTurn: Side, seats: Record<Side, ReviewSeat>): { w: SideReview; b: SideReview } {
-  const side = (s: Side): SideReview => {
+  const metrics = (s: Side) => {
     const rows = moves.filter((_, index) => ownerOf(index, startTurn) === s);
     const counts: Record<MoveGrade, number> = { best: 0, good: 0, inaccuracy: 0, mistake: 0, blunder: 0 };
     for (const row of rows) counts[row.grade] += 1;
@@ -97,13 +101,20 @@ export function summarizeReview(moves: ReviewedMove[], startTurn: Side, seats: R
     const basis = scored.length ? scored : rows;
     const accuracy = basis.length ? basis.reduce((sum, row) => sum + moveAccuracy(row.lossWin), 0) / basis.length : 0;
     const acpl = basis.length ? basis.reduce((sum, row) => sum + row.loss, 0) / basis.length : 0;
-    const other = seats[s === "w" ? "b" : "w"];
-    const anchor = other.engine ? other.strength : HUMAN_ANCHOR;
-    const rating = seats[s].engine
-      ? seats[s].strength
-      : Math.max(400, Math.min(3500, Math.round(anchor + (accuracy - 50) * 8)));
-    return { accuracy, acpl, rating, estimated: !seats[s].engine, counts, forced: rows.length - scored.length };
+    return { accuracy, acpl, counts, forced: rows.length - scored.length };
   };
+  const w = metrics("w");
+  const b = metrics("b");
+  const estimate = (accuracy: number, anchor: number) => Math.max(400, Math.min(3500, Math.round(anchor + (accuracy - 50) * 8)));
+  const ratingOf = (s: Side): number => {
+    const other: Side = s === "w" ? "b" : "w";
+    const own = s === "w" ? w : b;
+    const otherMetrics = other === "w" ? w : b;
+    if (!seats[s].engine) return estimate(own.accuracy, seats[other].engine ? seats[other].strength : HUMAN_ANCHOR);
+    if (seats[other].engine) return estimate(own.accuracy, seats[other].strength);
+    return estimate(own.accuracy, estimate(otherMetrics.accuracy, seats[s].strength));
+  };
+  const side = (s: Side): SideReview => ({ ...(s === "w" ? w : b), rating: ratingOf(s), estimated: true });
   return { w: side("w"), b: side("b") };
 }
 

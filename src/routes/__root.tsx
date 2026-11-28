@@ -10,7 +10,7 @@ export const Route = createRootRoute({
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "OE Chess" },
       { name: "description", content: "Offline opening repertoire and endgame trainer." },
-      { name: "theme-color", content: "#141611" },
+      { name: "theme-color", content: "#0a0f14" },
     ],
     links: [
       { rel: "icon", type: "image/svg+xml", href: "/logo-piece.svg" },
