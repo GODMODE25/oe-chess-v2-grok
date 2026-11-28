@@ -217,7 +217,10 @@ export function Shell() {
             "relative min-h-0 flex-1 overflow-y-auto px-4 py-5 md:px-6",
             nav === "openings" && "scrollbar-hidden",
             // Play owns its full-height layout: the board is fixed and the page never scrolls.
+            // Endgames follow the same contract on phones and tablets; desktop keeps the old
+            // scrolling page with the theme card beside the board.
             nav === "play" && "overflow-hidden p-0 md:p-0",
+            nav === "endgames" && "max-xl:overflow-hidden max-xl:p-0",
           )}
         >
           {bootError && <p className="mb-4 text-sm text-danger">{bootError}</p>}

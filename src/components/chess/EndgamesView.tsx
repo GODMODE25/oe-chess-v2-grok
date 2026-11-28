@@ -1,5 +1,15 @@
+import {
+  ArrowLeft,
+  BarChart3,
+  Info,
+  Lightbulb,
+  RotateCcw,
+  Undo2,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 import { Chess } from "chess.js";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ButtonHTMLAttributes } from "react";
 import { judgeEndgame } from "@/lib/chess/endgame-result";
 import { getEngine } from "@/lib/chess/engine";
 import { dequeuePremove, dropAnsweredPremove, enqueuePremove, premoveLabel, type QueuedMove } from "@/lib/chess/premove";
@@ -11,10 +21,31 @@ import { Board } from "./Board";
 import { EnginePanelBody } from "./EnginePanel";
 import { EvalBar } from "./EvalBar";
 import { seatRating, SeatColumn, type SeatChipProps } from "./SeatRail";
-import { Button, CollapsiblePanel, Field, Meter, Panel, Pill, TextInput } from "./ui";
+import { Button, cn, CollapsiblePanel, Field, Meter, Panel, Pill, TextInput } from "./ui";
 import { useEngineAnalysis } from "@/lib/chess/use-engine-analysis";
 
 const NO_PREFS: Prefs = {};
+
+/** A control that keeps its label on wide screens and shrinks to its icon on a phone. */
+function ActionButton({
+  icon: Icon,
+  label,
+  className,
+  ...props
+}: ButtonHTMLAttributes<HTMLButtonElement> & { icon: LucideIcon; label: string }) {
+  return (
+    <Button
+      variant="quiet"
+      aria-label={label}
+      title={label}
+      className={cn("h-10 w-10 shrink-0 px-0 sm:h-11 sm:w-auto sm:px-4", className)}
+      {...props}
+    >
+      <Icon className="h-4 w-4 shrink-0 sm:hidden" aria-hidden />
+      <span className="hidden sm:inline">{label}</span>
+    </Button>
+  );
+}
 
 const RANKS: Difficulty[] = ["beginner", "intermediate", "advanced", "expert"];
 /** The shelf order: mates first, then the piece you promote, then the messy ones. */
@@ -189,24 +220,30 @@ export function EndgamesView() {
 
   const solvedCount = solvedIn(positions, stats);
 
+  // The trainer is the full-screen, no-scroll surface; every browse view scrolls inside main.
+  if (active) {
+    return (
+      <Trainer
+        key={active.id}
+        pos={active}
+        onExit={() => setActiveId(null)}
+        onNext={() => {
+          const index = filtered.findIndex((pos) => pos.id === active.id);
+          const next = filtered[index + 1] ?? filtered[0];
+          if (next) setActiveId(next.id);
+        }}
+        onSave={(attempt) => {
+          saveAttempt(attempt);
+          if (attempt.success) noteSuccess();
+        }}
+      />
+    );
+  }
+
   return (
-    <div className="grid gap-4">
-      {active ? (
-        <Trainer
-          key={active.id}
-          pos={active}
-          onExit={() => setActiveId(null)}
-          onNext={() => {
-            const index = filtered.findIndex((pos) => pos.id === active.id);
-            const next = filtered[index + 1] ?? filtered[0];
-            if (next) setActiveId(next.id);
-          }}
-          onSave={(attempt) => {
-            saveAttempt(attempt);
-            if (attempt.success) noteSuccess();
-          }}
-        />
-      ) : group && rank ? (
+    <div className="h-full overflow-y-auto px-4 py-5 md:px-6 xl:h-auto xl:overflow-visible xl:p-0">
+      <div className="grid gap-4">
+        {group && rank ? (
         <>
           <Panel>
             <div className="flex flex-wrap items-end justify-between gap-3">
@@ -311,7 +348,8 @@ export function EndgamesView() {
             <Button className="mt-3" onClick={addCustom} disabled={!fenOk(draftFen.trim())}>Save position</Button>
           </CollapsiblePanel>
         </>
-      )}
+        )}
+      </div>
     </div>
   );
 }
@@ -334,6 +372,8 @@ function Trainer({ pos, onExit, onNext, onSave }: { pos: EndgamePos; onExit: () 
   const [engineError, setEngineError] = useState("");
   const [engineNonce, setEngineNonce] = useState(0);
   const [analysis, setAnalysis] = useState(false);
+  const [themeOpen, setThemeOpen] = useState(false);
+  const [panelTab, setPanelTab] = useState<"theme" | "moves">("theme");
   const [premoves, setPremoves] = useState<QueuedMove[]>([]);
   const [premoveNote, setPremoveNote] = useState("");
   const saved = useRef(false);
@@ -531,18 +571,79 @@ function Trainer({ pos, onExit, onNext, onSave }: { pos: EndgamePos; onExit: () 
         ? "Move budget exhausted. Try again?"
         : "Not this time";
 
+  const history = played.chess.history({ verbose: true });
+
+  const themeCard = (
+    <>
+      <h2 className="text-2xl">{pos.title}</h2>
+      <div className="mt-2 flex flex-wrap gap-2">
+        <Pill>{pos.category}</Pill>
+        <Pill tone="brass">{pos.difficulty}</Pill>
+        <Pill tone="ok">{pos.objective}</Pill>
+      </div>
+      <p className="mt-3 text-sm text-mist">{pos.notes}</p>
+      <div className="mt-4 grid gap-2">
+        {(["w", "b"] as Side[]).map((side) => (
+          <div key={side} className="flex items-center justify-between gap-2">
+            <span className="text-sm">{side === "w" ? "White" : "Black"}</span>
+            <div className="flex gap-2">
+              <Button variant={seats[side] === "you" ? "primary" : "quiet"} onClick={() => setSeats((current) => ({ ...current, [side]: "you" }))}>Human</Button>
+              <Button variant={seats[side] === "stockfish" ? "primary" : "quiet"} onClick={() => setSeats((current) => ({ ...current, [side]: "stockfish" }))}>Computer</Button>
+            </div>
+          </div>
+        ))}
+      </div>
+      {!hasHuman && <p className="mt-3 text-xs text-mist">Computer v computer is for analysis and never banks a solve.</p>}
+      {pos.mateIn != null && <p className="mt-2 text-sm">Mate in {pos.mateIn}.</p>}
+      <p className="mt-3 text-sm">Moves {judgement.userMoves}{pos.maxMoves ? ` / ${pos.maxMoves}` : ""}{pos.holdMoves ? ` · hold ${pos.holdMoves}` : ""}</p>
+      {pos.solution.length > 0 && <p className="mt-3 text-sm">Solution: {pos.solution.join(" ")}</p>}
+      {analysis && (
+        <div className="mt-4 border-t border-line pt-3">
+          <h3 className="text-sm text-mist">Engine</h3>
+          <div className="mt-1">
+            <EnginePanelBody info={evalAnalysis.info} enabled={analysis} />
+          </div>
+        </div>
+      )}
+      {note && <p className="mt-4 text-lg text-brass">{note}</p>}
+      <p className="mt-4 text-xs text-mist break-all">{pos.fen}</p>
+    </>
+  );
+
+  const movesList = (
+    <ol className="grid gap-1 text-sm tabular-nums">
+      {history.map((move, index) => (
+        <li key={`${move.san}-${index}`} className="flex items-center gap-2 rounded-md px-1 py-0.5">
+          <span className="w-7 text-right text-mist">{index + 1}.</span>
+          <span
+            className={cn("h-2.5 w-2.5 shrink-0 rounded-full border border-line", move.color === "w" ? "bg-board-light" : "bg-board-dark")}
+            aria-hidden
+          />
+          <span className="text-ivory">{move.san}</span>
+        </li>
+      ))}
+      {history.length === 0 && <li className="px-1 text-mist">No moves yet.</li>}
+    </ol>
+  );
+
   return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]" data-fen={played.chess.fen()}>
-      <div className="flex flex-col items-center gap-3">
-        <div className="flex w-full max-w-[40rem] flex-col gap-2 lg:flex-row lg:items-stretch">
+    <div
+      className="flex h-full min-h-0 flex-col gap-2 px-2 pb-2 xl:h-auto xl:min-h-0 xl:grid xl:grid-cols-[minmax(0,1fr)_20rem] xl:gap-4 xl:p-0"
+      data-fen={played.chess.fen()}
+    >
+      <div className="flex min-h-0 flex-1 flex-col items-center gap-2 xl:gap-3">
+        <div className="flex min-h-0 w-full max-w-[40rem] flex-1 flex-col gap-2 lg:flex-row lg:items-stretch">
           <SeatColumn
             top={seatProps(topColor)}
             bottom={seatProps(flipped ? "b" : "w")}
           />
-          <div className="flex min-w-0 flex-1 items-stretch gap-2">
+          <div className="flex min-h-0 min-w-0 flex-1 items-stretch gap-2">
             {analysis && <EvalBar info={evalAnalysis.info} stm={turn} flipped={flipped} />}
-            <div className="min-w-0 flex-1">
-              <Board
+            {/* Below xl the board is square and fitted to the room, so it never scrolls the page;
+                desktop keeps its natural width-filled size. */}
+            <div className="flex min-h-0 min-w-0 flex-1 items-center justify-center [container-type:size] xl:[container-type:normal]">
+              <div className="aspect-square w-[min(100cqw,100cqh)] xl:aspect-auto xl:w-full">
+                <Board
                 fen={played.chess.fen()}
                 orientation={flipped ? "black" : "white"}
                 interactive={!settled && hasHuman}
@@ -556,26 +657,33 @@ function Trainer({ pos, onExit, onNext, onSave }: { pos: EndgamePos; onExit: () 
                 premoves={premoves}
                 arrows={analysis ? [...arrow, ...evalAnalysis.arrows] : arrow}
                 onMove={onMove}
-              />
+                />
+              </div>
             </div>
           </div>
         </div>
-        <div className="flex flex-wrap justify-center gap-2">
-          <Button variant="quiet" onClick={onExit}>Back</Button>
-          <Button variant="quiet" onClick={() => void hint()}>Hint</Button>
-          <Button variant="quiet" onClick={takeback}>Takeback</Button>
-          <Button variant="quiet" onClick={retry}>Retry</Button>
-          <Button variant="quiet" onClick={() => setAnalysis((on) => !on)}>{analysis ? "Hide analysis" : "Analyze"}</Button>
+        <div className="flex shrink-0 flex-wrap justify-center gap-2">
+          <ActionButton icon={ArrowLeft} label="Back" onClick={onExit} />
+          <ActionButton icon={Lightbulb} label="Hint" onClick={() => void hint()} />
+          <ActionButton icon={Undo2} label="Takeback" onClick={takeback} />
+          <ActionButton icon={RotateCcw} label="Retry" onClick={retry} />
+          <ActionButton
+            icon={BarChart3}
+            label={analysis ? "Hide analysis" : "Analyze"}
+            onClick={() => setAnalysis((on) => !on)}
+            className={cn(analysis && "border-brass text-brass")}
+          />
+          <ActionButton icon={Info} label="Theme" onClick={() => setThemeOpen(true)} className="xl:hidden" />
         </div>
-        {thinking && <p className="text-sm text-mist">Stockfish is thinking.</p>}
+        {thinking && <p className="shrink-0 text-sm text-mist">Stockfish is thinking.</p>}
         {engineError && (
-          <p className="text-sm text-danger">
+          <p className="shrink-0 text-sm text-danger">
             {engineError}{" "}
             <button type="button" className="underline" onClick={() => setEngineNonce((value) => value + 1)}>Try again</button>
           </p>
         )}
         {premoves.length > 0 && (
-          <div className="flex flex-wrap items-center justify-center gap-1.5 text-xs">
+          <div className="flex shrink-0 flex-wrap items-center justify-center gap-1.5 text-xs">
             <span className="text-mist">Queued:</span>
             {premoves.map((move, index) => (
               <span key={`${move.from}${move.to}${index}`} className="flex items-center gap-1 rounded-full border border-line bg-surface-2 py-1 pl-2 pr-1">
@@ -611,40 +719,48 @@ function Trainer({ pos, onExit, onNext, onSave }: { pos: EndgamePos; onExit: () 
           </div>
         )}
       </div>
-      <Panel className="h-[36rem] overflow-y-auto">
-        <h2 className="text-2xl">{pos.title}</h2>
-        <div className="mt-2 flex flex-wrap gap-2">
-          <Pill>{pos.category}</Pill>
-          <Pill tone="brass">{pos.difficulty}</Pill>
-          <Pill tone="ok">{pos.objective}</Pill>
-        </div>
-        <p className="mt-3 text-sm text-mist">{pos.notes}</p>
-        <div className="mt-4 grid gap-2">
-          {(["w", "b"] as Side[]).map((side) => (
-            <div key={side} className="flex items-center justify-between gap-2">
-              <span className="text-sm">{side === "w" ? "White" : "Black"}</span>
-              <div className="flex gap-2">
-                <Button variant={seats[side] === "you" ? "primary" : "quiet"} onClick={() => setSeats((current) => ({ ...current, [side]: "you" }))}>Human</Button>
-                <Button variant={seats[side] === "stockfish" ? "primary" : "quiet"} onClick={() => setSeats((current) => ({ ...current, [side]: "stockfish" }))}>Computer</Button>
-              </div>
-            </div>
-          ))}
-        </div>
-        {!hasHuman && <p className="mt-3 text-xs text-mist">Computer v computer is for analysis and never banks a solve.</p>}
-        {pos.mateIn != null && <p className="mt-2 text-sm">Mate in {pos.mateIn}.</p>}
-        <p className="mt-3 text-sm">Moves {judgement.userMoves}{pos.maxMoves ? ` / ${pos.maxMoves}` : ""}{pos.holdMoves ? ` · hold ${pos.holdMoves}` : ""}</p>
-        {pos.solution.length > 0 && <p className="mt-3 text-sm">Solution: {pos.solution.join(" ")}</p>}
-        {analysis && (
-          <div className="mt-4 border-t border-line pt-3">
-            <h3 className="text-sm text-mist">Engine</h3>
-            <div className="mt-1">
-              <EnginePanelBody info={evalAnalysis.info} enabled={analysis} />
-            </div>
-          </div>
-        )}
-        {note && <p className="mt-4 text-lg text-brass">{note}</p>}
-        <p className="mt-4 text-xs text-mist break-all">{pos.fen}</p>
+      {/* Desktop keeps the theme card inline; below xl it only exists in the popup. */}
+      <Panel className="hidden h-[36rem] overflow-y-auto xl:block">
+        {themeCard}
       </Panel>
+      {themeOpen && (
+        <div
+          className="fixed inset-0 z-40 flex items-start justify-center bg-scrim/70 p-2 sm:p-4 xl:hidden"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Endgame theme"
+        >
+          <div className="modal-card flex h-[calc(100dvh-1rem)] w-full max-w-md flex-col gap-3 overflow-hidden rounded-xl border border-line p-3 sm:h-[calc(100dvh-2rem)] sm:p-4">
+            <div className="flex shrink-0 items-center justify-between gap-2">
+              <nav aria-label="Endgame panels" className="flex shrink-0 gap-1 rounded-lg border border-line bg-surface-2 p-1">
+                {([["theme", "Theme"], ["moves", "Moves"]] as const).map(([id, label]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    aria-pressed={panelTab === id}
+                    onClick={() => setPanelTab(id)}
+                    className={cn(
+                      "h-9 shrink-0 rounded-md px-3 text-sm transition",
+                      panelTab === id ? "bg-brass text-on-accent" : "text-mist hover:bg-surface hover:text-ivory",
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </nav>
+              <button
+                type="button"
+                aria-label="Close theme panel"
+                onClick={() => setThemeOpen(false)}
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-line bg-surface text-mist transition hover:text-ivory"
+              >
+                <X className="h-4 w-4" aria-hidden />
+              </button>
+            </div>
+            <div className="scrollbar-hidden min-h-0 flex-1 overflow-y-auto">{panelTab === "theme" ? themeCard : movesList}</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
