@@ -866,7 +866,7 @@ export function PlayView() {
             ref={marqueeRef}
             role="region"
             aria-label="Moves"
-            className="scrollbar-hidden flex w-full max-w-[40rem] shrink-0 gap-1.5 overflow-x-auto rounded-lg border border-line bg-surface px-2 py-1.5 text-xs"
+            className="scrollbar-hidden hidden w-full max-w-[40rem] shrink-0 gap-1.5 overflow-x-auto rounded-lg border border-line bg-surface px-2 py-1.5 text-xs xl:flex"
           >
             {Array.from({ length: Math.ceil(sans.length / 2) }, (_, index) => (
               <span key={index} className="flex shrink-0 items-center gap-1">
@@ -893,7 +893,7 @@ export function PlayView() {
           </div>
         )}
         {(endNote || phase !== "idle") && (
-          <p className="w-full max-w-[40rem] shrink-0 px-2 text-xs text-ivory sm:px-0">
+          <p className="hidden w-full max-w-[40rem] shrink-0 px-2 text-xs text-ivory sm:px-0 xl:block">
             {label}
             {repeatWarn && (
               <span
