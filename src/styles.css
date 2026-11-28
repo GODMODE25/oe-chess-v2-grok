@@ -46,13 +46,20 @@
   }
   body {
     margin: 0;
-    min-height: 100vh;
+    /* `dvh`, not `vh`: on phones 100vh is the height with the URL bar hidden,
+       which makes the document taller than the screen and lets a drag scroll
+       the fixed Play board away. The shell owns all scrolling. */
+    min-height: 100dvh;
     overflow-x: hidden;
+    overscroll-behavior: none;
     font-family: var(--font-sans);
   }
   button:not(:disabled),
   [role="button"]:not(:disabled) {
     cursor: pointer;
+  }
+  main {
+    overscroll-behavior: contain;
   }
   h1, h2, h3 {
     font-family: var(--font-display);
